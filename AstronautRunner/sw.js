@@ -1,4 +1,4 @@
-const CACHE_NAME = 'astronaut-runner-v6';
+const CACHE_NAME = 'astronaut-runner-v7';
 const ASSETS = [
   './',
   './index.html',

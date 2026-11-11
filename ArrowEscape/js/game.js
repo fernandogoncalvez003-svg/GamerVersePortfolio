@@ -279,27 +279,14 @@ class ArrowEscapeGame {
                 }
             } else {
                 const btn = document.getElementById('btn-buy-shield-ad');
-                const origText = btn.innerText;
-                btn.disabled = true;
-                btn.innerText = '⏳...';
-                const grantShield = () => {
+                this.runRewardedAdButton(btn, 'Desbloquear Escudo con Monetag', () => {
                     btn.innerText = '✓ LISTO';
                     this.boosterShieldActive = true;
                     document.getElementById('status-shield-active').innerText = 'SÍ';
                     document.getElementById('booster-shield').classList.add('active');
                     window.audioManager.playVictory();
                     this.saveProgress();
-                };
-                if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
-                    window.GamerVerse.showRewardedAd(grantShield, () => {
-                        btn.disabled = false;
-                        btn.innerText = origText;
-                        this.spawnComboText('⚠️ Anuncio no disponible');
-                    }, 'Desbloquear Escudo con Monetag');
-                } else {
-                    btn.disabled = false;
-                    btn.innerText = origText;
-                }
+                });
                 return;
             }
             document.getElementById('status-shield-active').innerText = 'SÍ';
@@ -317,27 +304,14 @@ class ArrowEscapeGame {
                 }
             } else {
                 const btn = document.getElementById('btn-buy-compass-ad');
-                const origText = btn.innerText;
-                btn.disabled = true;
-                btn.innerText = '⏳...';
-                const grantCompass = () => {
+                this.runRewardedAdButton(btn, 'Desbloquear Brújula con Monetag', () => {
                     btn.innerText = '✓ LISTO';
                     this.boosterCompassActive = true;
                     document.getElementById('status-compass-active').innerText = 'SÍ';
                     document.getElementById('booster-compass').classList.add('active');
                     window.audioManager.playVictory();
                     this.saveProgress();
-                };
-                if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
-                    window.GamerVerse.showRewardedAd(grantCompass, () => {
-                        btn.disabled = false;
-                        btn.innerText = origText;
-                        this.spawnComboText('⚠️ Anuncio no disponible');
-                    }, 'Desbloquear Brújula con Monetag');
-                } else {
-                    btn.disabled = false;
-                    btn.innerText = origText;
-                }
+                });
                 return;
             }
             document.getElementById('status-compass-active').innerText = 'SÍ';
@@ -346,32 +320,46 @@ class ArrowEscapeGame {
         this.saveProgress();
     }
 
+    runRewardedAdButton(btn, label, onSuccess, restoreOnSuccess = false) {
+        if (!btn || btn.disabled) return;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerText = '⏳ CARGANDO ANUNCIO...';
+
+        const showFail = () => {
+            btn.disabled = false;
+            btn.innerText = '⚠️ SIN ANUNCIO · REINTENTA';
+            setTimeout(() => {
+                if (!btn.disabled && btn.innerText.includes('SIN ANUNCIO')) {
+                    btn.innerHTML = originalHTML;
+                }
+            }, 2400);
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+            window.GamerVerse.showRewardedAd(
+                () => {
+                    btn.disabled = false;
+                    if (restoreOnSuccess) btn.innerHTML = originalHTML;
+                    if (typeof onSuccess === 'function') onSuccess();
+                },
+                showFail,
+                label
+            );
+        } else {
+            showFail();
+        }
+    }
+
     reviveWithAd() {
         const btn = document.getElementById('btn-revive-ad');
-        const original = btn.innerHTML;
-        btn.innerText = '⏳ CARGANDO ANUNCIO...';
-        btn.disabled = true;
-
-        const restoreLives = () => {
-            btn.innerHTML = original;
-            btn.disabled = false;
+        this.runRewardedAdButton(btn, 'Revivir con Monetag', () => {
             this.lives = this.maxLives;
             this.updateHUD();
             this.closeModal('modal-gameover');
             window.audioManager.playVictory();
             this.spawnComboText('❤️ +3 VIDAS RESTAURADAS');
-        };
-        const failAd = () => {
-            btn.innerHTML = original;
-            btn.disabled = false;
-            this.spawnComboText('⚠️ Anuncio no disponible');
-        };
-
-        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
-            window.GamerVerse.showRewardedAd(restoreLives, failAd, 'Revivir con Monetag');
-        } else {
-            failAd();
-        }
+        }, true);
     }
 
     reviveWithCoins() {

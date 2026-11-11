@@ -361,7 +361,9 @@
                 return Promise.resolve(false);
             }
             return this.loadMonetagSdk(zoneId).then((ready) => {
-                if (ready && !this.monetag.inAppStarted) {
+                let isTopWindow = true;
+                try { isTopWindow = (window.top === window); } catch (_) {}
+                if (ready && isTopWindow && !this.monetag.inAppStarted) {
                     const interZone = this.monetag.interstitialZoneId || zoneId;
                     const fn = window['show_' + interZone];
                     if (typeof fn === 'function') {
@@ -439,6 +441,13 @@
         },
 
         showRewardedAd: function (onRewardSuccess, onRewardFail, label) {
+            try {
+                if (window.top && window.top !== window && window.top.GamerVerse && typeof window.top.GamerVerse.showRewardedAd === 'function') {
+                    window.top.GamerVerse.showRewardedAd(onRewardSuccess, onRewardFail, label);
+                    return;
+                }
+            } catch (_) {}
+
             this.resolveMonetagZones();
             const zoneId = this.monetag.zoneId;
 
@@ -459,23 +468,32 @@
                     if (typeof onRewardFail === 'function') onRewardFail('sdk_unavailable');
                     return;
                 }
-                showFn({
-                    type: 'end',
-                    ymid: String(this.user.id || 'guest')
-                }).then((result) => {
-                    if (result && result.reward_event_type && result.reward_event_type !== 'valued') {
-                        if (typeof onRewardFail === 'function') onRewardFail('not_valued');
-                        return;
-                    }
-                    if (typeof onRewardSuccess === 'function') onRewardSuccess(result);
-                }).catch((err) => {
-                    console.warn('Monetag rewarded error:', err);
+                try {
+                    Promise.resolve(showFn()).then((result) => {
+                        if (result && result.reward_event_type && result.reward_event_type !== 'valued') {
+                            if (typeof onRewardFail === 'function') onRewardFail('not_valued');
+                            return;
+                        }
+                        if (typeof onRewardSuccess === 'function') onRewardSuccess(result);
+                    }).catch((err) => {
+                        console.warn('Monetag rewarded error:', err);
+                        if (typeof onRewardFail === 'function') onRewardFail(err);
+                    });
+                } catch (err) {
+                    console.warn('Monetag invocation error:', err);
                     if (typeof onRewardFail === 'function') onRewardFail(err);
-                });
+                }
             });
         },
 
         showInterstitialAd: function (onCloseCallback) {
+            try {
+                if (window.top && window.top !== window && window.top.GamerVerse && typeof window.top.GamerVerse.showInterstitialAd === 'function') {
+                    window.top.GamerVerse.showInterstitialAd(onCloseCallback);
+                    return;
+                }
+            } catch (_) {}
+
             this.resolveMonetagZones();
             const zoneId = this.monetag.interstitialZoneId || this.monetag.zoneId;
             const done = () => { if (typeof onCloseCallback === 'function') onCloseCallback(); };
@@ -495,9 +513,11 @@
                     done();
                     return;
                 }
-                showFn({
-                    ymid: String(this.user.id || 'guest')
-                }).catch(() => {}).finally(done);
+                try {
+                    Promise.resolve(showFn()).catch(() => {}).finally(done);
+                } catch (_) {
+                    done();
+                }
             });
         },
 
