@@ -243,8 +243,11 @@ ALTER TABLE public.jackpots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.game_scores ENABLE ROW LEVEL SECURITY;
 
 -- Lectura pública para Leaderboard y Bote
+DROP POLICY IF EXISTS "Lectura pública de jackpots" ON public.jackpots;
 CREATE POLICY "Lectura pública de jackpots" ON public.jackpots FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Lectura pública de ranking" ON public.game_scores;
 CREATE POLICY "Lectura pública de ranking" ON public.game_scores FOR SELECT USING (is_valid = true);
+DROP POLICY IF EXISTS "Lectura del propio perfil" ON public.users;
 CREATE POLICY "Lectura del propio perfil" ON public.users FOR SELECT USING (true);
 
 -- ----------------------------------------------------------------------------
