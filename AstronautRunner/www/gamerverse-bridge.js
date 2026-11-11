@@ -17,7 +17,7 @@
         version: '1.4.0',
         brandName: 'GameVerse 307',
         apiBase: '', // Resuelto dinámicamente en resolveApiBase()
-        botUsername: (typeof window !== 'undefined' && window.GAMEVERSE_BOT_USERNAME) || 'GameVerse307Bot',
+        botUsername: (typeof window !== 'undefined' && window.GAMEVERSE_BOT_USERNAME) || 'GameServer307_bot',
 
         // Configuración centralizada de Monetag (Telegram Mini App / Web SDK)
         // Pega aquí tu Zone ID numérico de Monetag cuando lo crees, o define window.MONETAG_ZONE_ID

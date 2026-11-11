@@ -1,7 +1,7 @@
 /**
  * GameVerse 307 Studios | Telegram Bot & Backend API
  * Handles:
- * 1. Telegram Bot (@GameVerse307Bot) commands & Viral Referrals
+ * 1. Telegram Bot (@GameServer307_bot) commands & Viral Referrals
  * 2. HMAC-SHA256 Auth for Telegram.WebApp.initData
  * 3. Supabase integration for Tickets, Scores, Jackpots & Anti-Cheat
  */
@@ -190,7 +190,7 @@ bot.start(async (ctx) => {
     }
 
     const jackpotAmount = await getActiveJackpotAmount();
-    const botUser = (ctx.botInfo && ctx.botInfo.username) || 'GameVerse307Bot';
+    const botUser = (ctx.botInfo && ctx.botInfo.username) || 'GameServer307_bot';
     const shareLink = `https://t.me/share/url?url=${encodeURIComponent(`https://t.me/${botUser}?start=ref_${from.id}`)}&text=${encodeURIComponent('¡Te regalo 3 Tickets para jugar en GameVerse 307! Compite gratis por el Bote Semanal en USDT 🚀🎟️')}`;
 
     const welcomeText = `🚀 *¡Bienvenido a GameVerse 307, ${from.first_name || 'Piloto'}!* 🎮\n\n` +
