@@ -16,14 +16,21 @@ const WEBAPP_URL = process.env.WEBAPP_URL || 'https://gameverse307.pages.dev';
 const WEBHOOK_URL = process.env.WEBHOOK_URL || '';
 const PORT = process.env.PORT || 3001;
 
-// Configuración Supabase (con fallback en memoria para desarrollo local)
+// Configuración Supabase (soporta claves nuevas sb_secret_/sb_publishable_ y clásicas)
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+const SUPABASE_KEY =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_KEY ||
+    SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_JWKS_URL = process.env.SUPABASE_JWKS_URL || (SUPABASE_URL ? `${SUPABASE_URL}/auth/v1/.well-known/jwks.json` : '');
 
 let supabase = null;
-if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('your-project')) {
+if (SUPABASE_URL && SUPABASE_KEY && !SUPABASE_URL.includes('your-project') && !SUPABASE_KEY.includes('PEGA_AQUI') && !SUPABASE_KEY.includes('your-')) {
     const { createClient } = require('@supabase/supabase-js');
-    supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sbOptions = typeof WebSocket === 'undefined' ? { realtime: { transport: require('ws') } } : {};
+    supabase = createClient(SUPABASE_URL, SUPABASE_KEY, sbOptions);
     console.log('✅ Supabase conectado exitosamente.');
 } else {
     console.log('⚠️ Credenciales de Supabase no configuradas. Usando emulador en memoria.');
@@ -135,7 +142,7 @@ function verifyTelegramWebAppData(initDataString, botToken) {
 // ----------------------------------------------------------------------------
 // 2. BOT DE TELEGRAM: Comandos y Lógica Viral de Referidos
 // ----------------------------------------------------------------------------
-const hasRealBotToken = BOT_TOKEN && !BOT_TOKEN.includes('FakeToken') && !BOT_TOKEN.includes('YOUR_TELEGRAM');
+const hasRealBotToken = BOT_TOKEN && !BOT_TOKEN.includes('FakeToken') && !BOT_TOKEN.includes('YOUR_TELEGRAM') && !BOT_TOKEN.includes('PEGA_AQUI');
 const bot = new Telegraf(BOT_TOKEN || '0000000000:placeholder');
 
 bot.start(async (ctx) => {
