@@ -1,0 +1,22 @@
+{
+  "name": "Astronaut Runner - Space Endless Arcade",
+  "short_name": "Astronaut Runner",
+  "description": "Corre en 3 carriles por el espacio exterior, esquiva barreras de energía y destruye monstruos alienígenas.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05030a",
+  "theme_color": "#ff5e57",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

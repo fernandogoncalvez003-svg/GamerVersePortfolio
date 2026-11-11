@@ -1,0 +1,3367 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Astronaut Runner - Space Endless Arcade</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #ff5e57;
+            --primary-glow: rgba(255, 94, 87, 0.45);
+            --secondary: #00f0ff;
+            --secondary-glow: rgba(0, 240, 255, 0.45);
+            --accent: #ffd32a;
+            --accent-glow: rgba(255, 211, 42, 0.4);
+            --bg-dark: #05030a;
+            --card-bg: rgba(15, 10, 25, 0.65);
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            outline: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #ffffff;
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            height: 100%;
+            max-height: 850px;
+            background-color: var(--bg-dark);
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+            border-radius: 0;
+        }
+
+        @media (min-width: 450px) {
+            #game-container {
+                border-radius: 20px;
+                border: 2px solid rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .sound-btn {
+            position: absolute;
+            top: 24px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            color: #fff;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .sound-btn:active {
+            transform: scale(0.9);
+        }
+
+        .pause-btn {
+            position: absolute;
+            top: 74px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            color: #fff;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            transition: transform 0.1s;
+        }
+
+        .pause-btn:active {
+            transform: scale(0.9);
+        }
+
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        #hud {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .hud-row {
+            display: flex;
+            justify-content: space-between;
+            margin-right: 92px;
+        }
+
+        .hud-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            text-shadow: 0 0 8px rgba(255,255,255,0.2);
+        }
+
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 3, 10, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .screen-overlay.hidden {
+            display: none !important;
+            opacity: 0;
+        }
+
+        .glass-card {
+            background: rgba(15, 10, 25, 0.75);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 30px 24px;
+            width: 88%;
+            max-width: 360px;
+            text-align: center;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            transform: scale(1);
+            transition: transform 0.3s;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 26px;
+            margin: 0 0 8px 0;
+            letter-spacing: 1.5px;
+            color: #ff5e57;
+            text-shadow: 0 0 10px rgba(255, 94, 87, 0.5);
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #b0aabf;
+            margin: 0 0 20px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-premium {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #ff5e57 0%, #ff3f34 100%);
+            border: none;
+            border-radius: 14px;
+            color: #fff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 94, 87, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s, opacity 0.2s;
+            pointer-events: auto;
+        }
+
+        .btn-premium:active {
+            transform: scale(0.97);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 12px 20px;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            color: #d1cbdc;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.2s;
+            pointer-events: auto;
+        }
+
+        .btn-secondary:active {
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #fff;
+            transform: scale(0.97);
+        }
+
+        .interactive {
+            pointer-events: auto;
+        }
+
+        .settings-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+        
+        .switch-toggle {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 22px;
+        }
+        .switch-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider-toggle {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .3s;
+            border-radius: 34px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .slider-toggle:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 3px; bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider-toggle {
+            background-color: #2ed573;
+        }
+        input:checked + .slider-toggle:before {
+            transform: translateX(20px);
+        }
+
+        /* Lang Button styles */
+        .lang-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.03);
+            color: #b0aabf;
+            border-radius: 8px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-btn.active {
+            border-color: #ff5e57;
+            color: #ff5e57;
+            background: rgba(255, 94, 87, 0.1);
+        }
+
+        /* Swipe Guide Animation */
+        #gameplay-instructions {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .finger-icon {
+            font-size: 32px;
+            animation: swipeAnim 2.5s infinite;
+        }
+
+        @keyframes swipeAnim {
+            0% { transform: translate(-30px, 0); opacity: 0; }
+            20% { opacity: 1; }
+            50% { transform: translate(30px, 0); opacity: 1; }
+            80% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+    </style>
+    <!-- Telegram WebApp SDK y GamerVerse Unified Bridge -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="gamerverse-bridge.js"></script>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Botón de sonido -->
+        <div class="sound-btn interactive" id="soundBtn" onclick="toggleSound()">
+            <svg id="soundOnIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            <svg id="soundOffIcon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+        </div>
+
+        <!-- Botón de pausa (oculto por defecto) -->
+        <div class="pause-btn interactive hidden" id="pauseBtn" onclick="pauseGame()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="4" x2="18" y2="20"></line><line x1="6" y1="4" x2="6" y2="20"></line></svg>
+        </div>
+
+        <div class="ui-layer">
+            <!-- HUD Superior -->
+            <div id="hud">
+                <div class="hud-row">
+                    <div class="hud-panel" style="border-color: #00f0ff; min-width: 48px;"><span id="sectorVal" style="color: #00f0ff; font-weight: 800;">S1</span></div>
+                    <div class="hud-panel"><span data-i18n="score">DISTANCE</span>: <span id="scoreVal">0</span>m</div>
+                    <div class="hud-panel">🪙 <span id="coinVal" style="color: #ffd32a; font-weight: 800;">0</span></div>
+                    <div class="hud-panel"><span data-i18n="best">BEST</span>: <span id="bestVal">0</span>m</div>
+                </div>
+                <!-- Contenedor de Power-Ups Activos -->
+                <div id="powerup-hud" style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;"></div>
+            </div>
+
+            <!-- Pantalla Menú Principal -->
+            <div class="screen-overlay interactive" id="menu-screen">
+                <div class="glass-card">
+                    <div style="font-size: 48px; margin-bottom: 8px; animation: float 3s ease-in-out infinite;">👨‍🚀</div>
+                    <h1>ASTRONAUT RUNNER</h1>
+                    <p class="subtitle" data-i18n="menu_subtitle">Esquiva obstáculos a toda velocidad</p>
+                    <div style="margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 14px; color: #ffd32a; font-weight: bold;">
+                        🪙 TOTAL: <span id="totalCoinsVal">0</span>
+                    </div>
+                    <button class="btn-premium" onclick="openPrepareLevelModal()" style="margin-bottom: 12px;">
+                        <span data-i18n="play">INICIAR CORRIDA</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    </button>
+                    <button class="btn-secondary" onclick="openShop()" style="margin-bottom: 12px;">
+                        <span data-i18n="shop_title">TIENDA DE TRAJES</span>
+                    </button>
+                    <button class="btn-secondary" onclick="openSettings()">
+                        <span data-i18n="settings_title">AJUSTES</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal de Preparación (Rewarded Boosters) -->
+            <div class="screen-overlay interactive hidden" id="level-prepare-modal" style="z-index: 60;">
+                <div class="glass-card" style="border-color: rgba(255, 94, 87, 0.25);">
+                    <h2 data-i18n="prepare_title" style="font-family: 'Orbitron', sans-serif; font-size: 18px; color: #fff; margin: 0 0 4px 0; font-weight: 900;">PREPARAR VUELO</h2>
+                    <p class="subtitle" data-i18n="prepare_subtitle" style="font-size: 10px; margin-bottom: 20px;">Activa potenciadores con anuncios</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px; text-align: left;">
+                        <!-- Furia -->
+                        <div class="settings-item" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.01);">
+                            <div style="font-size: 20px; color: #ff5e57; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,94,87,0.1); border-radius: 8px;">🔥</div>
+                            <div style="flex-grow: 1;">
+                                <div data-i18n="booster_fury" style="font-size: 11px; font-weight: 800; color: #fff;">Furia de Plasma</div>
+                                <div data-i18n="booster_fury_desc" style="font-size: 9px; color: #b0aabf; margin-top: 1px;">Láser de Plasma por 30s</div>
+                            </div>
+                            <button id="btn-activate-fury" onclick="watchAdForFury()" class="btn-premium" style="padding: 6px 10px; font-size: 9px; border-radius: 6px; box-shadow: none; min-width: 90px; background: linear-gradient(135deg, #ffd32a 0%, #ff5e57 100%);">
+                                📺 ANUNCIO
+                            </button>
+                        </div>
+                        <!-- Imán -->
+                        <div class="settings-item" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.01);">
+                            <div style="font-size: 20px; color: #00f0ff; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(0,240,255,0.1); border-radius: 8px;">🧲</div>
+                            <div style="flex-grow: 1;">
+                                <div data-i18n="booster_magnet" style="font-size: 11px; font-weight: 800; color: #fff;">Súper Imán</div>
+                                <div data-i18n="booster_magnet_desc" style="font-size: 9px; color: #b0aabf; margin-top: 1px;">Rango de imán infinito</div>
+                            </div>
+                            <button id="btn-activate-magnet" onclick="watchAdForMagnet()" class="btn-premium" style="padding: 6px 10px; font-size: 9px; border-radius: 6px; box-shadow: none; min-width: 90px; background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);">
+                                📺 ANUNCIO
+                            </button>
+                        </div>
+                    </div>
+
+                    <button class="btn-premium" onclick="startGame()" style="margin-bottom: 10px; background: linear-gradient(135deg, #2ed573 0%, #10ac84 100%); box-shadow: 0 0 15px rgba(46,213,115,0.3);">
+                        <span data-i18n="launch">DESPEGAR</span>
+                    </button>
+                    <button class="btn-secondary" onclick="closePrepareModal()">
+                        <span data-i18n="back_btn">VOLVER</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pantalla Tienda de Skins -->
+            <div class="screen-overlay interactive hidden" id="shop-screen" style="z-index: 60;">
+                <div class="glass-card" style="width: 92%; max-width: 380px; padding: 22px 18px; border-color: rgba(255, 211, 42, 0.25);">
+                    <h2 data-i18n="shop_title" style="color: #ffd32a; font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; margin: 0 0 4px 0;">TIENDA DE TRAJES</h2>
+                    <p class="subtitle" data-i18n="shop_subtitle" style="font-size: 10px; margin-bottom: 16px;">Skins con habilidades</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; margin-bottom: 15px; text-align: left;" id="shop-items-container">
+                        <!-- Las skins se inyectarán con JS -->
+                    </div>
+
+                    <div style="margin: 10px 0; font-family: 'Orbitron', sans-serif; font-size: 13px; color: #ffd32a; display: flex; justify-content: center; align-items: center; gap: 6px;">
+                        <span data-i18n="wallet">Saldo</span>: <span id="shopCoinsVal" style="font-weight: bold; font-size: 15px;">0</span> 🪙
+                    </div>
+
+                    <button class="btn-secondary" onclick="closeShop()" style="width: 100%;">
+                        <span data-i18n="back_btn">VOLVER</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pantalla Ajustes -->
+            <div class="screen-overlay interactive hidden" id="settings-screen" style="z-index: 60;">
+                <div class="glass-card">
+                    <h2 data-i18n="settings_title" style="color: #ff5e57; font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; margin: 0 0 4px 0;">AJUSTES</h2>
+                    <p class="subtitle" data-i18n="settings_subtitle" style="font-size: 10px; margin-bottom: 20px;">Ajusta los parámetros</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; text-align: left; width: 100%; margin-bottom: 20px;">
+                        <!-- Selector de Idioma -->
+                        <div class="settings-item">
+                            <span data-i18n="language" style="font-size: 11px; color: #ffd32a; font-weight: bold; display: block; margin-bottom: 6px;">Idioma</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="lang-btn" id="lang-es" onclick="setLanguage('es')">ES</button>
+                                <button class="lang-btn" id="lang-en" onclick="setLanguage('en')">EN</button>
+                                <button class="lang-btn" id="lang-pt" onclick="setLanguage('pt')">PT</button>
+                            </div>
+                        </div>
+
+                        <!-- Volumen Música -->
+                        <div class="settings-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span data-i18n="music_volume" style="font-size: 11px; color: #ffd32a; font-weight: bold;">Volumen Música</span>
+                                <span id="musicVolVal" style="color: #00f0ff; font-size: 11px; font-weight: bold;">40%</span>
+                            </div>
+                            <input type="range" id="musicVolSlider" min="0.0" max="1.0" step="0.05" value="0.4" oninput="updateMusicVolume(this.value)" style="width: 100%; accent-color: #ff5e57; cursor: pointer; height: 4px;">
+                        </div>
+
+                        <!-- Volumen Efectos -->
+                        <div class="settings-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span data-i18n="sfx_volume" style="font-size: 11px; color: #ffd32a; font-weight: bold;">Volumen Efectos</span>
+                                <span id="sfxVolVal" style="color: #00f0ff; font-size: 11px; font-weight: bold;">60%</span>
+                            </div>
+                            <input type="range" id="sfxVolSlider" min="0.0" max="1.0" step="0.05" value="0.6" oninput="updateSfxVolume(this.value)" style="width: 100%; accent-color: #ff5e57; cursor: pointer; height: 4px;">
+                        </div>
+
+                        <!-- Safe Zone -->
+                        <div class="settings-item" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <span data-i18n="safe_zone" style="font-size: 11px; color: #fff; font-weight: bold; display: block;">Zona Segura</span>
+                                <span data-i18n="safe_zone_desc" style="font-size: 8px; color: #b0aabf;">Espacio inferior extra</span>
+                            </div>
+                            <label class="switch-toggle">
+                                <input type="checkbox" id="safeZoneToggle" checked onchange="toggleSafeZone(this.checked)">
+                                <span class="slider-toggle"></span>
+                            </label>
+                        </div>
+
+                        <!-- Sensibilidad del Swipe -->
+                        <div class="settings-item">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <div>
+                                    <span style="font-size: 11px; color: #ffd32a; font-weight: bold; display: block;">Sensibilidad</span>
+                                    <span style="font-size: 8px; color: #b0aabf;">Distancia mínima del gesto</span>
+                                </div>
+                                <span id="sensitivityVal" style="color: #00f0ff; font-size: 11px; font-weight: bold;">50%</span>
+                            </div>
+                            <input type="range" id="sensitivitySlider" min="0.5" max="2.0" step="0.1" value="1.0" oninput="updateSensitivity(this.value)" style="width: 100%; accent-color: #ffd32a; cursor: pointer; height: 4px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 8px; color: #b0aabf; margin-top: 2px;">
+                                <span>Mínima</span><span>Máxima</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-premium" onclick="closeSettings()" style="width: 100%; margin-bottom: 10px;">
+                        <span data-i18n="resume">CONTINUAR</span>
+                    </button>
+                    <button data-i18n="reset_progress" class="btn-secondary" onclick="confirmResetProgress()" style="color: #ff5e57; border-color: rgba(255,94,87,0.3);">
+                        ⚠️ REINICIAR PROGRESO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pantalla Pausa -->
+            <div class="screen-overlay interactive hidden" id="pause-screen" style="z-index: 60;">
+                <div class="glass-card" style="border-color: rgba(0, 240, 255, 0.25);">
+                    <div style="font-size: 40px; margin-bottom: 8px;">⏸️</div>
+                    <h2 data-i18n="pause_title" style="color: #00f0ff; font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; margin: 0 0 4px 0;">JUEGO PAUSADO</h2>
+                    <p class="subtitle" style="font-size: 10px; margin-bottom: 20px;">Partida en suspensión</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;">
+                        <button class="btn-premium" onclick="resumeGame()">
+                            <span data-i18n="resume_btn">CONTINUAR</span>
+                        </button>
+                        <button class="btn-secondary" onclick="restartGameFromPause()">
+                            <span data-i18n="restart_btn">REINICIAR</span>
+                        </button>
+                        <button class="btn-secondary" onclick="openSettingsFromPause()">
+                            <span data-i18n="settings_title">AJUSTES</span>
+                        </button>
+                        <button class="btn-secondary" onclick="exitToMenuFromPause()" style="color: #ff5e57; border-color: rgba(255,94,87,0.3);">
+                            <span data-i18n="exit_btn">SALIR AL MENÚ</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pantalla Game Over -->
+            <div class="screen-overlay interactive hidden" id="gameover-screen">
+                <div class="glass-card" style="border-color: rgba(255, 94, 87, 0.3);">
+                    <div style="font-size: 40px; margin-bottom: 8px;">💥</div>
+                    <h1 style="color: #ff5e57; background: none; -webkit-text-fill-color: #ff5e57; text-shadow: 0 0 14px rgba(255,94,87,0.6);">CORRIDA TERMINADA</h1>
+                    <p class="subtitle" style="margin-bottom: 12px;"><span data-i18n="gameover_distance">Distancia</span>: <span id="finalScore" style="color: #ff5e57; font-weight: bold;">0</span>m</p>
+                    
+                    <div style="margin-bottom: 20px; font-family: 'Orbitron', sans-serif; font-size: 13px; color: #ffd32a; line-height: 1.5;">
+                        <span data-i18n="gameover_match_coins">Monedas recolectadas</span>: +<span id="matchCoins">0</span> 🪙<br>
+                        <span style="font-size: 10px; color: #b0aabf; font-family: 'Outfit', sans-serif;"><span data-i18n="gameover_total_coins">Total Acumulado</span>: <span id="totalCoinsOver" style="color: #fff; font-weight: bold;">0</span> 🪙</span>
+                    </div>
+
+                    <!-- Botón de compartir récord (Web Share API) -->
+                    <button class="btn-premium hidden" id="shareBtn" onclick="shareHighScore()" style="background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%); box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); margin-bottom: 10px;">
+                        <span data-i18n="share_record">📢 COMPARTIR RÉCORD</span>
+                    </button>
+
+                    <!-- Revivir con Ad (Rewarded) -->
+                    <button class="btn-premium" id="reviveBtn" onclick="watchAdToRevive()" style="background: linear-gradient(135deg, #ffd32a 0%, #ff9f43 100%); box-shadow: 0 0 15px rgba(255, 211, 42, 0.35); margin-bottom: 10px;">
+                        <span data-i18n="gameover_revive">📺 REVIVIR (1 ANUNCIO)</span>
+                    </button>
+
+                    <!-- Duplicar Monedas con Ad (Rewarded) -->
+                    <button class="btn-premium" id="doubleCoinsBtn" onclick="watchAdToDoubleCoins()" style="background: linear-gradient(135deg, #2ed573 0%, #10ac84 100%); box-shadow: 0 0 15px rgba(46, 213, 115, 0.35); margin-bottom: 10px;">
+                        <span data-i18n="gameover_double_coins">📺 DUPLICAR MONEDAS (+2x)</span>
+                    </button>
+
+                    <button class="btn-secondary" onclick="restartGame()" style="margin-bottom: 10px;">
+                        <span data-i18n="gameover_retry">REINTENTAR</span>
+                    </button>
+                    
+                    <button class="btn-secondary" onclick="backToMenu()">
+                        <span data-i18n="back_menu">MENÚ PRINCIPAL</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Instrucciones de control al inicio -->
+            <div id="gameplay-instructions" class="hidden">
+                <span class="finger-icon">👆</span>
+                <p data-i18n="instructions">Desliza Izquierda/Derecha para esquivar.<br>Arriba para saltar, Abajo para deslizarte.</p>
+            </div>
+        </div>
+
+        <!-- Pantalla de Anuncio Simulada -->
+        <div class="screen-overlay interactive hidden" id="ad-overlay" style="z-index: 1000;">
+            <div class="glass-card" style="border-color: #ffd32a; padding: 40px 20px;">
+                <div style="font-size: 32px; margin-bottom: 10px;">📺</div>
+                <h3 data-i18n="ad_title" style="color: #ffd32a; font-family: 'Orbitron', sans-serif; font-size: 15px; margin: 0 0 8px 0;">ANUNCIO PATROCINADO</h3>
+                <p data-i18n="ad_subtitle" style="font-size: 11px; color: #b0aabf; margin: 0 0 20px 0;">El juego continuará en unos momentos...</p>
+                <div style="font-size: 24px; font-family: 'Orbitron', sans-serif; color: #ff5e57; font-weight: 900;" id="ad-timer">3</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- TRANSLATIONS DICTIONARY ---
+        const TRANSLATIONS = {
+            es: {
+                score: "DISTANCIA",
+                best: "RECORD",
+                menu_subtitle: "Esquiva obstáculos a toda velocidad",
+                play: "INICIAR CORRIDA",
+                shop_title: "TIENDA DE TRAJES",
+                settings_title: "AJUSTES",
+                settings_subtitle: "Ajusta los parámetros",
+                language: "Idioma",
+                music_volume: "Volumen Música",
+                sfx_volume: "Volumen Efectos",
+                safe_zone: "Zona Segura",
+                safe_zone_desc: "Espacio inferior extra",
+                resume: "CONTINUAR",
+                reset_progress: "⚠️ REINICIAR PROGRESO",
+                prepare_title: "PREPARAR VUELO",
+                prepare_subtitle: "Activa potenciadores con anuncios",
+                booster_fury: "Furia de Plasma",
+                booster_fury_desc: "Láser de Plasma por 30s",
+                booster_magnet: "Súper Imán",
+                booster_magnet_desc: "Rango de imán infinito",
+                launch: "DESPEGAR",
+                back_btn: "VOLVER",
+                shop_subtitle: "Skins con habilidades",
+                wallet: "Saldo",
+                buy: "COMPRAR",
+                equip: "EQUIPAR",
+                equipped: "EQUIPADO",
+                gameover_title: "CORRIDA TERMINADA",
+                gameover_distance: "Distancia",
+                gameover_match_coins: "Monedas recolectadas",
+                gameover_total_coins: "Total Acumulado",
+                share_record: "📢 COMPARTIR RÉCORD",
+                gameover_revive: "📺 REVIVIR (1 ANUNCIO)",
+                gameover_double_coins: "📺 DUPLICAR MONEDAS (+2x)",
+                gameover_retry: "REINTENTAR",
+                back_menu: "MENÚ PRINCIPAL",
+                instructions: "Desliza Izquierda/Derecha para esquivar.<br>Arriba para saltar, Abajo para deslizarte.",
+                ad_title: "ANUNCIO PATROCINADO",
+                ad_subtitle: "El juego continuará en unos momentos...",
+                activated: "✓ ACTIVO",
+                ad_watch: "📺 ANUNCIO",
+                double_coins_done: "✓ DUPLICADO",
+                msg_reset_confirm: "¿Estás seguro de reiniciar tu progreso? Se borrarán monedas, skins y records.",
+                share_text: "¡Acabo de correr {score}m en Astronaut Runner! 👨‍🚀🚀 ¿Puedes superar mi récord?",
+                pause_title: "JUEGO PAUSADO",
+                resume_btn: "CONTINUAR",
+                restart_btn: "REINICIAR",
+                exit_btn: "SALIR AL MENÚ"
+            },
+            en: {
+                score: "DISTANCE",
+                best: "BEST",
+                menu_subtitle: "Dodge obstacles at high speed",
+                play: "LAUNCH RUN",
+                shop_title: "SUIT SHOP",
+                settings_title: "SETTINGS",
+                settings_subtitle: "Adjust game parameters",
+                language: "Language",
+                music_volume: "Music Volume",
+                sfx_volume: "Effects Volume",
+                safe_zone: "Safe Zone",
+                safe_zone_desc: "Extra bottom spacing",
+                resume: "CONTINUE",
+                reset_progress: "⚠️ RESET PROGRESS",
+                prepare_title: "FLIGHT BRIEFING",
+                prepare_subtitle: "Activate ad-boosters",
+                booster_fury: "Plasma Fury",
+                booster_fury_desc: "Plasma Laser for 30s",
+                booster_magnet: "Super Magnet",
+                booster_magnet_desc: "Infinite magnet range",
+                launch: "LAUNCH",
+                back_btn: "BACK",
+                shop_subtitle: "Skins with abilities",
+                wallet: "Balance",
+                buy: "BUY",
+                equip: "EQUIP",
+                equipped: "EQUIPPED",
+                gameover_title: "RUN FINISHED",
+                gameover_distance: "Distance",
+                gameover_match_coins: "Coins collected",
+                gameover_total_coins: "Total Accumulated",
+                share_record: "📢 SHARE SCORE",
+                gameover_revive: "📺 REVIVE (1 AD)",
+                gameover_double_coins: "📺 DOUBLE COINS (+2x)",
+                gameover_retry: "RETRY",
+                back_menu: "MAIN MENU",
+                instructions: "Swipe Left/Right to dodge.<br>Up to jump, Down to slide.",
+                ad_title: "SPONSORED AD",
+                ad_subtitle: "The game will resume in a few moments...",
+                activated: "✓ ACTIVE",
+                ad_watch: "📺 AD",
+                double_coins_done: "✓ DOUBLED",
+                msg_reset_confirm: "Are you sure you want to reset progress? All coins, skins and records will be deleted.",
+                share_text: "I just ran {score}m in Astronaut Runner! 👨‍🚀🚀 Can you beat my high score?",
+                pause_title: "GAME PAUSED",
+                resume_btn: "RESUME",
+                restart_btn: "RESTART",
+                exit_btn: "MAIN MENU"
+            },
+            pt: {
+                score: "DISTÂNCIA",
+                best: "RECORDE",
+                menu_subtitle: "Desvie dos obstáculos a toda velocidade",
+                play: "INICIAR CORRIDA",
+                shop_title: "LOJA DE TRAJES",
+                settings_title: "AJUSTES",
+                settings_subtitle: "Ajuste os parâmetros",
+                language: "Idioma",
+                music_volume: "Volume Música",
+                sfx_volume: "Volume Efeitos",
+                safe_zone: "Zona Segura",
+                safe_zone_desc: "Espaço inferior extra",
+                resume: "CONTINUAR",
+                reset_progress: "⚠️ REINICIAR PROGRESSO",
+                prepare_title: "PREPARAR VOO",
+                prepare_subtitle: "Ative boosters com anúncios",
+                booster_fury: "Fúria de Plasma",
+                booster_fury_desc: "Laser de Plasma por 30s",
+                booster_magnet: "Súper Ímã",
+                booster_magnet_desc: "Rango de ímã infinito",
+                launch: "DECOLAR",
+                back_btn: "VOLTAR",
+                shop_subtitle: "Skins com habilidades",
+                wallet: "Saldo",
+                buy: "COMPRAR",
+                equip: "EQUIPAR",
+                equipped: "EQUIPADO",
+                gameover_title: "CORRIDA ENCERRADA",
+                gameover_distance: "Distância",
+                gameover_match_coins: "Moedas coletadas",
+                gameover_total_coins: "Total Acumulado",
+                share_record: "📢 COMPARTILHAR RECORDE",
+                gameover_revive: "📺 REAVIVAR (1 ANÚNCIO)",
+                gameover_double_coins: "📺 DUPLICAR MOEDAS (+2x)",
+                gameover_retry: "REINTENTAR",
+                back_menu: "MENU PRINCIPAL",
+                instructions: "Deslize Esquerda/Direita para desviar.<br>Cima para pular, Baixo para deslizar.",
+                ad_title: "ANÚNCIO PATROCINADO",
+                ad_subtitle: "O jogo continuará em instantes...",
+                activated: "✓ ATIVO",
+                ad_watch: "📺 ANÚNCIO",
+                double_coins_done: "✓ DUPLICADO",
+                msg_reset_confirm: "Tem certeza de que deseja reiniciar o progresso? Moedas, skins e recordes serão limpos.",
+                share_text: "Acabei de correr {score}m no Astronaut Runner! 👨‍🚀🚀 Consegue superar o meu recorde?",
+                pause_title: "JOGO PAUSADO",
+                resume_btn: "CONTINUAR",
+                restart_btn: "REINICIAR",
+                exit_btn: "MENU PRINCIPAL"
+            }
+        };
+
+        // --- PROC-AUDIO SYNTHESIS SYSTEM (Zero Assets Loaded!) ---
+        let audioCtx = null;
+        let musicGainNode = null;
+        let sfxGainNode = null;
+        let isMuted = false;
+        let musicVolume = parseFloat(localStorage.getItem('musicVolume')) ?? 0.4;
+        let sfxVolume = parseFloat(localStorage.getItem('sfxVolume')) ?? 0.6;
+        let musicInterval = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContextClass();
+
+            musicGainNode = audioCtx.createGain();
+            musicGainNode.gain.setValueAtTime(isMuted ? 0 : musicVolume, audioCtx.currentTime);
+            musicGainNode.connect(audioCtx.destination);
+
+            sfxGainNode = audioCtx.createGain();
+            sfxGainNode.gain.setValueAtTime(isMuted ? 0 : sfxVolume, audioCtx.currentTime);
+            sfxGainNode.connect(audioCtx.destination);
+
+            startProceduralBGM();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            if (isMuted || sfxVolume === 0) return;
+            
+            try {
+                const now = audioCtx.currentTime;
+                
+                if (type === 'click') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1000, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.08);
+                }
+                else if (type === 'jump') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.25);
+                }
+                else if (type === 'slide') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.3);
+                }
+                else if (type === 'coin') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(987.77, now); // B5
+                    osc.frequency.setValueAtTime(1318.51, now + 0.08); // E6
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.25);
+                }
+                else if (type === 'laser') {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.12);
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + 0.12);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.12);
+                }
+                else if (type === 'explosion') {
+                    // Generación de ruido blanco para explosión
+                    const bufferSize = audioCtx.sampleRate * 0.4;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(800, now);
+                    filter.frequency.exponentialRampToValueAtTime(50, now + 0.4);
+                    
+                    const gain = audioCtx.createGain();
+                    gain.gain.setValueAtTime(0.35, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(sfxGainNode);
+                    noise.start();
+                    noise.stop(now + 0.4);
+                }
+                else if (type === 'powerup_shield') {
+                    // Escudo: Tono ascendente neón cian
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.45);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.45);
+                }
+                else if (type === 'powerup_doubleshoot') {
+                    // Doble disparo: pitido doble rápido láser
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.setValueAtTime(800, now + 0.08);
+                    gain.gain.setValueAtTime(0.18, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.2);
+                }
+                else if (type === 'powerup_magnet') {
+                    // Imán: modulación de frecuencia magnética
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.linearRampToValueAtTime(450, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.3);
+                }
+                else if (type === 'powerup_turbo') {
+                    // Turbo: Ruido blanco + oscilador ascendente super veloz
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.exponentialRampToValueAtTime(1600, now + 0.6);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                    osc.connect(gain);
+                    gain.connect(sfxGainNode);
+                    osc.start();
+                    osc.stop(now + 0.6);
+                    
+                    // Ruido blanco
+                    const bufferSize = audioCtx.sampleRate * 0.4;
+                    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    const noise = audioCtx.createBufferSource();
+                    noise.buffer = buffer;
+                    const filter = audioCtx.createBiquadFilter();
+                    filter.type = 'bandpass';
+                    filter.frequency.setValueAtTime(400, now);
+                    filter.frequency.exponentialRampToValueAtTime(1800, now + 0.4);
+                    const noiseGain = audioCtx.createGain();
+                    noiseGain.gain.setValueAtTime(0.15, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.005, now + 0.4);
+                    noise.connect(filter);
+                    filter.connect(noiseGain);
+                    noiseGain.connect(sfxGainNode);
+                    noise.start();
+                    noise.stop(now + 0.4);
+                }
+                else if (type === 'fanfare') {
+                    // Fanfarria Triunfal de Derrota de Jefe (Acorde ascendente C4 -> E4 -> G4 -> C5)
+                    const notes = [261.63, 329.63, 392.00, 523.25];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        const noteStart = now + idx * 0.10;
+                        osc.frequency.setValueAtTime(freq, noteStart);
+                        gain.gain.setValueAtTime(0.24, noteStart);
+                        gain.gain.exponentialRampToValueAtTime(0.01, noteStart + 0.35);
+                        osc.connect(gain);
+                        gain.connect(sfxGainNode);
+                        osc.start(noteStart);
+                        osc.stop(noteStart + 0.35);
+                    });
+                }
+                else if (type === 'rival_passed') {
+                    // Campana estelar de Rival Superado (F6 -> A6 -> C7)
+                    const notes = [1396.91, 1760.00, 2093.00];
+                    notes.forEach((freq, idx) => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'sine';
+                        const noteStart = now + idx * 0.08;
+                        osc.frequency.setValueAtTime(freq, noteStart);
+                        gain.gain.setValueAtTime(0.20, noteStart);
+                        gain.gain.exponentialRampToValueAtTime(0.005, noteStart + 0.28);
+                        osc.connect(gain);
+                        gain.connect(sfxGainNode);
+                        osc.start(noteStart);
+                        osc.stop(noteStart + 0.28);
+                    });
+                }
+            } catch (e) {
+                console.error("Audio error", e);
+            }
+        }
+
+        // Sintetizar bucle de música retro cyberpunk
+        function startProceduralBGM() {
+            if (musicInterval) clearInterval(musicInterval);
+            let step = 0;
+            const notes = [110, 110, 130, 110, 146, 146, 130, 164]; // Línea de bajo continuo
+            
+            musicInterval = setInterval(() => {
+                if (!audioCtx || isMuted || musicVolume === 0 || gameState !== STATE.PLAYING) return;
+                try {
+                    const now = audioCtx.currentTime;
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    
+                    osc.type = 'triangle';
+                    const baseFreq = notes[step % notes.length];
+                    osc.frequency.setValueAtTime(baseFreq, now);
+                    
+                    gain.gain.setValueAtTime(0.12, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+                    
+                    osc.connect(gain);
+                    gain.connect(musicGainNode);
+                    osc.start();
+                    osc.stop(now + 0.25);
+                    
+                    // Melodía aleatoria en el canal superior a veces
+                    if (step % 4 === 2 && Math.random() > 0.4) {
+                        const melodyOsc = audioCtx.createOscillator();
+                        const melodyGain = audioCtx.createGain();
+                        melodyOsc.type = 'sine';
+                        const melodyNotes = [440, 494, 523, 587, 659, 784];
+                        const note = melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
+                        melodyOsc.frequency.setValueAtTime(note, now);
+                        melodyGain.gain.setValueAtTime(0.04, now);
+                        melodyGain.gain.exponentialRampToValueAtTime(0.005, now + 0.35);
+                        melodyOsc.connect(melodyGain);
+                        melodyGain.connect(musicGainNode);
+                        melodyOsc.start();
+                        melodyOsc.stop(now + 0.4);
+                    }
+                    step++;
+                } catch(e){}
+            }, 250);
+        }
+
+        function toggleSound() {
+            isMuted = !isMuted;
+            localStorage.setItem('isMuted', isMuted);
+            
+            document.getElementById('soundOnIcon').classList.toggle('hidden', isMuted);
+            document.getElementById('soundOffIcon').classList.toggle('hidden', !isMuted);
+
+            if (audioCtx) {
+                musicGainNode.gain.setValueAtTime(isMuted ? 0 : musicVolume, audioCtx.currentTime);
+                sfxGainNode.gain.setValueAtTime(isMuted ? 0 : sfxVolume, audioCtx.currentTime);
+            }
+            if (!isMuted && !audioCtx) {
+                initAudio();
+            }
+            playSound('click');
+        }
+
+        // --- SKINS DATABASE AND CONFIGURATION ---
+        const SKINS = [
+            { id: 'alfa', nameKey: 'suit_alfa_name', descKey: 'suit_alfa_desc', primary: '#ffffff', secondary: '#00f0ff', accent: '#a29bfe', bonus: 'none', cost: 0 },
+            { id: 'phantom', nameKey: 'suit_phantom_name', descKey: 'suit_phantom_desc', primary: '#15121e', secondary: '#2ecc71', accent: '#27ae60', bonus: 'magnet', cost: 80 },
+            { id: 'cyberpunk', nameKey: 'suit_cyber_name', descKey: 'suit_cyber_desc', primary: '#ff007f', secondary: '#ffd32a', accent: '#ff9ff3', bonus: 'firerate', cost: 150 },
+            { id: 'golden', nameKey: 'suit_golden_name', descKey: 'suit_golden_desc', primary: '#ffd32a', secondary: '#ff9f43', accent: '#ffffff', bonus: 'multiplier', cost: 250 }
+        ];
+
+        let equippedSkin = localStorage.getItem('equippedSkin') || 'alfa';
+        let unlockedSkins = JSON.parse(localStorage.getItem('unlockedSkins')) || ['alfa'];
+
+        // --- GAME SYSTEM CONFIGURATIONS ---
+        const STATE = { MENU: 0, PLAYING: 1, PAUSED: 2, GAMEOVER: 3 };
+        let gameState = STATE.MENU;
+        let settingsSourceState = STATE.MENU;
+
+        let currentLanguage = localStorage.getItem('currentLanguage') || 'es';
+        let isSafeZoneEnabled = localStorage.getItem('isSafeZoneEnabled') === 'true' || true;
+        let sensitivityMultiplier = parseFloat(localStorage.getItem('sensitivityMultiplier')) || 1.0;
+
+        let totalCoins = parseInt(localStorage.getItem('totalCoins')) || 0;
+        let bestDistance = parseInt(localStorage.getItem('bestDistance')) || 0;
+
+        // Variables de la carrera activa
+        let distance = 0;
+        let coins = 0;
+        let matchStartTime = 0;
+        let playTime = 0;
+        let hasRevivedThisGame = false;
+        let hasDoubleCoinsThisGame = false;
+        let deathsCountSinceLastAd = parseInt(localStorage.getItem('deathsCountSinceLastAd')) || 0;
+
+        // Boosters del modal prepare
+        let boosterFuryActive = false;
+        let boosterMagnetActive = false;
+        let boosterFuryTimer = 0;
+
+        // --- PUENTE DE PUBLICIDAD UNIFICADO (MONETAG) ---
+        const MonetagBridge = {
+            showInterstitialAd(callback) {
+                if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+                    window.GamerVerse.showInterstitialAd(callback);
+                } else if (callback) {
+                    callback();
+                }
+            },
+            showRewardedAd(onRewardedSuccess, onRewardFail) {
+                if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+                    window.GamerVerse.showRewardedAd(onRewardedSuccess, onRewardFail);
+                } else if (onRewardFail) {
+                    onRewardFail('bridge_unavailable');
+                }
+            }
+        };
+
+        // --- SYSTEM CORE AND GAME LOOP ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Adaptación de DPI
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            const rect = container.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+        }
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 200));
+
+        // --- ENTITIES & physics ---
+        let player = {
+            lane: 1, // 0, 1, 2
+            x: 0,
+            targetX: 0,
+            y: 0,
+            width: 32,
+            height: 48,
+            state: 'running', // 'running', 'jumping', 'sliding'
+            stateTimer: 0,
+            shieldActive: false,
+            shieldTime: 0
+        };
+
+        let stars = [];
+        let items = []; // Monedas, propulsores
+        let obstacles = []; // Vallas bajas, láseres altos, monstruos
+        let bullets = [];
+        let particles = [];
+        
+        let laneWidth = 0;
+        let laneCenters = [];
+        let gameSpeed = 5.25; // Velocidad dinámica del juego
+        let baseSpeed = 5.25; // Velocidad base que aumenta con cada jefe derrotado
+        
+        // --- SISTEMA DE SECTORES / BIOMAS DINÁMICOS ---
+        const SECTORS = [
+            {
+                id: 1,
+                name: 'SECTOR 1: CINTURÓN DE ASTEROIDES',
+                subtitle: 'Órbita Terrestre · Velocidad Normal',
+                bgColor: '#05030a',
+                vortexInner: 'rgba(155, 89, 182, 0.28)',
+                vortexMid: 'rgba(0, 240, 255, 0.12)',
+                starColor: '#ffffff',
+                trackColor: 'rgba(255, 94, 87, 0.20)',
+                trackGlow: '#ff5e57',
+                bossName: 'NAVE NODRIZA ALIENÍGENA',
+                bossColor: '#ff3f34'
+            },
+            {
+                id: 2,
+                name: 'SECTOR 2: TORMENTA SOLAR',
+                subtitle: 'Nebulosa Ígnea · ¡VELOCIDAD +25%!',
+                bgColor: '#160404',
+                vortexInner: 'rgba(255, 94, 87, 0.40)',
+                vortexMid: 'rgba(255, 211, 42, 0.22)',
+                starColor: '#ffd32a',
+                trackColor: 'rgba(255, 211, 42, 0.25)',
+                trackGlow: '#ffd32a',
+                bossName: '🔥 COLOSO DE FUEGO SOLAR',
+                bossColor: '#ff793f'
+            },
+            {
+                id: 3,
+                name: 'SECTOR 3: CIBER-VÓRTICE CUÁNTICO',
+                subtitle: 'Hiperespacio · ¡VELOCIDAD +50%!',
+                bgColor: '#02120e',
+                vortexInner: 'rgba(0, 255, 157, 0.38)',
+                vortexMid: 'rgba(0, 240, 255, 0.20)',
+                starColor: '#00ff9d',
+                trackColor: 'rgba(0, 255, 157, 0.28)',
+                trackGlow: '#00ff9d',
+                bossName: '⚡ LEVIATÁN DEL CIBERESPACIO',
+                bossColor: '#00ff9d'
+            },
+            {
+                id: 4,
+                name: 'SECTOR 4: EL AGUJERO NEGRO (SINGULARIDAD)',
+                subtitle: 'Horizonte de Sucesos · ¡VELOCIDAD EXTREMA!',
+                bgColor: '#04020a',
+                vortexInner: 'rgba(162, 155, 254, 0.45)',
+                vortexMid: 'rgba(255, 0, 127, 0.25)',
+                starColor: '#a29bfe',
+                trackColor: 'rgba(255, 0, 127, 0.32)',
+                trackGlow: '#ff007f',
+                bossName: '💀 ENTIDAD DEL VACÍO CÓSMICO',
+                bossColor: '#e056fd'
+            }
+        ];
+
+        let currentSectorIndex = 0;
+        let sectorTransitionTimer = 0;
+        let sectorBannerText = '';
+        let sectorBannerSub = '';
+
+        // --- RIVALES DEL TORNEO EN VIVO (GHOST RIVALS) ---
+        const TOURNAMENT_RIVALS = [
+            { name: '@pedro_ton', distance: 180, prize: '$0.50 USDT' },
+            { name: '@maria_crypto', distance: 380, prize: '$1.00 USDT' },
+            { name: '@lucas_runner', distance: 680, prize: '$2.00 USDT' },
+            { name: '@elena_arcade', distance: 980, prize: '$4.00 USDT' },
+            { name: '@stellar_dan', distance: 1480, prize: '🥉 Top 3 ($6.38 USDT)' },
+            { name: '@moon_runner', distance: 2200, prize: '🥈 Top 2 ($10.62 USDT)' },
+            { name: '@crypto_pilot', distance: 3150, prize: '🥇 Líder ($25.50 USDT)' },
+            { name: '@galaxy_master', distance: 4500, prize: '🏆 Leyenda GamerVerse' }
+        ];
+        let nextRivalIndex = 0;
+
+        // Estado de power-ups temporales (en milisegundos restantes)
+        let activePowerups = {
+            shield: 0,
+            doubleshoot: 0,
+            magnet: 0,
+            turbo: 0
+        };
+
+        // Variables del Jefe Final
+        let bossActive = false;
+        let bossHp = 0;
+        let bossMaxHp = 100;
+        let bossX = 0;
+        let bossY = -120;
+        let bossShootTimer = 0;
+        let nextBossDistance = 1000; // Primer jefe a los 1,000m (cada 1,000m un monstruo)
+
+        // Screen Shake
+        let shakeIntensity = 0;
+        let shakeDecay = 0.9;
+
+        // Textos flotantes
+        let floatingTexts = [];
+        
+        let shootTimer = 0;
+        let obstacleTimer = 0;
+        let coinTimer = 0;
+        let powerupTimer = 0; // Temporizador para generar power-ups en carrera
+        let lastTime = 0;
+
+        function createStars() {
+            stars = [];
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+            for (let i = 0; i < 60; i++) { // Aumentamos la densidad para un efecto 3D fluido
+                stars.push({
+                    angle: Math.random() * Math.PI * 2,
+                    distance: Math.random() * h,
+                    size: Math.random() * 1.5 + 0.5,
+                    speed: Math.random() * 1.8 + 0.5
+                });
+            }
+        }
+
+        // --- SWIPE TOUCH DETECTION ---
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let pointerDown = false;
+
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState !== STATE.PLAYING) return;
+            const t = e.touches[0];
+            touchStartX = t.clientX;
+            touchStartY = t.clientY;
+            pointerDown = true;
+        }, { passive: true });
+
+        // Detección instantánea en touchmove (sin esperar a soltar el dedo)
+        canvas.addEventListener('touchmove', (e) => {
+            if (!pointerDown || gameState !== STATE.PLAYING) return;
+            const t = e.touches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            
+            const swipeThreshold = Math.max(10, 24 / sensitivityMultiplier);
+            if (Math.max(absDx, absDy) > swipeThreshold) {
+                if (absDx > absDy * 1.15) {
+                    // Deslizamiento Horizontal (Carriles)
+                    if (dx > 0) changeLane(1);
+                    else changeLane(-1);
+                } else {
+                    // Deslizamiento Vertical (Salto Inmediato / Deslizarse)
+                    if (dy < 0) triggerJump();
+                    else triggerSlide();
+                }
+                pointerDown = false; // Consumido para evitar dobles saltos involuntarios
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!pointerDown || gameState !== STATE.PLAYING) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            
+            const swipeThreshold = Math.max(10, 24 / sensitivityMultiplier);
+            if (Math.max(absDx, absDy) > swipeThreshold) {
+                if (absDx > absDy * 1.15) {
+                    if (dx > 0) changeLane(1);
+                    else changeLane(-1);
+                } else {
+                    if (dy < 0) triggerJump();
+                    else triggerSlide();
+                }
+            }
+            pointerDown = false;
+        }, { passive: true });
+
+        // Control por teclado
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== STATE.PLAYING) return;
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') changeLane(-1);
+            else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') changeLane(1);
+            else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') triggerJump();
+            else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') triggerSlide();
+            else if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') pauseGame();
+        });
+
+        function changeLane(dir) {
+            const oldLane = player.lane;
+            player.lane = Math.max(0, Math.min(2, player.lane + dir));
+            if (player.lane !== oldLane) {
+                playSound('click');
+            }
+        }
+
+        function triggerJump() {
+            if (player.state !== 'running') return;
+            player.state = 'jumping';
+            player.stateTimer = 650; // duración extendida y satisfactoria del salto (650ms)
+            playSound('jump');
+        }
+
+        function triggerSlide() {
+            if (player.state !== 'running') return;
+            player.state = 'sliding';
+            player.stateTimer = 500; // duración del deslizamiento
+            playSound('slide');
+        }
+
+        // --- GAME CONTROLLERS ---
+        function startGame() {
+            // Verificar disponibilidad de Tickets en GamerVerse
+            if (window.GamerVerse && !window.GamerVerse.canPlay()) {
+                window.GamerVerse.showNoTicketsModal(() => startGame());
+                return;
+            }
+            if (window.GamerVerse) {
+                window.GamerVerse.consumeTicket();
+            }
+
+            initAudio();
+            document.getElementById('level-prepare-modal').classList.add('hidden');
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('hud').style.opacity = '1';
+            document.getElementById('gameplay-instructions').classList.remove('hidden');
+
+            // Resetear estados
+            gameState = STATE.PLAYING;
+            distance = 0;
+            coins = 0;
+            playTime = 0;
+            matchStartTime = Date.now();
+            hasRevivedThisGame = false;
+            hasDoubleCoinsThisGame = false;
+
+            // Resetear powerups en partida
+            activePowerups = { shield: 0, doubleshoot: 0, magnet: 0, turbo: 0 };
+            document.getElementById('powerup-hud').innerHTML = '';
+
+            // Resetear Jefe, Sectores, Rivales y efectos
+            currentSectorIndex = 0;
+            nextRivalIndex = 0;
+            baseSpeed = 5.25;
+            sectorTransitionTimer = 0;
+            bossActive = false;
+            bossHp = 0;
+            bossY = -120;
+            nextBossDistance = 1000; // Monstruo cada 1,000m
+            shakeIntensity = 0;
+            floatingTexts = [];
+
+            document.getElementById('scoreVal').innerText = '0';
+            document.getElementById('coinVal').innerText = '0';
+
+            // Mostrar botón de pausa en pantalla
+            document.getElementById('pauseBtn').classList.remove('hidden');
+
+            // Boosters config
+            if (boosterFuryActive) {
+                boosterFuryTimer = 30000; // 30s de furia
+            } else {
+                boosterFuryTimer = 0;
+            }
+
+            // Reset de entidades
+            player.lane = 1;
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            laneWidth = w / 3;
+            laneCenters = [laneWidth * 0.5, laneWidth * 1.5, laneWidth * 2.5];
+            player.x = laneCenters[1];
+            player.targetX = player.x;
+            player.y = (canvas.height / (window.devicePixelRatio || 1)) - (isSafeZoneEnabled ? 170 : 100);
+            player.state = 'running';
+            player.stateTimer = 0;
+            player.shieldActive = true; // Inicia con mini-escudo protector
+            player.shieldTime = Date.now() + 2500;
+
+            obstacles = [];
+            items = [];
+            bullets = [];
+            particles = [];
+            gameSpeed = baseSpeed;
+
+            obstacleTimer = 0;
+            coinTimer = 0;
+            shootTimer = 0;
+            lastTime = performance.now();
+
+            // Ocultar instrucciones a los 3.5 segundos
+            setTimeout(() => {
+                document.getElementById('gameplay-instructions').classList.add('hidden');
+            }, 3500);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function gameLoop(timestamp) {
+            if (gameState !== STATE.PLAYING) return;
+
+            const deltaTime = timestamp - lastTime;
+            lastTime = timestamp;
+
+            if (window.GamerVerse) {
+                window.GamerVerse.recordFrame();
+            }
+
+            update(deltaTime);
+            draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- UPDATE LOOP ---
+        function update(deltaTime) {
+            // Limitar deltaTime para saltos de foco
+            const dt = Math.min(deltaTime, 50);
+
+            // Decrementar power-ups temporales
+            activePowerups.shield = Math.max(0, activePowerups.shield - dt);
+            activePowerups.doubleshoot = Math.max(0, activePowerups.doubleshoot - dt);
+            activePowerups.magnet = Math.max(0, activePowerups.magnet - dt);
+            activePowerups.turbo = Math.max(0, activePowerups.turbo - dt);
+
+            // Actualizar la interfaz del HUD de power-ups
+            updatePowerupHUD();
+
+            // Decrementar sacudida de pantalla (Screen Shake)
+            shakeIntensity *= shakeDecay;
+            if (shakeIntensity < 0.1) shakeIntensity = 0;
+
+            // Decrementar temporizador del banner de sector
+            if (sectorTransitionTimer > 0) {
+                sectorTransitionTimer -= dt;
+            }
+
+            // Actualizar Textos Flotantes
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i];
+                ft.y += ft.vy * (dt / 16.66);
+                ft.alpha -= 0.02 * (dt / 16.66);
+                if (ft.alpha <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+
+            playTime += dt;
+            distance = Math.floor(playTime / 100);
+            document.getElementById('scoreVal').innerText = distance;
+            const secBadge = document.getElementById('sectorVal');
+            if (secBadge) secBadge.innerText = 'S' + (currentSectorIndex + 1);
+
+            // Comprobar rebase de Rivales en Torneo (Ghost Rivals)
+            if (nextRivalIndex < TOURNAMENT_RIVALS.length && distance >= TOURNAMENT_RIVALS[nextRivalIndex].distance) {
+                const rival = TOURNAMENT_RIVALS[nextRivalIndex];
+                triggerHaptic('success');
+                playSound('rival_passed');
+                spawnFloatingText(player.x, player.y - 40, `🚩 ¡SUPERASTE A ${rival.name}!`, '#2ecc71');
+                spawnFloatingText(player.x, player.y - 65, `💰 ${rival.prize}`, '#ffd32a');
+                nextRivalIndex++;
+            }
+
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+
+            // Activación del Jefe / Monstruo de Sector (cada 1,000m)
+            if (distance >= nextBossDistance && !bossActive) {
+                bossActive = true;
+                bossHp = 60 + (currentSectorIndex * 35); // Escala de vida por sector
+                bossMaxHp = bossHp;
+                bossY = -120;
+                bossX = w * 0.5;
+                bossShootTimer = 0;
+                // Limpiar obstáculos normales para que sea una pelea justa
+                obstacles = [];
+                const sec = SECTORS[currentSectorIndex] || SECTORS[0];
+                spawnFloatingText(w * 0.5, h * 0.4, '⚠️ ' + sec.bossName + ' ⚠️', sec.bossColor);
+                playSound('explosion');
+                triggerHaptic('heavy');
+            }
+
+            if (bossActive) {
+                // Descenso
+                if (bossY < h * 0.22) {
+                    bossY += (h * 0.22 - bossY) * 0.04 * (dt / 16.66);
+                }
+                // Movimiento oscilante
+                bossX = w * 0.5 + Math.sin(playTime * 0.0015) * (w * 0.3);
+                
+                // Disparo de proyectiles de plasma del jefe
+                bossShootTimer += dt;
+                if (bossShootTimer >= 1400 - Math.min(600, distance * 0.2)) {
+                    const targetLane = Math.random() < 0.6 ? player.lane : Math.floor(Math.random() * 3);
+                    obstacles.push({
+                        lane: targetLane,
+                        x: laneCenters[targetLane],
+                        y: bossY + 20,
+                        radius: 12,
+                        type: 'boss_projectile',
+                        hp: 0,
+                        pulse: 0
+                    });
+                    bossShootTimer = 0;
+                    playSound('laser');
+                }
+            }
+
+            // Incrementar velocidad gradualmente (+ factor Turbo si está activo)
+            let speedMultiplier = activePowerups.turbo > 0 ? 1.6 : 1.0;
+            gameSpeed = (baseSpeed + (distance * 0.00315)) * speedMultiplier; // +5% en la aceleración (0.00315)
+
+            // Decrementar boosters
+            if (boosterFuryActive && boosterFuryTimer > 0) {
+                boosterFuryTimer -= dt;
+                if (boosterFuryTimer <= 0) {
+                    boosterFuryActive = false;
+                    playSound('explosion');
+                }
+            }
+
+            // Suavizado de cambio de carril (Lerp)
+            player.targetX = laneCenters[player.lane];
+            player.x += (player.targetX - player.x) * (activePowerups.turbo > 0 ? 0.35 : 0.22); // Movimiento más rápido en turbo
+
+            // Procesar estados del jugador (Salto / Deslizarse)
+            if (player.state !== 'running') {
+                player.stateTimer -= dt;
+                if (player.stateTimer <= 0) {
+                    player.state = 'running';
+                }
+            }
+
+            // El escudo del jugador está activo si el power-up de escudo o el escudo inicial está activo
+            player.shieldActive = (activePowerups.shield > 0) || (Date.now() < player.shieldTime);
+
+            // Emisión de partículas de Jetpack (se adaptan al traje equipado)
+            const skin = SKINS.find(s => s.id === equippedSkin);
+            if (Math.random() < 0.5) {
+                particles.push({
+                    x: player.x + (Math.random() - 0.5) * 8,
+                    y: player.y + (player.state === 'sliding' ? -10 : 20),
+                    vx: (Math.random() - 0.5) * 1,
+                    vy: gameSpeed * 0.3 + Math.random() * 2,
+                    radius: Math.random() * 4 + 2,
+                    alpha: 1.0,
+                    color: skin.secondary
+                });
+            }
+
+            // --- SPAWNERS ---
+            // A: Disparos (Furia, Doble Disparo o normal)
+            shootTimer += dt;
+            const currentSkinData = SKINS.find(s => s.id === equippedSkin);
+            const isFury = boosterFuryActive;
+            const hasDouble = activePowerups.doubleshoot > 0;
+            const shootCooldown = isFury ? 100 : (hasDouble ? 150 : (currentSkinData.bonus === 'firerate' ? 200 : 300));
+
+            if (shootTimer >= shootCooldown) {
+                shootBullet(isFury, hasDouble);
+                shootTimer = 0;
+            }
+
+            // B: Obstáculos (Meteoros, Planetas, Láseres altos, Satélites)
+            obstacleTimer += dt;
+            const spawnInterval = Math.max(650, (activePowerups.turbo > 0 ? 500 : 1600) - (distance * 0.5));
+            if (obstacleTimer >= spawnInterval) {
+                if (!bossActive) { // Solo spawnea si el jefe no está activo
+                    spawnObstacle();
+                }
+                obstacleTimer = 0;
+            }
+
+            // C: Monedas
+            coinTimer += dt;
+            const coinInterval = activePowerups.turbo > 0 ? 800 : 2200; // Más monedas durante turbo
+            if (coinTimer >= coinInterval) {
+                if (!bossActive) {
+                    spawnCoinLine();
+                }
+                coinTimer = 0;
+            }
+
+            // D: Power-Ups en Carrera
+            powerupTimer += dt;
+            const powerupInterval = 14000 + Math.random() * 6000; // Spawn de power-up cada 14-20 segundos
+            if (powerupTimer >= powerupInterval) {
+                if (!bossActive) {
+                    spawnPowerup();
+                }
+                powerupTimer = 0;
+            }
+
+            // --- ACTUALIZAR BALAS Y COLISIONES ---
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.y += b.vy * (dt / 16.66);
+
+                if (b.y < -20) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+
+                let hit = false;
+                // Colisiones con el Jefe Final
+                if (bossActive && b.y < bossY + 30 && b.y > bossY - 30) {
+                    let dx = b.x - bossX;
+                    if (Math.abs(dx) < 45) {
+                        bossHp -= b.damage;
+                        hit = true;
+                        createExplosion(b.x, b.y, '#ff3f34', 6);
+                        playSound('click');
+                        triggerHaptic('light');
+
+                        if (bossHp <= 0) {
+                            bossActive = false;
+                            
+                            // 🚀 CAMBIO DE SECTOR Y AUMENTO DE VELOCIDAD
+                            currentSectorIndex = (currentSectorIndex + 1) % SECTORS.length;
+                            const nextSector = SECTORS[currentSectorIndex];
+
+                            // Aumento permanente de velocidad (+1.35 por cada monstruo eliminado)
+                            baseSpeed += 1.35;
+                            nextBossDistance = distance + 1000; // Siguiente monstruo en 1,000m
+
+                            shakeIntensity = 22;
+                            playSound('explosion');
+                            playSound('fanfare');
+                            triggerHaptic('success');
+                            createExplosion(bossX, bossY, nextSector.trackGlow, 40);
+
+                            // Activar banner de transición de sector
+                            sectorTransitionTimer = 3500;
+                            sectorBannerText = nextSector.name;
+                            sectorBannerSub = `⚡ ¡VELOCIDAD AUMENTADA! (+${Math.round(currentSectorIndex * 25)}%) ⚡`;
+                            spawnFloatingText(bossX, bossY - 20, '👾 ¡MONSTRUO DESTRUIDO! +1500m', '#ffd32a');
+                            
+                            // Lluvia generosa de monedas (25 monedas)
+                            for (let c = 0; c < 25; c++) {
+                                items.push({
+                                    lane: Math.floor(Math.random() * 3),
+                                    x: bossX + (Math.random() - 0.5) * 80,
+                                    y: bossY + (Math.random() - 0.5) * 80,
+                                    radius: 8,
+                                    type: 'coin',
+                                    pulse: Math.random() * Math.PI
+                                });
+                            }
+                        }
+                        bullets.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                // Colisiones con monstruos, meteoros, planetas, cometas o vórtices
+                for (let j = obstacles.length - 1; j >= 0; j--) {
+                    let obs = obstacles[j];
+                    if (obs.type === 'monster' || obs.type === 'meteor' || obs.type === 'planet' || obs.type === 'fast_comet' || obs.type === 'dark_vortex') {
+                        // Ignorar cometas en fase de advertencia
+                        if (obs.type === 'fast_comet' && obs.warningTimer > 0) continue;
+                        
+                        let dx = b.x - obs.x;
+                        let dy = b.y - obs.y;
+                        let dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < obs.radius + 10) {
+                            obs.hp -= b.damage;
+                            hit = true;
+                            createExplosion(b.x, b.y, '#ffd32a', 6);
+                            playSound('click');
+
+                            if (obs.hp <= 0) {
+                                playSound('explosion');
+                                createExplosion(obs.x, obs.y, obs.type === 'meteor' ? '#e67e22' : (obs.type === 'planet' ? '#9b59b6' : (obs.type === 'fast_comet' ? '#00f0ff' : '#ff007f')), 18);
+                                // Soltar monedas como premio (los planetas y meteoros dan más monedas!)
+                                const coinCount = obs.type === 'planet' ? 8 : (obs.type === 'dark_vortex' ? 4 : (obs.type === 'meteor' ? 3 : 2));
+                                for (let c = 0; c < coinCount; c++) {
+                                    items.push({
+                                        x: obs.x + (Math.random() - 0.5) * 15,
+                                        y: obs.y + (Math.random() - 0.5) * 15,
+                                        radius: 8,
+                                        type: 'coin',
+                                        pulse: Math.random() * Math.PI
+                                    });
+                                }
+                                obstacles.splice(j, 1);
+                            }
+                            break;
+                        }
+                    }
+                }
+                if (hit) {
+                    bullets.splice(i, 1);
+                }
+            }
+
+            // --- ACTUALIZAR MONEDAS Y POWER-UPS (ITEMS) ---
+            // Rango de atracción: Infinito si Turbo o Imán activo, o si booster de Imán activo.
+            const hasMagnetPowerup = activePowerups.magnet > 0 || activePowerups.turbo > 0;
+            const magnetRange = (boosterMagnetActive || hasMagnetPowerup) ? 9999 : (currentSkinData.bonus === 'magnet' ? 240 : 130);
+            for (let i = items.length - 1; i >= 0; i--) {
+                let item = items[i];
+                item.y += gameSpeed * (dt / 16.66);
+                item.pulse += 0.08;
+
+                let dx = player.x - item.x;
+                let dy = player.y - item.y;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                // Atracción del imán
+                if (dist < magnetRange) {
+                    let pull = 0.12 + (1 - dist / magnetRange) * 0.18;
+                    item.x += dx * pull;
+                    item.y += dy * pull;
+                }
+
+                // Absorción/Recolección
+                if (dist < item.radius + player.width * 0.5) {
+                    if (item.type === 'coin') {
+                        coins++;
+                        document.getElementById('coinVal').innerText = coins;
+                        playSound('coin');
+                        triggerHaptic('light');
+                        spawnFloatingText(item.x, item.y, '+1 🪙', '#ffd32a');
+                        createExplosion(item.x, item.y, '#ffd32a', 8);
+                    } else if (item.type.startsWith('powerup_')) {
+                        const powerType = item.type.split('_')[1];
+                        triggerHaptic('medium');
+                        if (powerType === 'shield') {
+                            activePowerups.shield = 45000; // 45s
+                            playSound('powerup_shield');
+                            spawnFloatingText(item.x, item.y, '🛡️ ESCUDO ACTIVO!', '#00f0ff');
+                            createExplosion(item.x, item.y, '#00f0ff', 12);
+                        } else if (powerType === 'doubleshoot') {
+                            activePowerups.doubleshoot = 30000; // 30s
+                            playSound('powerup_doubleshoot');
+                            spawnFloatingText(item.x, item.y, '🔫 DOBLE DISPARO!', '#ff007f');
+                            createExplosion(item.x, item.y, '#ff007f', 12);
+                        } else if (powerType === 'magnet') {
+                            activePowerups.magnet = 25000; // 25s
+                            playSound('powerup_magnet');
+                            spawnFloatingText(item.x, item.y, '🧲 IMÁN ACTIVADO!', '#ffd32a');
+                            createExplosion(item.x, item.y, '#ffd32a', 12);
+                        } else if (powerType === 'turbo') {
+                            activePowerups.turbo = 6000; // 6s
+                            playSound('powerup_turbo');
+                            spawnFloatingText(item.x, item.y, '⚡ TURBO HYPERDRIVE!', '#ffd32a');
+                            shakeIntensity = 6;
+                            createExplosion(item.x, item.y, '#ffd32a', 20);
+                        }
+                    }
+                    items.splice(i, 1);
+                    continue;
+                }
+
+                if (item.y > canvas.height / (window.devicePixelRatio || 1) + 20) {
+                    items.splice(i, 1);
+                }
+            }
+
+            // --- ACTUALIZAR OBSTÁCULOS ---
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                
+                if (obs.type === 'fast_comet') {
+                    if (obs.warningTimer > 0) {
+                        obs.warningTimer -= dt;
+                        continue;
+                    }
+                    obs.y += gameSpeed * 3 * (dt / 16.66);
+                } else if (obs.type === 'boss_projectile') {
+                    obs.y += gameSpeed * 1.5 * (dt / 16.66); // Proyectiles del jefe van más rápidos
+                } else {
+                    obs.y += gameSpeed * (dt / 16.66);
+                }
+                
+                if (obs.type === 'monster' || obs.type === 'meteor' || obs.type === 'planet' || obs.type === 'fast_comet' || obs.type === 'dark_vortex') {
+                    obs.pulse += 0.08;
+                    if (obs.type === 'meteor' && Math.random() < 0.3) {
+                        particles.push({
+                            x: obs.x + (Math.random() - 0.5) * 10,
+                            y: obs.y - 10,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: -gameSpeed * 0.2 - Math.random() * 2,
+                            radius: Math.random() * 3 + 1,
+                            alpha: 1.0,
+                            color: '#e67e22'
+                        });
+                    }
+                    if (obs.type === 'fast_comet' && obs.warningTimer <= 0 && Math.random() < 0.5) {
+                        particles.push({
+                            x: obs.x + (Math.random() - 0.5) * 6,
+                            y: obs.y - 10,
+                            vx: (Math.random() - 0.5) * 2,
+                            vy: -gameSpeed * 0.6 - Math.random() * 3,
+                            radius: Math.random() * 4 + 1.5,
+                            alpha: 1.0,
+                            color: Math.random() < 0.5 ? '#00f0ff' : '#ff007f'
+                        });
+                    }
+                    if (obs.type === 'dark_vortex' && Math.random() < 0.4) {
+                        particles.push({
+                            x: obs.x + (Math.random() - 0.5) * 12,
+                            y: obs.y + (Math.random() - 0.5) * 12,
+                            vx: (Math.random() - 0.5) * 3,
+                            vy: (Math.random() - 0.5) * 3,
+                            radius: Math.random() * 3.5 + 1,
+                            alpha: 1.0,
+                            color: '#a29bfe'
+                        });
+                    }
+                }
+
+                let isColliding = false;
+                let hit = false;
+
+                if (obs.type === 'laser_wall_all') {
+                    // Barrera láser de pantalla completa: cubre los 3 carriles
+                    // Colisión rectangular en todo el ancho de la pantalla
+                    if (Math.abs(player.y - obs.y) < 26) {
+                        isColliding = true;
+                        // ¡Saltar lo esquiva limpiamente!
+                        if (player.state === 'jumping') {
+                            hit = false;
+                            if (!obs.cleared) {
+                                obs.cleared = true;
+                                spawnFloatingText(player.x, player.y - 30, '⚡ ¡SALTO PERFECTO! ⚡', '#00f0ff');
+                                playSound('jump');
+                            }
+                        } else {
+                            hit = true;
+                        }
+                    }
+                } else {
+                    let dx = player.x - obs.x;
+                    let dy = player.y - obs.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+
+                    // Colisión letal con el jugador
+                    if (dist < obs.radius + player.width * 0.4) {
+                        isColliding = true;
+                        hit = true;
+
+                        // Validar evasión según el tipo de obstáculo:
+                        // Ahora saltar esquiva barreras bajas, basura espacial Y también la valla láser roja (laser_gate)
+                        if ((obs.type === 'barrier_low' || obs.type === 'space_junk' || obs.type === 'laser_gate') && player.state === 'jumping') {
+                            hit = false;
+                        }
+                        // Deslizarse también esquiva lásers
+                        if ((obs.type === 'laser_high' || obs.type === 'laser_gate') && player.state === 'sliding') {
+                            hit = false;
+                        }
+                    }
+                }
+
+                if (isColliding) {
+                    if (obs.type === 'fast_comet' && obs.warningTimer > 0) continue;
+
+                    // Si el jugador está en Turbo, destruye los obstáculos a su paso!
+                    if (activePowerups.turbo > 0) {
+                        playSound('explosion');
+                        shakeIntensity = 8;
+                        triggerHaptic('medium');
+                        createExplosion(obs.x, obs.y, '#ffd32a', 15);
+                        obstacles.splice(i, 1);
+                        continue;
+                    }
+                    
+                    if (hit && !player.shieldActive) {
+                        triggerHaptic('vibrate');
+                        endGame();
+                        return;
+                    } else if (hit && player.shieldActive) {
+                        if (activePowerups.shield > 0) {
+                            activePowerups.shield = 0;
+                        } else {
+                            player.shieldTime = 0;
+                        }
+                        player.shieldActive = false;
+                        shakeIntensity = 12; // Sacudida en impacto
+                        triggerHaptic('heavy'); // Vibración fuerte
+                        spawnFloatingText(player.x, player.y - 30, '🛡️ ESCUDO ROTO!', '#00f0ff');
+                        createExplosion(obs.x, obs.y, '#00f0ff', 20);
+                        playSound('explosion');
+                        obstacles.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                if (obs.y > canvas.height / (window.devicePixelRatio || 1) + 30) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // --- PARTÍCULAS ---
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.02 * (dt / 16.66);
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // --- DISPARO DE BALAS ---
+        function shootBullet(isFury, hasDouble) {
+            playSound('laser');
+            if (isFury) {
+                // Triple ráfaga en furia (balas rojas de alto daño)
+                bullets.push({ x: player.x - 10, y: player.y - 20, vy: -14, width: 4, height: 12, damage: 2 });
+                bullets.push({ x: player.x, y: player.y - 22, vy: -16, width: 6, height: 14, damage: 3 });
+                bullets.push({ x: player.x + 10, y: player.y - 20, vy: -14, width: 4, height: 12, damage: 2 });
+            } else if (hasDouble) {
+                // Doble disparo lateral (balas rosas)
+                bullets.push({ x: player.x - 8, y: player.y - 15, vy: -11, width: 4, height: 12, damage: 1.5 });
+                bullets.push({ x: player.x + 8, y: player.y - 15, vy: -11, width: 4, height: 12, damage: 1.5 });
+            } else {
+                // Disparo estándar sencillo (azul)
+                bullets.push({ x: player.x, y: player.y - 15, vy: -10, width: 4, height: 12, damage: 1 });
+            }
+        }
+
+        // --- GENERADOR DE OBSTÁCULOS ---
+        function spawnObstacle() {
+            // A partir de los 40m de carrera, se habilita la Barrera Láser de Pantalla Completa
+            const pool = ['space_junk', 'barrier_low', 'laser_gate', 'meteor', 'planet', 'fast_comet', 'dark_vortex'];
+            if (distance > 40 && Math.random() < 0.28) {
+                pool.push('laser_wall_all', 'laser_wall_all');
+            }
+            const type = pool[Math.floor(Math.random() * pool.length)];
+
+            let lane = Math.floor(Math.random() * 3);
+            let hp = 0;
+            let radius = 16;
+            let warningTimer = 0;
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            let posX = laneCenters[lane];
+            
+            if (type === 'laser_wall_all') {
+                posX = w * 0.5; // Centrado horizontal en toda la pantalla
+                radius = 24;
+                lane = 1;
+            } else if (type === 'meteor') {
+                hp = 3;
+                radius = 20;
+            } else if (type === 'planet') {
+                hp = 10;
+                radius = 26;
+            } else if (type === 'space_junk') {
+                radius = 18;
+            } else if (type === 'barrier_low') {
+                radius = 16;
+            } else if (type === 'laser_gate') {
+                radius = 15;
+            } else if (type === 'fast_comet') {
+                hp = 2;
+                radius = 14;
+                warningTimer = 800; // 800ms de aviso antes de descender
+            } else if (type === 'dark_vortex') {
+                hp = 4;
+                radius = 22;
+            }
+            
+            obstacles.push({
+                lane: lane,
+                x: posX,
+                y: -40,
+                radius: radius,
+                type: type,
+                hp: hp,
+                pulse: Math.random() * Math.PI,
+                warningTimer: warningTimer,
+                cleared: false
+            });
+        }
+
+        // --- GENERADOR DE POWER-UPS EN PARTIDA ---
+        function spawnPowerup() {
+            const lane = Math.floor(Math.random() * 3);
+            const types = ['powerup_shield', 'powerup_doubleshoot', 'powerup_magnet', 'powerup_turbo'];
+            const chosenType = types[Math.floor(Math.random() * types.length)];
+            
+            items.push({
+                lane: lane,
+                x: laneCenters[lane],
+                y: -40,
+                radius: 12,
+                type: chosenType,
+                pulse: 0
+            });
+        }
+
+        function spawnCoinLine() {
+            const lane = Math.floor(Math.random() * 3);
+            const startY = -80;
+            for (let i = 0; i < 4; i++) {
+                items.push({
+                    lane: lane,
+                    x: laneCenters[lane],
+                    y: startY - (i * 35),
+                    radius: 8,
+                    type: 'coin',
+                    pulse: i * 0.2
+                });
+            }
+        }
+
+        function createExplosion(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    radius: Math.random() * 3 + 1,
+                    alpha: 1.0,
+                    color: color
+                });
+            }
+        }
+
+        // --- DRAW/RENDER LOOP ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+
+            ctx.save(); // Save de screen shake
+            if (shakeIntensity > 0) {
+                const dx = (Math.random() - 0.5) * shakeIntensity;
+                const dy = (Math.random() - 0.5) * shakeIntensity;
+                ctx.translate(dx, dy);
+            }
+
+            // 1. Fondo Estelar Dinámico según el Sector / Bioma activo
+            const curSec = SECTORS[currentSectorIndex] || SECTORS[0];
+            ctx.fillStyle = curSec.bgColor;
+            ctx.fillRect(0, 0, w, h);
+
+            // Dibujar vórtice neón al fondo con la paleta del sector
+            const vortexGrad = ctx.createRadialGradient(w * 0.5, h * 0.18, 0, w * 0.5, h * 0.18, 130);
+            vortexGrad.addColorStop(0, curSec.vortexInner);
+            vortexGrad.addColorStop(0.5, curSec.vortexMid);
+            vortexGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = vortexGrad;
+            ctx.beginPath();
+            ctx.arc(w * 0.5, h * 0.18, 130, 0, Math.PI * 2);
+            ctx.fill();
+
+            const centerFX = w * 0.5;
+            const centerFY = h * 0.18;
+            const isTurbo = activePowerups.turbo > 0;
+
+            stars.forEach(s => {
+                // Aumentar la distancia radial según la velocidad del juego
+                s.distance += s.speed * gameSpeed * (isTurbo ? 3.0 : 0.8) * 0.1;
+                
+                const sx = centerFX + Math.cos(s.angle) * s.distance;
+                const sy = centerFY + Math.sin(s.angle) * s.distance;
+
+                // Resetear si sale de los límites de la pantalla
+                if (sx < -20 || sx > w + 20 || sy < -20 || sy > h + 20) {
+                    s.angle = Math.random() * Math.PI * 2;
+                    s.distance = Math.random() * 10; // Cerca del centro
+                    s.size = Math.random() * 1.5 + 0.5;
+                    s.speed = Math.random() * 1.8 + 0.5;
+                }
+
+                ctx.globalAlpha = Math.min(1.0, s.distance / 50); // Aparecer gradualmente al salir del vórtice
+                
+                if (isTurbo) {
+                    // Efecto Hiperespacio (Líneas radiales estiradas de color dorado/blanco)
+                    ctx.strokeStyle = '#ffd32a';
+                    ctx.lineWidth = s.size * 1.2;
+                    ctx.beginPath();
+                    const prevDistance = s.distance - s.speed * gameSpeed * 0.6;
+                    const psx = centerFX + Math.cos(s.angle) * prevDistance;
+                    const psy = centerFY + Math.sin(s.angle) * prevDistance;
+                    ctx.moveTo(psx, psy);
+                    ctx.lineTo(sx, sy);
+                    ctx.stroke();
+                } else {
+                    // Estrellas con color temático del sector
+                    ctx.fillStyle = curSec.starColor;
+                    const currentSize = s.size * (1 + s.distance * 0.003);
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, currentSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 2. Dibujar las 3 líneas de carriles con perspectiva neón 3D
+            const fX = w * 0.5;
+            const fY = h * 0.18;
+
+            for (let i = 0; i < 3; i++) {
+                // Líneas divisorias centrales
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(fX, fY);
+                ctx.lineTo(laneCenters[i], h);
+                ctx.stroke();
+
+                // Bordes brillantes laterales de la pista neón
+                if (i < 2) {
+                    const bottomDividerX = laneCenters[i] + laneWidth * 0.5;
+                    ctx.strokeStyle = curSec.trackColor;
+                    ctx.shadowColor = curSec.trackGlow;
+                    ctx.shadowBlur = 10;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(fX, fY);
+                    ctx.lineTo(bottomDividerX, h);
+                    ctx.stroke();
+                    ctx.shadowBlur = 0; // Limpiar brillo
+                }
+            }
+
+            // 3. Dibujar Monedas e Ítems
+            items.forEach(item => {
+                ctx.save();
+                ctx.translate(item.x, item.y);
+                const pulseScale = 1 + Math.sin(item.pulse) * 0.15;
+                ctx.scale(pulseScale, pulseScale);
+                
+                if (item.type === 'coin') {
+                    // Moneda de oro brillante
+                    ctx.fillStyle = '#ffd32a';
+                    ctx.shadowColor = '#ffd32a';
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, item.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Detalles internos
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#ff9f43';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, item.radius * 0.6, 0, Math.PI * 2);
+                    ctx.stroke();
+                } else if (item.type.startsWith('powerup_')) {
+                    // Dibujar Power-Up procedural neón
+                    const pType = item.type.split('_')[1];
+                    let pColor = '#ffd32a';
+                    let label = '';
+                    
+                    if (pType === 'shield') { pColor = '#00f0ff'; label = '🛡️'; }
+                    else if (pType === 'doubleshoot') { pColor = '#ff007f'; label = '🔫'; }
+                    else if (pType === 'magnet') { pColor = '#ffd32a'; label = '🧲'; }
+                    else if (pType === 'turbo') { pColor = '#ffd32a'; label = '⚡'; }
+                    
+                    // Anillo de energía exterior
+                    ctx.strokeStyle = pColor;
+                    ctx.shadowColor = pColor;
+                    ctx.shadowBlur = 14;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, item.radius, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Centro translúcido
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+                    ctx.fill();
+                    
+                    // Icono central
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '12px Outfit';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(label, 0, 0);
+                }
+                ctx.restore();
+            });
+
+            // 4. Dibujar Proyectiles (Balas)
+            bullets.forEach(b => {
+                // Elegir color según el tipo de daño/powerup
+                let bulletColor = '#00f0ff'; // Cian por defecto
+                if (b.damage === 1.5) bulletColor = '#ff007f'; // Rosa para Doble
+                else if (b.damage >= 2) bulletColor = '#ff3f34'; // Rojo/Naranja para Furia
+                
+                ctx.fillStyle = bulletColor;
+                ctx.shadowColor = bulletColor;
+                ctx.shadowBlur = 8;
+                ctx.fillRect(b.x - b.width/2, b.y - b.height/2, b.width, b.height);
+                ctx.shadowBlur = 0;
+            });
+
+            // 5. Dibujar Obstáculos
+            obstacles.forEach(obs => {
+                ctx.save();
+                ctx.translate(obs.x, obs.y);
+
+                if (obs.type === 'barrier_low') {
+                    // Barrera baja saltable: Valla fluorescente amarilla con flechas de salto hacia arriba
+                    ctx.shadowColor = '#ffd32a';
+                    ctx.shadowBlur = 12;
+                    ctx.fillStyle = '#ffd32a';
+                    ctx.fillRect(-laneWidth * 0.4, -8, laneWidth * 0.8, 16);
+
+                    // Franjas de advertencia negras
+                    ctx.fillStyle = '#000000';
+                    for (let s = -laneWidth * 0.35; s < laneWidth * 0.35; s += 16) {
+                        ctx.beginPath();
+                        ctx.moveTo(s, -8);
+                        ctx.lineTo(s + 6, -8);
+                        ctx.lineTo(s, 8);
+                        ctx.lineTo(s - 6, 8);
+                        ctx.fill();
+                    }
+
+                    // Indicador neón "▲ SALTAR ▲" arriba de la valla
+                    ctx.shadowBlur = 8;
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.font = 'bold 9px Orbitron';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('▲ SALTAR ▲', 0, -14);
+                    ctx.shadowBlur = 0;
+                }
+                else if (obs.type === 'space_junk') {
+                    // Basura espacial / Satélite: Caja metálica con paneles solares
+                    ctx.rotate(obs.pulse * 0.2); // Rotación orbital lenta
+                    
+                    // Paneles solares laterales
+                    ctx.fillStyle = '#00a8ff';
+                    ctx.shadowColor = '#00a8ff';
+                    ctx.shadowBlur = 8;
+                    ctx.fillRect(-obs.radius - 8, -3, 8, 6);
+                    ctx.fillRect(obs.radius, -3, 8, 6);
+                    
+                    // Chasis metálico
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#dcdde1';
+                    ctx.fillRect(-obs.radius + 6, -obs.radius + 6, obs.radius * 2 - 12, obs.radius * 2 - 12);
+                    ctx.strokeStyle = '#718093';
+                    ctx.strokeRect(-obs.radius + 6, -obs.radius + 6, obs.radius * 2 - 12, obs.radius * 2 - 12);
+                    
+                    // Antena
+                    ctx.beginPath();
+                    ctx.moveTo(0, -obs.radius + 6);
+                    ctx.lineTo(0, -obs.radius - 4);
+                    ctx.strokeStyle = '#718093';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                } 
+                else if (obs.type === 'laser_wall_all') {
+                    // BARRERA LÁSER DE PANTALLA COMPLETA (Cubre todos los carriles de borde a borde)
+                    const screenW = canvas.width / (window.devicePixelRatio || 1);
+                    const beamPulse = Math.sin(Date.now() * 0.02) * 3;
+                    
+                    // Rayo de plasma carmesí brillante con halo neón
+                    ctx.shadowColor = '#ff3f34';
+                    ctx.shadowBlur = 22 + Math.abs(beamPulse);
+                    ctx.strokeStyle = '#ff3f34';
+                    ctx.lineWidth = 10 + Math.abs(beamPulse);
+                    ctx.beginPath();
+                    ctx.moveTo(-screenW * 0.5, 0);
+                    ctx.lineTo(screenW * 0.5, 0);
+                    ctx.stroke();
+
+                    // Núcleo blanco de alta energía
+                    ctx.lineWidth = 3.5;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.stroke();
+
+                    // Emisores mecánicos en los extremos izquierdo y derecho
+                    ctx.shadowBlur = 10;
+                    ctx.fillStyle = '#ffd32a';
+                    ctx.shadowColor = '#ffd32a';
+                    ctx.fillRect(-screenW * 0.5, -16, 16, 32);
+                    ctx.fillRect(screenW * 0.5 - 16, -16, 16, 32);
+
+                    // Cartel Neón Parpadeante de Salto Obligatorio
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 14;
+                    ctx.fillStyle = '#00f0ff';
+                    ctx.font = '900 11px Orbitron, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('▲ ¡SALTO OBLIGATORIO! ▲', 0, -16);
+                    ctx.shadowBlur = 0;
+                }
+                else if (obs.type === 'laser_gate' || obs.type === 'laser_high') {
+                    // Rayo Láser neón rojo (ahora se puede esquivar tanto saltando como deslizándose)
+                    ctx.strokeStyle = '#ff3f34';
+                    ctx.shadowColor = '#ff3f34';
+                    ctx.shadowBlur = 15;
+                    ctx.lineWidth = 6;
+                    ctx.beginPath();
+                    ctx.moveTo(-laneWidth * 0.45, -12);
+                    ctx.lineTo(laneWidth * 0.45, -12);
+                    ctx.stroke();
+
+                    // Núcleo blanco del láser
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#fff';
+                    ctx.stroke();
+
+                    // Soporte neón
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#2f3542';
+                    ctx.fillRect(-laneWidth * 0.45 - 2, -26, 4, 26);
+                    ctx.fillRect(laneWidth * 0.45 - 2, -26, 4, 26);
+
+                    // Indicador neón "▲ SALTA ▲"
+                    ctx.shadowBlur = 8;
+                    ctx.fillStyle = '#ffd32a';
+                    ctx.font = 'bold 8px Orbitron';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('▲ SALTA ▲', 0, -18);
+                    ctx.shadowBlur = 0;
+                } 
+                else if (obs.type === 'meteor') {
+                    // Meteoro: Roca poligonal llameante
+                    ctx.rotate(obs.pulse);
+                    
+                    // Brillo del núcleo de fuego
+                    ctx.shadowColor = '#e67e22';
+                    ctx.shadowBlur = 16;
+                    
+                    // Dibujo de roca poligonal
+                    ctx.fillStyle = '#7f8c8d';
+                    ctx.beginPath();
+                    const vertices = 8;
+                    for (let k = 0; k < vertices; k++) {
+                        const angle = (k / vertices) * Math.PI * 2;
+                        const r = obs.radius * (0.8 + Math.sin(k * 1.7) * 0.2);
+                        const kx = Math.cos(angle) * r;
+                        const ky = Math.sin(angle) * r;
+                        if (k === 0) ctx.moveTo(kx, ky);
+                        else ctx.lineTo(kx, ky);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Cráteres de la roca
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = '#34495e';
+                    ctx.beginPath();
+                    ctx.arc(-obs.radius * 0.3, -obs.radius * 0.2, obs.radius * 0.25, 0, Math.PI * 2);
+                    ctx.arc(obs.radius * 0.4, obs.radius * 0.3, obs.radius * 0.2, 0, Math.PI * 2);
+                    ctx.fill();
+                } 
+                else if (obs.type === 'planet') {
+                    // Planeta gigante con anillo neón inclinados
+                    const scale = 1 + Math.sin(obs.pulse) * 0.05;
+                    ctx.scale(scale, scale);
+
+                    // Dibujar anillo (atrás del planeta)
+                    ctx.strokeStyle = '#00f0ff';
+                    ctx.shadowColor = '#00f0ff';
+                    ctx.shadowBlur = 10;
+                    ctx.lineWidth = 4;
+                    ctx.save();
+                    ctx.rotate(Math.PI / 6);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, obs.radius * 1.5, obs.radius * 0.3, 0, Math.PI, 0);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Dibujar cuerpo del planeta con gradiente
+                    ctx.shadowColor = '#9b59b6';
+                    ctx.shadowBlur = 12;
+                    const planetGrad = ctx.createLinearGradient(-obs.radius, -obs.radius, obs.radius, obs.radius);
+                    planetGrad.addColorStop(0, '#8e44ad');
+                    planetGrad.addColorStop(1, '#2c3e50');
+                    ctx.fillStyle = planetGrad;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obs.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Bandas planetarias
+                    ctx.shadowBlur = 0;
+                    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                    ctx.fillRect(-obs.radius * 0.8, -obs.radius * 0.4, obs.radius * 1.6, obs.radius * 0.25);
+                    ctx.fillRect(-obs.radius * 0.9, obs.radius * 0.1, obs.radius * 1.8, obs.radius * 0.2);
+
+                    // Dibujar anillo (delante del planeta)
+                    ctx.strokeStyle = '#00f0ff';
+                    ctx.lineWidth = 4;
+                    ctx.save();
+                    ctx.rotate(Math.PI / 6);
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, obs.radius * 1.5, obs.radius * 0.3, 0, 0, Math.PI);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                else if (obs.type === 'fast_comet') {
+                    if (obs.warningTimer > 0) {
+                        // Restaurar el contexto para dibujar libremente en pantalla el warning de carril
+                        ctx.restore();
+                        ctx.save();
+                        
+                        const flash = Math.sin(Date.now() * 0.025) * 0.5 + 0.5;
+                        ctx.fillStyle = `rgba(255, 63, 52, ${0.08 + flash * 0.16})`;
+                        ctx.fillRect(obs.x - laneWidth * 0.45, 0, laneWidth * 0.9, h);
+                        
+                        // Icono neón de peligro parpadeante
+                        ctx.shadowColor = '#ff3f34';
+                        ctx.shadowBlur = 15;
+                        ctx.fillStyle = '#ff3f34';
+                        ctx.font = 'bold 24px Orbitron';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText('⚠️', obs.x, h * 0.4 + Math.sin(Date.now() * 0.015) * 6);
+                        ctx.shadowBlur = 0;
+                    } else {
+                        // Núcleo y estela del cometa veloz
+                        ctx.shadowColor = '#00f0ff';
+                        ctx.shadowBlur = 15;
+                        
+                        // Cola/Estela estirada
+                        const grad = ctx.createLinearGradient(0, 0, 0, -60);
+                        grad.addColorStop(0, 'rgba(0, 240, 255, 0.85)');
+                        grad.addColorStop(0.4, 'rgba(255, 0, 127, 0.4)');
+                        grad.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.moveTo(-obs.radius * 0.7, 0);
+                        ctx.lineTo(0, -65);
+                        ctx.lineTo(obs.radius * 0.7, 0);
+                        ctx.fill();
+
+                        // Núcleo esférico blanco neón
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, obs.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                }
+                else if (obs.type === 'dark_vortex') {
+                    // Vórtice de Regaliz: Núcleo negro profundo con anillos de neón invertidos
+                    ctx.shadowColor = '#a29bfe';
+                    ctx.shadowBlur = 18;
+                    ctx.fillStyle = '#0a0518';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obs.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#7000ff';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+
+                    // Anillo 1 (inclinado a la derecha, gira a favor del pulso)
+                    ctx.save();
+                    ctx.rotate(obs.pulse * 0.7);
+                    ctx.strokeStyle = '#00f0ff';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, obs.radius * 1.45, obs.radius * 0.35, Math.PI/4, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+
+                    // Anillo 2 (inclinado a la izquierda, gira en contra del pulso)
+                    ctx.save();
+                    ctx.rotate(-obs.pulse * 1.1);
+                    ctx.strokeStyle = '#ff007f';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, obs.radius * 1.45, obs.radius * 0.35, -Math.PI/4, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                else if (obs.type === 'boss_projectile') {
+                    // Proyectil del jefe: orbe de plasma roja vibrando
+                    ctx.shadowColor = '#ff3f34';
+                    ctx.shadowBlur = 12;
+                    ctx.fillStyle = '#ff3f34';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obs.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Núcleo blanco
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, obs.radius * 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+                ctx.restore();
+            });
+
+            // 5B. Dibujar Jefe Final
+            if (bossActive) {
+                ctx.save();
+                ctx.translate(bossX, bossY);
+
+                // Brillo de motor
+                ctx.shadowColor = '#7000ff';
+                ctx.shadowBlur = 20;
+
+                // Alas laterales
+                ctx.fillStyle = '#1e1b29';
+                ctx.beginPath();
+                ctx.moveTo(-45, -15);
+                ctx.lineTo(-65, 10);
+                ctx.lineTo(-30, 20);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(45, -15);
+                ctx.lineTo(65, 10);
+                ctx.lineTo(30, 20);
+                ctx.closePath();
+                ctx.fill();
+
+                // Cabina central del Jefe
+                const cabinGrad = ctx.createLinearGradient(-35, -20, 35, 25);
+                cabinGrad.addColorStop(0, '#2c2544');
+                cabinGrad.addColorStop(1, '#0e0b16');
+                ctx.fillStyle = cabinGrad;
+                ctx.beginPath();
+                ctx.roundRect(-38, -25, 76, 45, 12);
+                ctx.fill();
+                ctx.strokeStyle = '#ff007f';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+
+                // Visor de ojo del jefe neón
+                ctx.shadowColor = '#ff007f';
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = '#ff007f';
+                ctx.beginPath();
+                ctx.roundRect(-18, -12, 36, 10, 4);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Propulsores traseros neón (Llama del motor)
+                const thrusterFlash = Math.sin(Date.now() * 0.05) * 4;
+                ctx.fillStyle = '#00f0ff';
+                ctx.fillRect(-22, -32, 10, 7 + thrusterFlash);
+                ctx.fillRect(12, -32, 10, 7 + thrusterFlash);
+
+                ctx.restore();
+
+                // DIBUJAR BARRA DE VIDA DEL JEFE
+                ctx.save();
+                const barWidth = w * 0.65;
+                const barHeight = 8;
+                const bx = (w - barWidth) * 0.5;
+                const by = 82; // Justo debajo del HUD superior
+
+                // Contenedor / Borde
+                ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+                ctx.fillStyle = 'rgba(10,8,22,0.6)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(bx, by, barWidth, barHeight, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                // Relleno de vida neón rojo
+                const lifeRatio = Math.max(0, bossHp / bossMaxHp);
+                ctx.fillStyle = '#ff3f34';
+                ctx.shadowColor = '#ff3f34';
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.roundRect(bx + 1, by + 1, (barWidth - 2) * lifeRatio, barHeight - 2, 3);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Texto del nombre del jefe
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 9px Orbitron';
+                ctx.textAlign = 'center';
+                const curSecBoss = SECTORS[currentSectorIndex] || SECTORS[0];
+                ctx.fillText(curSecBoss.bossName, w * 0.5, by - 4);
+                ctx.restore();
+            }
+
+            // Dibujar Textos Flotantes
+            floatingTexts.forEach(ft => {
+                ctx.save();
+                ctx.globalAlpha = ft.alpha;
+                ctx.fillStyle = ft.color;
+                ctx.shadowColor = ft.color;
+                ctx.shadowBlur = 8;
+                ctx.font = 'bold 12px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 6. Dibujar Partículas
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+            ctx.globalAlpha = 1.0;
+
+            // 7. Dibujar al Astronauta (Con físicas procedurales)
+            ctx.save();
+            ctx.translate(player.x, player.y);
+
+            const activeSkin = SKINS.find(s => s.id === equippedSkin);
+
+            // Escala de salto / deslizamiento
+            if (player.state === 'jumping') {
+                const jumpProgress = Math.sin((player.stateTimer / 650) * Math.PI);
+                const jumpFactor = 1 + jumpProgress * 0.4;
+                ctx.scale(jumpFactor, jumpFactor);
+                ctx.translate(0, -jumpProgress * 48); // Elevación vertical aumentada para librar vallas
+            } 
+            else if (player.state === 'sliding') {
+                ctx.scale(1.1, 0.65);
+            }
+
+            // Cuerpo del astronauta (Gradientes metálicos)
+            const bodyGrad = ctx.createLinearGradient(-12, -20, 12, 20);
+            bodyGrad.addColorStop(0, activeSkin.primary);
+            bodyGrad.addColorStop(1, activeSkin.accent);
+
+            // Traje
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.roundRect(-14, -22, 28, 38, 12);
+            ctx.fill();
+
+            // Visor brillante de neón
+            ctx.shadowColor = activeSkin.secondary;
+            ctx.shadowBlur = 14;
+            ctx.fillStyle = activeSkin.secondary;
+            ctx.beginPath();
+            ctx.roundRect(-8, -16, 16, 10, 5);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Reflejo blanco del cristal
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(-3, -13, 3, 1.5, -Math.PI / 6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Detalles del Traje (Mochila / Jetpack)
+            ctx.fillStyle = '#2f3542';
+            ctx.fillRect(-17, -12, 3, 20);
+            ctx.fillRect(14, -12, 3, 20);
+
+            // Escudo de invulnerabilidad
+            if (player.shieldActive) {
+                ctx.strokeStyle = '#00f0ff';
+                ctx.shadowColor = '#00f0ff';
+                ctx.shadowBlur = 15;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, -4, 30, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // Indicador visual de Furia activa
+            if (boosterFuryActive) {
+                ctx.strokeStyle = '#ff3f34';
+                ctx.shadowColor = '#ff3f34';
+                ctx.shadowBlur = 10;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, -4, 25 + Math.sin(Date.now() * 0.01) * 3, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            // Indicador visual de Turbo activo (halo dorado parpadeante)
+            if (activePowerups.turbo > 0) {
+                ctx.strokeStyle = '#ffd32a';
+                ctx.shadowColor = '#ffd32a';
+                ctx.shadowBlur = 20;
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(0, -4, 28 + Math.sin(Date.now() * 0.02) * 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.restore(); // Balancear player.save
+
+            // 8. Banner Cinemático de Transición de Sector
+            if (sectorTransitionTimer > 0) {
+                ctx.save();
+                const bannerAlpha = Math.min(1.0, sectorTransitionTimer / 600);
+                ctx.globalAlpha = bannerAlpha;
+
+                const curSec = SECTORS[currentSectorIndex] || SECTORS[0];
+                const bW = w * 0.90;
+                const bH = 64;
+                const bX = (w - bW) * 0.5;
+                const bY = h * 0.26;
+
+                // Placa neón translúcida con brillo del sector
+                ctx.fillStyle = 'rgba(6, 4, 15, 0.92)';
+                ctx.strokeStyle = curSec.trackGlow;
+                ctx.lineWidth = 3;
+                ctx.shadowColor = curSec.trackGlow;
+                ctx.shadowBlur = 24;
+
+                ctx.beginPath();
+                ctx.roundRect(bX, bY, bW, bH, 14);
+                ctx.fill();
+                ctx.stroke();
+
+                // Título del Sector
+                ctx.shadowBlur = 12;
+                ctx.fillStyle = curSec.trackGlow;
+                ctx.font = '900 13px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(sectorBannerText, w * 0.5, bY + 26);
+
+                // Subtítulo con el incremento de velocidad
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 10.5px Orbitron, sans-serif';
+                ctx.fillText(sectorBannerSub, w * 0.5, bY + 48);
+
+                ctx.restore();
+            }
+
+            // 9. Indicador HUD del Próximo Rival (Ghost Rival Tracker)
+            if (gameState === STATE.PLAYING && nextRivalIndex < TOURNAMENT_RIVALS.length) {
+                const targetRival = TOURNAMENT_RIVALS[nextRivalIndex];
+                const distToRival = targetRival.distance - distance;
+                
+                const pillW = Math.min(240, w * 0.74);
+                const pillH = 26;
+                const pillX = (w - pillW) * 0.5;
+                const pillY = 62; // Justo debajo del HUD de distancia
+
+                ctx.save();
+                const isNear = distToRival <= 60;
+                ctx.fillStyle = isNear ? 'rgba(255, 75, 43, 0.90)' : 'rgba(15, 12, 35, 0.80)';
+                ctx.strokeStyle = isNear ? '#ffd32a' : 'rgba(0, 240, 255, 0.65)';
+                ctx.lineWidth = 1.5;
+                if (isNear) {
+                    ctx.shadowColor = '#ffd32a';
+                    ctx.shadowBlur = 12;
+                }
+                ctx.beginPath();
+                ctx.roundRect(pillX, pillY, pillW, pillH, 13);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 10px Orbitron, sans-serif';
+                ctx.textAlign = 'center';
+                const distTxt = distToRival > 0 ? `${distToRival}m` : '¡ADELANTANDO!';
+                ctx.fillText(`🎯 ${targetRival.name} (${distTxt})`, w * 0.5, pillY + 17);
+                ctx.restore();
+            }
+
+            ctx.restore(); // Balancear screen shake
+        }
+
+        // --- GAME ACTIONS / SCREEN CONTROLLERS ---
+        function openPrepareLevelModal() {
+            boosterFuryActive = false;
+            boosterMagnetActive = false;
+
+            const texts = TRANSLATIONS[currentLanguage];
+            
+            const furyBtn = document.getElementById('btn-activate-fury');
+            furyBtn.innerText = texts.ad_watch;
+            furyBtn.disabled = false;
+            furyBtn.style.background = "linear-gradient(135deg, #ffd32a 0%, #ff5e57 100%)";
+            
+            const magnetBtn = document.getElementById('btn-activate-magnet');
+            magnetBtn.innerText = texts.ad_watch;
+            magnetBtn.disabled = false;
+            magnetBtn.style.background = "linear-gradient(135deg, #00f0ff 0%, #0072ff 100%)";
+
+            document.getElementById('level-prepare-modal').classList.remove('hidden');
+            playSound('click');
+        }
+
+        function closePrepareModal() {
+            document.getElementById('level-prepare-modal').classList.add('hidden');
+            playSound('click');
+        }
+
+        function watchAdForFury() {
+            playSound('click');
+            MonetagBridge.showRewardedAd(() => {
+                boosterFuryActive = true;
+                const btn = document.getElementById('btn-activate-fury');
+                btn.innerText = TRANSLATIONS[currentLanguage].activated;
+                btn.disabled = true;
+                btn.style.background = "#2ed573";
+                playSound('jump');
+            });
+        }
+
+        function watchAdForMagnet() {
+            playSound('click');
+            MonetagBridge.showRewardedAd(() => {
+                boosterMagnetActive = true;
+                const btn = document.getElementById('btn-activate-magnet');
+                btn.innerText = TRANSLATIONS[currentLanguage].activated;
+                btn.disabled = true;
+                btn.style.background = "#2ed573";
+                playSound('jump');
+            });
+        }
+
+        function endGame() {
+            playSound('explosion');
+            gameState = STATE.GAMEOVER;
+            deathsCountSinceLastAd++;
+            localStorage.setItem('deathsCountSinceLastAd', deathsCountSinceLastAd);
+
+            // Ocultar botón de pausa
+            document.getElementById('pauseBtn').classList.add('hidden');
+
+            document.getElementById('hud').style.opacity = '0';
+            document.getElementById('gameover-screen').classList.remove('hidden');
+            
+            // Distancia
+            document.getElementById('finalScore').innerText = distance;
+            document.getElementById('matchCoins').innerText = coins;
+
+            // Guardar monedas globales
+            totalCoins += coins;
+            localStorage.setItem('totalCoins', totalCoins);
+            document.getElementById('totalCoinsVal').innerText = totalCoins;
+            document.getElementById('totalCoinsOver').innerText = totalCoins;
+
+            // Récord
+            let isNewBest = false;
+            if (distance > bestDistance) {
+                bestDistance = distance;
+                localStorage.setItem('bestDistance', bestDistance);
+                document.getElementById('bestVal').innerText = bestDistance;
+                isNewBest = true;
+            }
+
+            // Sincronizar puntuación con GamerVerse SDK y Leaderboard Anti-Cheat
+            if (window.GamerVerse) {
+                window.GamerVerse.submitScore('astronaut_runner', distance, coins);
+            }
+
+            // Habilitar botón de compartir record si es mayor a 50m
+            const shareBtn = document.getElementById('shareBtn');
+            if (distance > 50) {
+                shareBtn.classList.remove('hidden');
+            } else {
+                shareBtn.classList.add('hidden');
+            }
+
+            // Resetear estado del botón duplicador
+            const doubleBtn = document.getElementById('doubleCoinsBtn');
+            doubleBtn.innerText = TRANSLATIONS[currentLanguage].gameover_double_coins;
+            doubleBtn.disabled = false;
+            doubleBtn.style.background = "linear-gradient(135deg, #2ed573 0%, #10ac84 100%)";
+            
+            // Configurar visibilidad del botón revivir
+            const reviveBtn = document.getElementById('reviveBtn');
+            if (hasRevivedThisGame) {
+                reviveBtn.classList.add('hidden');
+            } else {
+                reviveBtn.classList.remove('hidden');
+            }
+        }
+
+        function watchAdToRevive() {
+            playSound('click');
+            MonetagBridge.showRewardedAd(() => {
+                hasRevivedThisGame = true;
+                document.getElementById('gameover-screen').classList.add('hidden');
+                
+                // Configurar re-entrada
+                gameState = STATE.PLAYING;
+                player.shieldActive = true;
+                player.shieldTime = Date.now() + 3000; // Escudo por 3s al revivir
+                
+                obstacles = []; // Limpiar amenazas
+                items = [];
+                shootTimer = 0;
+                lastTime = performance.now();
+                document.getElementById('hud').style.opacity = '1';
+
+                playSound('jump');
+                requestAnimationFrame(gameLoop);
+            });
+        }
+
+        function watchAdToDoubleCoins() {
+            if (hasDoubleCoinsThisGame) return;
+            playSound('click');
+            MonetagBridge.showRewardedAd(() => {
+                hasDoubleCoinsThisGame = true;
+                totalCoins += coins; // Sumar las monedas otra vez
+                localStorage.setItem('totalCoins', totalCoins);
+                document.getElementById('totalCoinsVal').innerText = totalCoins;
+                document.getElementById('totalCoinsOver').innerText = totalCoins;
+
+                const doubleBtn = document.getElementById('doubleCoinsBtn');
+                doubleBtn.innerText = TRANSLATIONS[currentLanguage].double_coins_done;
+                doubleBtn.disabled = true;
+                doubleBtn.style.background = "#ffd32a";
+                playSound('coin');
+            });
+        }
+
+        function shareHighScore() {
+            playSound('click');
+            if (window.GamerVerse) {
+                window.GamerVerse.shareRecordToTelegram(distance);
+            } else if (navigator.share) {
+                const text = TRANSLATIONS[currentLanguage].share_text.replace('{score}', distance);
+                navigator.share({
+                    title: 'Astronaut Runner',
+                    text: text,
+                    url: window.location.href
+                }).then(() => console.log("Compartido con éxito"))
+                  .catch(err => console.error("Error al compartir", err));
+            } else {
+                window.open('https://t.me/share/url?text=' + encodeURIComponent('Hice ' + distance + 'm en Astronaut Runner!'), '_blank');
+            }
+        }
+
+        function restartGame() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            
+            // Frecuencia inteligente de intersticiales (No invasiva)
+            const duration = Date.now() - matchStartTime;
+            if (deathsCountSinceLastAd >= 3 && duration > 30000) { // Mayor a 3 muertes y partida larga
+                deathsCountSinceLastAd = 0;
+                localStorage.setItem('deathsCountSinceLastAd', 0);
+                MonetagBridge.showInterstitialAd(() => {
+                    openPrepareLevelModal();
+                });
+            } else {
+                openPrepareLevelModal();
+            }
+        }
+
+        function backToMenu() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            
+            const duration = Date.now() - matchStartTime;
+            if (deathsCountSinceLastAd >= 3 && duration > 30000) {
+                deathsCountSinceLastAd = 0;
+                localStorage.setItem('deathsCountSinceLastAd', 0);
+                MonetagBridge.showInterstitialAd(() => {
+                    document.getElementById('menu-screen').classList.remove('hidden');
+                    gameState = STATE.MENU;
+                });
+            } else {
+                document.getElementById('menu-screen').classList.remove('hidden');
+                gameState = STATE.MENU;
+            }
+        }
+
+        function pauseGame() {
+            if (gameState !== STATE.PLAYING) return;
+            gameState = STATE.PAUSED;
+            playSound('click');
+            document.getElementById('pauseBtn').classList.add('hidden');
+            document.getElementById('pause-screen').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            if (gameState !== STATE.PAUSED) return;
+            gameState = STATE.PLAYING;
+            playSound('click');
+            document.getElementById('pause-screen').classList.add('hidden');
+            document.getElementById('pauseBtn').classList.remove('hidden');
+            lastTime = performance.now(); // Resetear el delta de tiempo para evitar saltos bruscos
+            requestAnimationFrame(gameLoop);
+        }
+
+        function restartGameFromPause() {
+            playSound('click');
+            document.getElementById('pause-screen').classList.add('hidden');
+            startGame();
+        }
+
+        function openSettingsFromPause() {
+            playSound('click');
+            document.getElementById('pause-screen').classList.add('hidden');
+            openSettings();
+        }
+
+        function exitToMenuFromPause() {
+            playSound('click');
+            document.getElementById('pause-screen').classList.add('hidden');
+            document.getElementById('hud').style.opacity = '0';
+            document.getElementById('menu-screen').classList.remove('hidden');
+            gameState = STATE.MENU;
+        }
+
+        // --- SKINS SHOP CONTROLLER ---
+        function openShop() {
+            playSound('click');
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('shop-screen').classList.remove('hidden');
+            
+            // Render de los trajes
+            renderShopItems();
+        }
+
+        function renderShopItems() {
+            const container = document.getElementById('shop-items-container');
+            container.innerHTML = '';
+            document.getElementById('shopCoinsVal').innerText = totalCoins;
+
+            const texts = TRANSLATIONS[currentLanguage];
+
+            SKINS.forEach(skin => {
+                const isUnlocked = unlockedSkins.includes(skin.id);
+                const isEquipped = equippedSkin === skin.id;
+                
+                let buttonHtml = '';
+                if (isEquipped) {
+                    buttonHtml = `<button class="btn-premium" disabled style="padding: 6px 12px; font-size: 10px; border-radius: 6px; box-shadow: none; min-width: 85px; background: #2ed573;">${texts.equipped}</button>`;
+                } else if (isUnlocked) {
+                    buttonHtml = `<button onclick="equipSkin('${skin.id}')" class="btn-premium" style="padding: 6px 12px; font-size: 10px; border-radius: 6px; box-shadow: none; min-width: 85px; background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);">${texts.equip}</button>`;
+                } else {
+                    buttonHtml = `
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                            <span style="font-family: 'Orbitron', sans-serif; font-size: 11px; color: #ffd32a; font-weight: bold;">${skin.cost} 🪙</span>
+                            <button onclick="buySkin('${skin.id}', ${skin.cost})" class="btn-premium" style="padding: 6px 12px; font-size: 10px; border-radius: 6px; box-shadow: none; min-width: 85px; background: linear-gradient(135deg, #ffd32a 0%, #ff9f43 100%);">${texts.buy}</button>
+                        </div>
+                    `;
+                }
+
+                // Descripciones e iconos
+                let labelBonus = '';
+                if (skin.bonus === 'magnet') labelBonus = '(+15% Imán)';
+                else if (skin.bonus === 'firerate') labelBonus = '(+20% Cadencia)';
+                else if (skin.bonus === 'multiplier') labelBonus = '(+25% Puntos)';
+
+                const item = document.createElement('div');
+                item.className = 'settings-item';
+                item.style.display = 'flex';
+                item.style.alignItems = 'center';
+                item.style.gap = '12px';
+                item.style.background = 'rgba(255,255,255,0.01)';
+                item.style.padding = '8px 12px';
+                
+                const skinIcon = skin.id === 'alfa' ? '👨‍🚀' : (skin.id === 'phantom' ? '👽' : (skin.id === 'cyberpunk' ? '🤖' : '👑'));
+                
+                item.innerHTML = `
+                    <div style="font-size: 20px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid ${skin.secondary}; color: ${skin.secondary};">${skinIcon}</div>
+                    <div style="flex-grow: 1;">
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 800; color: #fff;">${skin.id.toUpperCase()} <span style="color: #ffd32a; font-size: 9px;">${labelBonus}</span></div>
+                        <div style="font-size: 9px; color: #b0aabf; margin-top: 1px;">Traje premium de exploración</div>
+                    </div>
+                    <div>${buttonHtml}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function equipSkin(id) {
+            equippedSkin = id;
+            localStorage.setItem('equippedSkin', id);
+            playSound('click');
+            renderShopItems();
+        }
+
+        function buySkin(id, cost) {
+            if (totalCoins >= cost) {
+                totalCoins -= cost;
+                localStorage.setItem('totalCoins', totalCoins);
+                unlockedSkins.push(id);
+                localStorage.setItem('unlockedSkins', JSON.stringify(unlockedSkins));
+                playSound('coin');
+                renderShopItems();
+            } else {
+                playSound('explosion'); // Denegado
+            }
+        }
+
+        function closeShop() {
+            document.getElementById('shop-screen').classList.add('hidden');
+            document.getElementById('menu-screen').classList.remove('hidden');
+            playSound('click');
+        }
+
+        // --- SETTINGS CONTROLLER ---
+        function openSettings() {
+            playSound('click');
+            
+            // Guardar origen
+            settingsSourceState = gameState;
+            
+            document.getElementById('menu-screen').classList.add('hidden');
+            document.getElementById('settings-screen').classList.remove('hidden');
+            
+            // Sincronizar UI
+            document.getElementById('safeZoneToggle').checked = isSafeZoneEnabled;
+            document.getElementById('musicVolSlider').value = musicVolume;
+            document.getElementById('musicVolVal').innerText = Math.round(musicVolume * 100) + '%';
+            document.getElementById('sfxVolSlider').value = sfxVolume;
+            document.getElementById('sfxVolVal').innerText = Math.round(sfxVolume * 100) + '%';
+            document.getElementById('sensitivitySlider').value = sensitivityMultiplier;
+            document.getElementById('sensitivityVal').innerText = Math.round(sensitivityMultiplier * 100) + '%';
+
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`lang-${currentLanguage}`).classList.add('active');
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-screen').classList.add('hidden');
+            playSound('click');
+            
+            if (settingsSourceState === STATE.PAUSED) {
+                document.getElementById('pause-screen').classList.remove('hidden');
+            } else {
+                document.getElementById('menu-screen').classList.remove('hidden');
+            }
+        }
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('currentLanguage', lang);
+            
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`lang-${lang}`).classList.add('active');
+            
+            translateUI();
+            playSound('click');
+        }
+
+        function translateUI() {
+            const texts = TRANSLATIONS[currentLanguage];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (texts[key]) {
+                    el.innerHTML = texts[key];
+                }
+            });
+        }
+
+        function updateMusicVolume(val) {
+            musicVolume = parseFloat(val);
+            localStorage.setItem('musicVolume', val);
+            document.getElementById('musicVolVal').innerText = Math.round(musicVolume * 100) + '%';
+            if (audioCtx && musicGainNode) {
+                musicGainNode.gain.setValueAtTime(isMuted ? 0 : musicVolume, audioCtx.currentTime);
+            }
+        }
+
+        function updateSfxVolume(val) {
+            sfxVolume = parseFloat(val);
+            localStorage.setItem('sfxVolume', val);
+            document.getElementById('sfxVolVal').innerText = Math.round(sfxVolume * 100) + '%';
+            if (audioCtx && sfxGainNode) {
+                sfxGainNode.gain.setValueAtTime(isMuted ? 0 : sfxVolume, audioCtx.currentTime);
+            }
+        }
+
+        function updateSensitivity(val) {
+            sensitivityMultiplier = parseFloat(val);
+            localStorage.setItem('sensitivityMultiplier', val);
+            document.getElementById('sensitivityVal').innerText = Math.round(sensitivityMultiplier * 100) + '%';
+        }
+
+        function toggleSafeZone(checked) {
+            isSafeZoneEnabled = checked;
+            localStorage.setItem('isSafeZoneEnabled', checked);
+            playSound('click');
+        }
+
+        function confirmResetProgress() {
+            const texts = TRANSLATIONS[currentLanguage];
+            if (confirm(texts.msg_reset_confirm)) {
+                totalCoins = 0;
+                bestDistance = 0;
+                equippedSkin = 'alfa';
+                unlockedSkins = ['alfa'];
+                deathsCountSinceLastAd = 0;
+
+                localStorage.setItem('totalCoins', 0);
+                localStorage.setItem('bestDistance', 0);
+                localStorage.setItem('equippedSkin', 'alfa');
+                localStorage.setItem('unlockedSkins', JSON.stringify(['alfa']));
+                localStorage.setItem('deathsCountSinceLastAd', 0);
+
+                document.getElementById('totalCoinsVal').innerText = '0';
+                document.getElementById('bestVal').innerText = '0';
+                playSound('explosion');
+                closeSettings();
+            }
+        }
+
+        // --- ACTUALIZAR HUD DE POWER-UPS ---
+        function updatePowerupHUD() {
+            const hud = document.getElementById('powerup-hud');
+            if (!hud) return;
+            
+            let html = '';
+            if (activePowerups.shield > 0) {
+                const s = Math.ceil(activePowerups.shield / 1000);
+                html += `<div class="hud-panel" style="border-color: #00f0ff; color: #00f0ff; font-size: 10px; padding: 4px 8px; font-weight: bold; border-radius: 8px;">🛡️ ${s}s</div>`;
+            }
+            if (activePowerups.doubleshoot > 0) {
+                const s = Math.ceil(activePowerups.doubleshoot / 1000);
+                html += `<div class="hud-panel" style="border-color: #ff007f; color: #ff007f; font-size: 10px; padding: 4px 8px; font-weight: bold; border-radius: 8px;">🔫 ${s}s</div>`;
+            }
+            if (activePowerups.magnet > 0) {
+                const s = Math.ceil(activePowerups.magnet / 1000);
+                html += `<div class="hud-panel" style="border-color: #ffd32a; color: #ffd32a; font-size: 10px; padding: 4px 8px; font-weight: bold; border-radius: 8px;">🧲 ${s}s</div>`;
+            }
+            if (activePowerups.turbo > 0) {
+                const s = Math.ceil(activePowerups.turbo / 1000);
+                html += `<div class="hud-panel" style="border-color: #ffd32a; color: #ffd32a; font-weight: 900; box-shadow: 0 0 10px #ffd32a; font-size: 10px; padding: 4px 8px; animation: pulse 0.5s infinite alternate; border-radius: 8px;">⚡ TURBO: ${s}s</div>`;
+            }
+            hud.innerHTML = html;
+        }
+
+        // --- SISTEMA HÁPTICO NATIVO TELEGRAM & MÓVIL ---
+        function triggerHaptic(type) {
+            try {
+                // 1. Háptica Nativa de Telegram WebApp
+                if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+                    const hf = window.Telegram.WebApp.HapticFeedback;
+                    if (type === 'light') hf.impactOccurred('light');
+                    else if (type === 'medium') hf.impactOccurred('medium');
+                    else if (type === 'heavy') hf.impactOccurred('heavy');
+                    else if (type === 'success') hf.notificationOccurred('success');
+                    else if (type === 'warning') hf.notificationOccurred('warning');
+                    else if (type === 'error' || type === 'vibrate') hf.notificationOccurred('error');
+                    return;
+                }
+                // 2. Capacitor Nativo
+                if (window.Capacitor && window.Capacitor.isPluginAvailable('Haptics')) {
+                    const { Haptics, ImpactStyle } = window.Capacitor.Plugins;
+                    if (type === 'light') Haptics.impact({ style: ImpactStyle.Light });
+                    else if (type === 'medium') Haptics.impact({ style: ImpactStyle.Medium });
+                    else if (type === 'heavy') Haptics.impact({ style: ImpactStyle.Heavy });
+                    else if (type === 'success') Haptics.notification({ type: 'SUCCESS' });
+                    else if (type === 'vibrate' || type === 'error') Haptics.vibrate();
+                    return;
+                }
+                // 3. Fallback Web Standard
+                if (navigator.vibrate) {
+                    if (type === 'light') navigator.vibrate(15);
+                    else if (type === 'medium') navigator.vibrate(30);
+                    else if (type === 'heavy') navigator.vibrate(60);
+                    else if (type === 'success') navigator.vibrate([20, 50, 40]);
+                    else if (type === 'error' || type === 'vibrate') navigator.vibrate(80);
+                }
+            } catch (e) {}
+        }
+
+        // --- CREAR TEXTOS FLOTANTES ---
+        function spawnFloatingText(x, y, text, color) {
+            floatingTexts.push({
+                x: x,
+                y: y,
+                text: text,
+                color: color || '#fff',
+                vy: -1.5,
+                alpha: 1.0
+            });
+        }
+
+        // Inicialización al arrancar
+        window.onload = () => {
+            resizeCanvas();
+            createStars();
+            
+            // Sincronizar marcadores del menú
+            document.getElementById('totalCoinsVal').innerText = totalCoins;
+            document.getElementById('bestVal').innerText = bestDistance;
+
+            // Traducir interfaz
+            translateUI();
+        };
+    </script>
+</body>
+</html>

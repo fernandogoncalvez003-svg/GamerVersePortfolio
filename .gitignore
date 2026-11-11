@@ -1,0 +1,26 @@
+# Dependencias y entornos locales
+node_modules/
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Artefactos compilados Android / iOS / Capacitor
+*.apk
+*.aab
+*.ipa
+*.keystore
+*.jks
+local.properties
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+**/android/.idea/
+**/ios/App/Pods/
+**/ios/DerivedData/
+
+# Logs, caché y sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

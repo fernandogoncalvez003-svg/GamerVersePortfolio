@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>GameVerse 307 — Arcade Hub</title>
+  <meta name="description" content="GameVerse 307: Hub oficial de juegos Space Arcade con Tickets diarios, Torneos Semanales y Bote en USDT." />
+  <meta name="theme-color" content="#070914" />
+
+  <!-- Configuración rápida para Producción ($0 Stack):
+       1) Pega tu Zone ID de Monetag en content=""
+       2) Pega la URL de tu backend en Render/Koyeb terminada en /api (ej: https://gameverse307-api.onrender.com/api) -->
+  <meta name="monetag-zone" content="" />
+  <meta name="gameverse-api" content="" />
+  <meta name="gameverse-bot" content="GameVerse307Bot" />
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+    (function bootstrapHubConfig() {
+      const apiMeta = document.querySelector('meta[name="gameverse-api"]')?.content?.trim();
+      const botMeta = document.querySelector('meta[name="gameverse-bot"]')?.content?.trim();
+      if (apiMeta) window.GAMEVERSE_API_BASE = apiMeta;
+      if (botMeta) window.GAMEVERSE_BOT_USERNAME = botMeta;
+    })();
+  </script>
+  <script src="./gamerverse-bridge.js"></script>
+
+  <style>
+    :root {
+      --bg-0: #050711;
+      --bg-1: #0b1024;
+      --card: rgba(15, 22, 46, 0.88);
+      --card-border: rgba(86, 178, 255, 0.22);
+      --cyan: #38bdf8;
+      --gold: #fbbf24;
+      --green: #34d399;
+      --purple: #a78bfa;
+      --pink: #f472b6;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 18% 10%, #16224a 0%, var(--bg-1) 42%, var(--bg-0) 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(1.5px 1.5px at 20px 30px, rgba(255,255,255,0.45), transparent),
+        radial-gradient(1px 1px at 90px 140px, rgba(56,189,248,0.45), transparent),
+        radial-gradient(1.5px 1.5px at 170px 70px, rgba(251,191,36,0.35), transparent);
+      background-size: 220px 220px;
+      opacity: 0.45;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: calc(12px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+    }
+
+    .brand-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--cyan);
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-meta {
+      font-size: 0.75rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wallet-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .ticket-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(251, 191, 36, 0.14);
+      border: 1px solid rgba(251, 191, 36, 0.45);
+      color: var(--gold);
+      font-weight: 800;
+      font-size: 0.92rem;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 800;
+      font-size: 0.86rem;
+      cursor: pointer;
+      color: #04101f;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      box-shadow: 0 6px 18px rgba(56, 189, 248, 0.28);
+      transition: transform 0.12s ease, opacity 0.15s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn-ad {
+      padding: 8px 11px;
+      font-size: 0.78rem;
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #1c1002;
+      box-shadow: 0 5px 14px rgba(251, 191, 36, 0.25);
+    }
+
+    .btn-invite {
+      width: 100%;
+      background: linear-gradient(135deg, #34d399, #10b981);
+      color: #032217;
+      box-shadow: 0 6px 18px rgba(52, 211, 153, 0.24);
+    }
+
+    .jackpot-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(145deg, rgba(24, 34, 72, 0.95), rgba(14, 18, 42, 0.96));
+      border: 1px solid rgba(251, 191, 36, 0.36);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .jackpot-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .jackpot-label {
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--gold);
+    }
+
+    .countdown-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fde68a;
+      background: rgba(251, 191, 36, 0.12);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    .jackpot-amount {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #fffbeb, #fbbf24, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 2px 0 10px;
+    }
+
+    .prize-splits {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .split-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 8px 6px;
+      text-align: center;
+      font-size: 0.76rem;
+    }
+
+    .split-chip strong {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin: 4px 2px 0;
+    }
+
+    .section-sub {
+      font-size: 0.73rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .games-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .game-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .game-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.7rem;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    .icon-save { background: linear-gradient(135deg, #1d4ed8, #0284c7); }
+    .icon-runner { background: linear-gradient(135deg, #7c3aed, #db2777); }
+    .icon-arrow { background: linear-gradient(135deg, #059669, #0ea5e9); }
+
+    .game-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .game-name {
+      font-size: 0.98rem;
+      font-weight: 800;
+      margin: 0 0 3px;
+    }
+
+    .game-desc {
+      font-size: 0.77rem;
+      color: var(--muted);
+      line-height: 1.3;
+      margin: 0 0 5px;
+    }
+
+    .game-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    .tag {
+      font-size: 0.67rem;
+      font-weight: 700;
+      color: #bae6fd;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      border-radius: 999px;
+      padding: 2px 7px;
+    }
+
+    .play-btn {
+      flex-shrink: 0;
+      padding: 10px 14px;
+      font-size: 0.84rem;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .invite-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .invite-copy h3 {
+      margin: 0 0 3px;
+      font-size: 0.94rem;
+    }
+
+    .invite-copy p {
+      margin: 0;
+      font-size: 0.77rem;
+      color: var(--muted);
+    }
+
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .lb-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 0.83rem;
+    }
+
+    .lb-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .lb-rank {
+      width: 24px;
+      text-align: center;
+      font-weight: 800;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .lb-name {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lb-score {
+      font-weight: 800;
+      color: var(--cyan);
+      flex-shrink: 0;
+    }
+
+    .rules-list {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 0.77rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding-top: 4px;
+    }
+
+    /* Overlay para lanzar cada juego sin perder el botón de retorno dentro de Telegram */
+    .game-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #02040a;
+      display: none;
+      flex-direction: column;
+    }
+
+    .game-overlay.active {
+      display: flex;
+    }
+
+    .game-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      flex: 1;
+      background: #02040a;
+    }
+
+    .hub-float-btn {
+      position: fixed;
+      top: calc(10px + env(safe-area-inset-top));
+      left: 10px;
+      z-index: 10001;
+      appearance: none;
+      border: 1px solid rgba(56, 189, 248, 0.55);
+      background: rgba(7, 11, 25, 0.84);
+      color: #f8fafc;
+      font-weight: 800;
+      font-size: 0.76rem;
+      padding: 6px 11px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: calc(18px + env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: var(--text);
+      padding: 9px 15px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 10002;
+      max-width: 92vw;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand-wrap">
+        <span class="brand-badge">🚀 GAMEVERSE 307</span>
+        <div class="brand-title">Arcade Hub</div>
+        <div class="player-meta" id="player-meta">Cargando piloto...</div>
+      </div>
+      <div class="wallet-actions">
+        <div class="ticket-pill" id="ticket-pill">🎟️ <span id="ticket-count">3</span></div>
+        <button class="btn btn-ad" id="btn-watch-ad" type="button">+1 🎟️</button>
+      </div>
+    </header>
+
+    <section class="jackpot-card" aria-label="Bote Semanal">
+      <div class="jackpot-head">
+        <span class="jackpot-label">🏆 Bote Semanal USDT</span>
+        <span class="countdown-pill" id="jackpot-countdown">⏳ 7d 00h</span>
+      </div>
+      <div class="jackpot-amount" id="jackpot-amount">$10.00 USDT</div>
+      <div class="prize-splits">
+        <div class="split-chip">🥇 1.er Lugar<strong id="split-1">$6.00</strong></div>
+        <div class="split-chip">🥈 2.º Lugar<strong id="split-2">$2.50</strong></div>
+        <div class="split-chip">🥉 3.er Lugar<strong id="split-3">$1.50</strong></div>
+      </div>
+    </section>
+
+    <div class="section-title">
+      <span>🎮 Juegos Disponibles</span>
+      <span class="section-sub">1 🎟️ por partida · 3 gratis/día</span>
+    </div>
+
+    <section class="games-grid">
+      <article class="game-card">
+        <div class="game-icon icon-save">🛸</div>
+        <div class="game-info">
+          <h2 class="game-name">Save The Astronaut</h2>
+          <p class="game-desc">55 mundos continuos, jefes finales, láser de plasma y escudos orbitales.</p>
+          <div class="game-tags">
+            <span class="tag">55 Mundos</span>
+            <span class="tag">1 Dedo</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./SaveTheAstronaut/index.html" data-title="Save The Astronaut">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner">☄️</div>
+        <div class="game-info">
+          <h2 class="game-name">Astronaut Runner</h2>
+          <p class="game-desc">Endless runner espacial de alta velocidad: esquiva meteoritos y suma combos.</p>
+          <div class="game-tags">
+            <span class="tag">Endless</span>
+            <span class="tag">Arcade</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./AstronautRunner/index.html" data-title="Astronaut Runner">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-arrow">🏹</div>
+        <div class="game-info">
+          <h2 class="game-name">Arrow Escape</h2>
+          <p class="game-desc">100 niveles tácticos de reflejos y precisión. Despeja el tablero sin chocar.</p>
+          <div class="game-tags">
+            <span class="tag">Puzzle</span>
+            <span class="tag">100 Niveles</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./ArrowEscape/index.html" data-title="Arrow Escape">Jugar</button>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="invite-row">
+        <div class="invite-copy">
+          <h3>🤝 Invita y gana +3 🎟️</h3>
+          <p>Comparte tu enlace oficial de GameVerse 307 con amigos en Telegram.</p>
+        </div>
+      </div>
+      <button class="btn btn-invite" id="btn-invite" type="button">Invitar Amigos (+3 🎟️)</button>
+    </section>
+
+    <section class="panel">
+      <div class="section-title" style="margin:0;">
+        <span>📊 Top 10 Semanal</span>
+        <span class="section-sub" id="lb-status">Sincronizando...</span>
+      </div>
+      <div class="leaderboard-list" id="leaderboard-list">
+        <div class="lb-row"><span class="lb-left"><span class="lb-rank">1.</span><span class="lb-name">Cargando ranking...</span></span><span class="lb-score">--</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title" style="margin:0;">
+        <span>📜 Reglas del Torneo</span>
+      </div>
+      <ul class="rules-list">
+        <li>Recibes <strong>3 Tickets gratis cada 24h</strong> y <strong>+1 Ticket</strong> por anuncio Monetag.</li>
+        <li>Cada partida consumida suma actividad al Bote Semanal en USDT.</li>
+        <li>Los domingos a las <strong>23:59 UTC</strong> se reparte el bote (60% / 25% / 15%) y reinicia la tabla.</li>
+      </ul>
+    </section>
+
+    <div class="footer-note">gameverse307.com · Portafolio Arcade Híbrido</div>
+  </main>
+
+  <div class="game-overlay" id="game-overlay" aria-hidden="true">
+    <button class="hub-float-btn" id="btn-exit-game" type="button">🏠 Hub</button>
+    <iframe class="game-frame" id="game-frame" title="GameVerse 307 Juego" allow="autoplay; fullscreen"></iframe>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function initGameVerse307Hub() {
+      const monetagMeta = document.querySelector('meta[name="monetag-zone"]')?.content?.trim();
+      if (monetagMeta && window.GamerVerse && typeof window.GamerVerse.setMonetagZone === 'function') {
+        window.GamerVerse.setMonetagZone(monetagMeta, monetagMeta);
+      }
+
+      const ticketEl = document.getElementById('ticket-count');
+      const playerMetaEl = document.getElementById('player-meta');
+      const jackpotAmountEl = document.getElementById('jackpot-amount');
+      const countdownEl = document.getElementById('jackpot-countdown');
+      const split1El = document.getElementById('split-1');
+      const split2El = document.getElementById('split-2');
+      const split3El = document.getElementById('split-3');
+      const lbListEl = document.getElementById('leaderboard-list');
+      const lbStatusEl = document.getElementById('lb-status');
+      const overlayEl = document.getElementById('game-overlay');
+      const frameEl = document.getElementById('game-frame');
+      const toastEl = document.getElementById('toast');
+      const btnWatchAd = document.getElementById('btn-watch-ad');
+
+      let toastTimer = null;
+      function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+      }
+
+      function computeClientCountdown() {
+        const now = new Date();
+        const day = now.getUTCDay();
+        const daysUntilSunday = (7 - day) % 7;
+        const target = new Date(Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() + daysUntilSunday,
+          23, 59, 59
+        ));
+        if (target <= now) target.setUTCDate(target.getUTCDate() + 7);
+        const diffMs = Math.max(0, target - now);
+        const d = Math.floor(diffMs / 86400000);
+        const h = Math.floor((diffMs % 86400000) / 3600000);
+        const m = Math.floor((diffMs % 3600000) / 60000);
+        return `${d}d ${h}h ${m}m`;
+      }
+
+      function renderState() {
+        const gv = window.GamerVerse;
+        if (!gv) return;
+        ticketEl.textContent = gv.user?.tickets ?? 0;
+        const name = gv.user?.firstName || gv.user?.username || 'Piloto';
+        playerMetaEl.textContent = `${name} · ID ${gv.user?.id || 'Guest'}`;
+
+        const pool = Number(gv.jackpot?.amount || 10);
+        jackpotAmountEl.textContent = `$${pool.toFixed(2)} USDT`;
+        split1El.textContent = `$${(pool * 0.60).toFixed(2)}`;
+        split2El.textContent = `$${(pool * 0.25).toFixed(2)}`;
+        split3El.textContent = `$${(pool * 0.15).toFixed(2)}`;
+        countdownEl.textContent = `⏳ ${gv.jackpot?.countdown || computeClientCountdown()}`;
+      }
+
+      function renderLeaderboard(rows, modeLabel) {
+        lbStatusEl.textContent = modeLabel;
+        if (!rows || !rows.length) {
+          lbListEl.innerHTML = `<div class="lb-row"><span class="lb-left"><span class="lb-rank">🚀</span><span class="lb-name">Sé el primero en registrar puntaje esta semana</span></span><span class="lb-score">0 pts</span></div>`;
+          return;
+        }
+        const medals = ['🥇', '🥈', '🥉'];
+        lbListEl.innerHTML = rows.slice(0, 10).map((row, idx) => {
+          const rankLabel = medals[idx] || `${row.rank || idx + 1}.`;
+          const rawName = String(row.display_name || 'Piloto').replace(/[<>&"]/g, '');
+          const score = Number(row.high_score || 0).toLocaleString('es-ES');
+          return `<div class="lb-row"><span class="lb-left"><span class="lb-rank">${rankLabel}</span><span class="lb-name">${rawName}</span></span><span class="lb-score">${score} pts</span></div>`;
+        }).join('');
+      }
+
+      async function loadLeaderboard() {
+        const gv = window.GamerVerse;
+        if (!gv || !gv.apiBase) {
+          const localBest = Number(localStorage.getItem('gv_local_best_score') || 0);
+          const demoRows = localBest > 0
+            ? [{ rank: 1, display_name: gv?.user?.firstName || 'Tú (Local)', high_score: localBest }]
+            : [];
+          renderLeaderboard(demoRows, 'Modo Offline ($0)');
+          return;
+        }
+        try {
+          const res = await fetch(`${gv.apiBase}/leaderboard?limit=10`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (data && data.success) {
+            renderLeaderboard(data.leaderboard || [], 'En vivo');
+          } else {
+            renderLeaderboard([], 'Sin datos');
+          }
+        } catch (err) {
+          renderLeaderboard([], 'Backend dormido');
+        }
+      }
+
+      function openGame(url, title) {
+        if (window.GamerVerse && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => {
+            renderState();
+            showToast('¡+1 🎟️ añadido! Ya puedes entrar.');
+          });
+          return;
+        }
+        frameEl.title = title;
+        frameEl.src = url;
+        overlayEl.classList.add('active');
+        overlayEl.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeGame() {
+        overlayEl.classList.remove('active');
+        overlayEl.setAttribute('aria-hidden', 'true');
+        frameEl.src = 'about:blank';
+        if (window.GamerVerse) {
+          window.GamerVerse.syncUser(() => {
+            renderState();
+            loadLeaderboard();
+          });
+        }
+      }
+
+      document.querySelectorAll('.play-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          openGame(btn.dataset.game, btn.dataset.title || 'GameVerse 307');
+        });
+      });
+
+      document.getElementById('btn-exit-game').addEventListener('click', closeGame);
+
+      btnWatchAd.addEventListener('click', () => {
+        if (!window.GamerVerse) return;
+        btnWatchAd.disabled = true;
+        window.GamerVerse.showRewardedAd(
+          () => {
+            window.GamerVerse.addTicketFromAd(() => {
+              btnWatchAd.disabled = false;
+              renderState();
+              showToast('🎟️ ¡+1 Ticket acreditado!');
+            });
+          },
+          (reason) => {
+            btnWatchAd.disabled = false;
+            showToast(reason === 'cancelled' ? 'Completa el anuncio para recibir +1 🎟️' : 'Anuncio no disponible ahora');
+          },
+          'Recarga +1 🎟️'
+        );
+      });
+
+      document.getElementById('btn-invite').addEventListener('click', () => {
+        if (!window.GamerVerse) return;
+        window.GamerVerse.shareRecordToTelegram(localStorage.getItem('gv_local_best_score') || 0);
+        showToast('Invitación lista en Telegram (+3 🎟️ al unirse)');
+      });
+
+      window.addEventListener('gv-state-updated', renderState);
+      window.addEventListener('message', (event) => {
+        if (!event.data || !event.data.type) return;
+        if (event.data.type === 'GV_TICKET_CONSUMED' || event.data.type === 'GV_TICKET_ADDED' || event.data.type === 'GV_SCORE_SUBMITTED') {
+          if (typeof event.data.score === 'number') {
+            const prev = Number(localStorage.getItem('gv_local_best_score') || 0);
+            if (event.data.score > prev) localStorage.setItem('gv_local_best_score', String(event.data.score));
+          }
+          if (window.GamerVerse) {
+            window.GamerVerse.loadLocalState?.();
+            renderState();
+          }
+        }
+      });
+
+      if (window.GamerVerse) {
+        window.GamerVerse.init();
+        renderState();
+        loadLeaderboard();
+      }
+      setInterval(() => {
+        countdownEl.textContent = `⏳ ${window.GamerVerse?.jackpot?.countdown || computeClientCountdown()}`;
+      }, 60000);
+    })();
+  </script>
+</body>
+</html>

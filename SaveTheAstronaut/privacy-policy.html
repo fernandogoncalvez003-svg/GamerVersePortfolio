@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad - Save the Astronaut</title>
+    <style>
+        :root {
+            --bg-color: #0b0713;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(0, 240, 255, 0.2);
+            --text-color: #d1cbdc;
+            --title-color: #00f0ff;
+            --accent-color: #ffd32a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.05);
+        }
+
+        h1 {
+            color: var(--title-color);
+            font-size: 28px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-top: 0;
+        }
+
+        h2 {
+            color: var(--title-color);
+            font-size: 20px;
+            margin-top: 30px;
+            border-left: 4px solid var(--title-color);
+            padding-left: 10px;
+        }
+
+        p,
+        li {
+            font-size: 15px;
+            text-align: justify;
+        }
+
+        ul {
+            padding-left: 20px;
+        }
+
+        .highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .lang-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 15px;
+        }
+
+        .lang-selector button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 240, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: var(--text-color);
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .lang-selector button:hover {
+            background: rgba(0, 240, 255, 0.1);
+            border-color: var(--title-color);
+        }
+
+        .lang-selector button.active {
+            background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);
+            border-color: transparent;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- Pestañas Selectoras de Idioma -->
+        <div class="lang-selector">
+            <button onclick="switchLang('es')" id="btn-es" class="active">Español</button>
+            <button onclick="switchLang('en')" id="btn-en">English</button>
+            <button onclick="switchLang('pt')" id="btn-pt">Português</button>
+        </div>
+
+        <!-- ================= VERSIÓN EN ESPAÑOL ================= -->
+        <div id="policy-es" class="policy-content">
+            <h1>Política de Privacidad</h1>
+            <p>Última actualización: <strong>28 de julio de 2026</strong></p>
+            <p>Esta Política de Privacidad describe cómo se recopila, utiliza y comparte su información personal cuando
+                juega a <strong>Save the Astronaut</strong> (en adelante, "el Juego"), desarrollado por <span
+                    class="highlight">Fernando A Goncalvez Aguilar / GamerVerse 307 </span> (en adelante, "el
+                Desarrollador"), operando como desarrollador individual/persona natural.</p>
+
+            <h2>1. Información que Recopilamos</h2>
+            <p>El Desarrollador está comprometido con la privacidad de los usuarios. El Juego ha sido diseñado bajo el
+                principio de minimización de datos:</p>
+            <ul>
+                <li><strong>Datos de Juego locales:</strong> El progreso de los niveles, las monedas virtuales obtenidas
+                    y la puntuación récord se almacenan de manera local y exclusiva en el almacenamiento interno de su
+                    dispositivo a través del navegador o la plataforma móvil (mediante la API
+                    <code>localStorage</code>). Estos datos no se transmiten a ningún servidor externo controlado por el
+                    Desarrollador.</li>
+                <li><strong>Identificadores de Publicidad de Terceros:</strong> El Juego incluye publicidad servida por
+                    proveedores externos (Google AdMob). AdMob recopila identificadores de publicidad anónimos de su
+                    dispositivo (como el <em>Google Advertising ID</em> en Android o el <em>IDFA</em> en iOS) y datos
+                    técnicos de rendimiento de la aplicación para medir la efectividad de los anuncios y prevenir
+                    fraudes.</li>
+            </ul>
+
+            <h2>2. Cumplimiento de la Privacidad Infantil (COPPA / GDPR-K)</h2>
+            <p>El Juego es apto para todas las edades. En cumplimiento con la Ley de Protección de la Privacidad
+                Infantil en Internet (<strong>COPPA</strong>) y el Reglamento General de Protección de Datos
+                (<strong>GDPR</strong>) para menores:</p>
+            <ul>
+                <li>No recopilamos a sabiendas ninguna información de identificación personal de niños menores de 13
+                    años (o 16 años en la Unión Europea).</li>
+                <li>Hemos configurado las solicitudes del SDK de anuncios de Google AdMob para habilitar el
+                    <strong>"Tratamiento Dirigido a Niños"</strong> (<code>tagForChildDirectedTreatment</code>),
+                    asegurando que solo se sirvan anuncios no personalizados y de contenido familiar apropiado para
+                    menores de edad, desactivando el rastreo de comportamiento publicitario en audiencias infantiles.
+                </li>
+            </ul>
+
+            <h2>3. Reglamento General de Protección de Datos (GDPR) y CCPA</h2>
+            <p>Si usted reside en el Espacio Económico Europeo (EEE) o en el estado de California (EE. UU.), cuenta con
+                derechos específicos de protección de datos:</p>
+            <ul>
+                <li><strong>Derecho de Acceso y Eliminación:</strong> Puede restablecer o eliminar por completo toda su
+                    información de juego local en cualquier momento haciendo uso del botón <span
+                        class="highlight">"Reiniciar Progreso"</span> ubicado en el menú de Ajustes dentro del Juego.
+                </li>
+                <li><strong>Consentimiento de Anuncios:</strong> En las regiones aplicables, se le presentará un banner
+                    de consentimiento de la plataforma de mensajería de Google (UMP) para autorizar o denegar el uso de
+                    cookies y rastreo publicitario por parte del SDK de AdMob antes de mostrar cualquier anuncio.</li>
+            </ul>
+
+            <h2>4. Compartición de Datos con Terceros</h2>
+            <p>No vendemos, intercambiamos ni transferimos sus datos a terceros. Los únicos proveedores externos
+                autorizados son los SDK de servicios publicitarios del sistema, los cuales están obligados a cumplir con
+                sus respectivas políticas de privacidad cifrando la información de tránsito (HTTPS):</p>
+            <ul>
+                <li><strong>Google AdMob:</strong> <a href="https://policies.google.com/privacy" target="_blank"
+                        style="color: var(--title-color);">Política de Privacidad de Google</a></li>
+            </ul>
+
+            <h2>5. Seguridad de la Información</h2>
+            <p>El Juego emplea el almacenamiento seguro provisto por el sistema operativo de su dispositivo. Al no
+                transmitir datos de perfil ni información sensible a servidores de backend externos, el riesgo de
+                filtración de datos de carácter personal queda reducido a cero.</p>
+
+            <h2>6. Contacto</h2>
+            <p>Si tiene alguna pregunta sobre esta Política de Privacidad o las prácticas de este Juego, puede ponerse
+                en contacto con el Desarrollador a través del correo electrónico: <span
+                    class="highlight">fernandogoncalvez003@gmail.com</span></p>
+        </div>
+
+        <!-- ================= ENGLISH VERSION ================= -->
+        <div id="policy-en" class="policy-content hidden">
+            <h1>Privacy Policy</h1>
+            <p>Last updated: <strong>July 28, 2026</strong></p>
+            <p>This Privacy Policy describes how your personal information is collected, used, and shared when you play
+                <strong>Save the Astronaut</strong> (hereinafter, "the Game"), developed by <span
+                    class="highlight">Fernando A Goncalvez Aguilar / GamerVerse</span> (hereinafter, "the Developer"),
+                operating as an individual developer.</p>
+
+            <h2>1. Information We Collect</h2>
+            <p>The Developer is committed to user privacy. The Game has been designed in accordance with the data
+                minimization principle:</p>
+            <ul>
+                <li><strong>Local Game Data:</strong> Level progress, virtual coins earned, and high scores are stored
+                    locally and exclusively on your device's internal storage (via the <code>localStorage</code> API).
+                    This data is not transmitted to any external server controlled by the Developer.</li>
+                <li><strong>Third-Party Advertising Identifiers:</strong> The Game includes advertising served by
+                    third-party providers (Google AdMob). AdMob collects anonymous advertising identifiers from your
+                    device (such as the <em>Google Advertising ID</em> on Android or the <em>IDFA</em> on iOS) and
+                    technical application performance data to measure ad effectiveness and prevent fraud.</li>
+            </ul>
+
+            <h2>2. Children's Privacy Compliance (COPPA / GDPR-K)</h2>
+            <p>The Game is suitable for all ages. In compliance with the Children's Online Privacy Protection Act
+                (<strong>COPPA</strong>) and the General Data Protection Regulation (<strong>GDPR</strong>) for minors:
+            </p>
+            <ul>
+                <li>We do not knowingly collect any personally identifiable information from children under 13 years of
+                    age (or 16 years of age in the European Union).</li>
+                <li>We have configured Google AdMob SDK requests to enable <strong>"Child-Directed Treatment"</strong>
+                    (<code>tagForChildDirectedTreatment</code>), ensuring that only non-personalized, family-appropriate
+                    advertisements are served to minor audiences, disabling behavioral tracking for children.</li>
+            </ul>
+
+            <h2>3. General Data Protection Regulation (GDPR) and CCPA Rights</h2>
+            <p>If you reside in the European Economic Area (EEA) or the state of California (USA), you have specific
+                data protection rights:</p>
+            <ul>
+                <li><strong>Right of Access and Deletion:</strong> You can reset or completely delete all your local
+                    game data at any time by using the <span class="highlight">"Reset Progress"</span> button located in
+                    the Settings menu within the Game.</li>
+                <li><strong>Ad Consent:</strong> In applicable regions, you will be presented with a consent banner from
+                    Google's User Messaging Platform (UMP) to authorize or deny the use of cookies and ad tracking by
+                    the AdMob SDK before any advertisement is shown.</li>
+            </ul>
+
+            <h2>4. Data Sharing with Third Parties</h2>
+            <p>We do not sell, trade, or transfer your data to third parties. The only authorized external providers are
+                the system's advertising SDKs, which are bound to comply with their respective privacy policies and
+                encrypt data in transit (HTTPS):</p>
+            <ul>
+                <li><strong>Google AdMob:</strong> <a href="https://policies.google.com/privacy" target="_blank"
+                        style="color: var(--title-color);">Google Privacy Policy</a></li>
+            </ul>
+
+            <h2>5. Data Security</h2>
+            <p>The Game utilizes the secure storage provided by your device's operating system. Because we do not
+                transmit profile data or sensitive information to external backend servers, the risk of personal data
+                leaks is reduced to zero.</p>
+
+            <h2>6. Contact Us</h2>
+            <p>If you have any questions regarding this Privacy Policy or the practices of this Game, please contact the
+                Developer via email: <span class="highlight">fernandogoncalvez003@gmail.com</span></p>
+        </div>
+
+        <!-- ================= VERSÃO EM PORTUGUÊS ================= -->
+        <div id="policy-pt" class="policy-content hidden">
+            <h1>Política de Privacidade</h1>
+            <p>Última atualização: <strong>28 de julho de 2026</strong></p>
+            <p>Esta Política de Privacidade descreve como suas informações pessoais são coletadas, usadas e
+                compartilhadas ao jogar <strong>Save the Astronaut</strong> (doravante denominado "o Jogo"),
+                desenvolvido por <span class="highlight">Fernando A Goncalvez Aguilar / GamerVerse</span> (doravante
+                denominado "o Desenvolvedor"), atuando como desenvolvedor individual/pessoa física.</p>
+
+            <h2>1. Informações que Coletamos</h2>
+            <p>O Desenvolvedor está comprometido com a privacidade dos usuários. O Jogo foi projetado sob o princípio da
+                minimização de dados:</p>
+            <ul>
+                <li><strong>Dados de Jogo Locais:</strong> O progresso dos níveis, as moedas virtuais obtidas e a
+                    pontuação recorde são armazenados de forma local e exclusiva no armazenamento interno do seu
+                    dispositivo (através da API <code>localStorage</code>). Esses dados não são enviados a nenhum
+                    servidor externo controlado pelo Desenvolvedor.</li>
+                <li><strong>Identificadores de Publicidade de Terceiros:</strong> O Jogo inclui publicidade exibida por
+                    provedores externos (Google AdMob). O AdMob coleta identificadores de publicidade anônimos do seu
+                    dispositivo (como o <em>Google Advertising ID</em> no Android ou o <em>IDFA</em> no iOS) e dados
+                    técnicos de desempenho do aplicativo para medir a eficácia dos anúncios e evitar fraudes.</li>
+            </ul>
+
+            <h2>2. Conformidade com a Privacidade Infantil (COPPA / GDPR-K)</h2>
+            <p>O Jogo é adequado para todas as idades. Em conformidade com a Lei de Proteção da Privacidade Infantil
+                Online (<strong>COPPA</strong>) e o Regulamento Geral sobre a Proteção de Dados (<strong>GDPR</strong>)
+                para menores:</p>
+            <ul>
+                <li>Não coletamos intencionalmente nenhuma informação de identificação pessoal de crianças menores de 13
+                    anos (ou 16 anos na União Europeia).</li>
+                <li>Configuramos as solicitações do SDK do Google AdMob para ativar o <strong>"Tratamento para
+                        Crianças"</strong> (<code>tagForChildDirectedTreatment</code>), garantindo que apenas anúncios
+                    não personalizados e com conteúdo familiar adequado sejam exibidos para o público infantil,
+                    desativando o rastreamento comportamental.</li>
+            </ul>
+
+            <h2>3. Regulamento Geral sobre a Proteção de Dados (GDPR) e Direitos CCPA</h2>
+            <p>Se você reside no Espaço Econômico Europeu (EEE) ou no estado da Califórnia (EUA), possui direitos
+                específicos de proteção de dados:</p>
+            <ul>
+                <li><strong>Direito de Acesso e Exclusão:</strong> Você pode redefinir ou excluir completamente todos os
+                    seus dados locais de jogo a qualquer momento usando o botão <span class="highlight">"Reiniciar
+                        Progresso"</span> localizado no menu de Configurações dentro do Jogo.</li>
+                <li><strong>Consentimento de Anúncios:</strong> Nas regiões aplicáveis, você verá um banner de
+                    consentimento da Plataforma de Mensagens do Usuário (UMP) do Google para autorizar ou recusar o uso
+                    de cookies e rastreamento de anúncios pelo SDK do AdMob antes que qualquer anúncio seja exibido.
+                </li>
+            </ul>
+
+            <h2>4. Compartilhamento de Dados com Terceiros</h2>
+            <p>Não vendemos, comercializamos ou transferimos seus dados para terceiros. Os únicos provedores externos
+                autorizados são os SDKs de anúncios do sistema, que são obrigados a cumprir suas respectivas políticas
+                de privacidade e criptografar os dados em trânsito (HTTPS):</p>
+            <ul>
+                <li><strong>Google AdMob:</strong> <a href="https://policies.google.com/privacy" target="_blank"
+                        style="color: var(--title-color);">Política de Privacidade do Google</a></li>
+            </ul>
+
+            <h2>5. Segurança dos Dados</h2>
+            <p>O Jogo utiliza o armazenamento seguro fornecido pelo sistema operacional do seu dispositivo. Como não
+                transmitimos dados de perfil ou informações confidenciais para servidores de backend externos, o risco
+                de vazamento de dados pessoais é reduzido a zero.</p>
+
+            <h2>6. Contato</h2>
+            <p>Se você tiver alguma dúvida sobre esta Política de Privacidade ou sobre as práticas deste Jogo, entre em
+                contato com o Desenvolvedor por e-mail: <span class="highlight">fernandogoncalvez003@gmail.com</span>
+            </p>
+        </div>
+
+        <footer>
+            &copy; 2026 Save the Astronaut. Todos os derechos reservados. / All rights reserved. / Todos os direitos
+            reservados.
+        </footer>
+    </div>
+
+    <!-- Script de Alternancia de Idiomas -->
+    <script>
+        function switchLang(lang) {
+            // Ocultar todos los contenidos de política
+            document.querySelectorAll('.policy-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            // Remover estado activo de todos los botones
+            document.querySelectorAll('.lang-selector button').forEach(el => {
+                el.classList.remove('active');
+            });
+            // Mostrar idioma seleccionado y activar su botón
+            document.getElementById('policy-' + lang).classList.remove('hidden');
+            document.getElementById('btn-' + lang).classList.add('active');
+        }
+    </script>
+</body>
+
+</html>

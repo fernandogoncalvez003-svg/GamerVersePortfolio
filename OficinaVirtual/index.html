@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GamerVerse Studios | Oficina Virtual de Agentes IA</title>
+    <link rel="stylesheet" href="office.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body class="cyber-office">
+
+    <!-- Top Navigation / Executive Bar -->
+    <header class="studio-header">
+        <div class="brand">
+            <div class="brand-logo">
+                <span class="pixel-icon">👾</span>
+            </div>
+            <div class="brand-info">
+                <h1>Gamer<span>Verse</span> Studios</h1>
+                <div class="live-pill"><span class="pulse-dot"></span> 10 AGENTES EN LÍNEA · TURNO ACTIVO</div>
+            </div>
+        </div>
+
+        <div class="header-metrics">
+            <div class="metric-card">
+                <span class="metric-label">META LLC</span>
+                <span class="metric-value gold">$50,000<small>/mes</small></span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">BOTE DINÁMICO</span>
+                <span class="metric-value cyan" id="jackpot-counter">$42.50 <small>USDT</small></span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-label">TIEMPO AL DOMINGO</span>
+                <span class="metric-value green" id="countdown-timer">2d 14h 28m</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <button id="sfx-toggle" class="icon-btn" title="Alternar Sonidos SFX">
+                🔊 <span class="btn-text">SFX: ON</span>
+            </button>
+            <button id="arcade-quick-launch" class="btn btn-arcade" title="Abrir Probador de Juegos">
+                🕹️ JUGAR EN ARCADE
+            </button>
+            <button id="all-hands-btn" class="btn btn-primary glow">
+                📢 REUNIÓN GENERAL (ALL-HANDS)
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout -->
+    <main class="studio-viewport">
+        
+        <!-- Left: Interactive Office Map (Isometric / Grid) -->
+        <section class="office-floorplan">
+            <div class="floorplan-overlay-header">
+                <h2>🏛️ PISO PRINCIPAL: OFICINA VIRTUAL EN VIVO</h2>
+                <div class="floorplan-hint">Haz clic en cualquier agente o estación de trabajo para interactuar en vivo</div>
+            </div>
+
+            <!-- The Grid of Rooms / Workstations -->
+            <div class="rooms-grid">
+
+                <!-- Room 1: Lead Direction & AI Command -->
+                <div class="room room-command" id="room-antigravity">
+                    <div class="room-sign">🏢 DIRECCIÓN GENERAL & IA</div>
+                    <div class="agent-desk" data-agent-id="antigravity">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-ai">🤖</div>
+                            <div class="status-badge busy"></div>
+                        </div>
+                        <div class="agent-name">Antigravity</div>
+                        <div class="agent-role">Lead Architect & CEO</div>
+                        <div class="agent-task-bubble">Orquestando roadmap $50k/mes y sincronizando agentes...</div>
+                    </div>
+                </div>
+
+                <!-- Room 2: Arcade Dev Lab -->
+                <div class="room room-dev" id="room-alex">
+                    <div class="room-sign">🕹️ TALLER ARCADE DEV</div>
+                    <div class="agent-desk" data-agent-id="alex">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-alex">🚀</div>
+                            <div class="status-badge coding"></div>
+                        </div>
+                        <div class="agent-name">Alex</div>
+                        <div class="agent-role">Game Dev Arcade</div>
+                        <div class="agent-task-bubble">Vinculando consumo de 1 Ticket en AstronautRunner...</div>
+                    </div>
+                </div>
+
+                <!-- Room 3: Puzzle Logic Lab -->
+                <div class="room room-puzzle" id="room-elena">
+                    <div class="room-sign">🧩 LAB DE PUZLES</div>
+                    <div class="agent-desk" data-agent-id="elena">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-elena">🎯</div>
+                            <div class="status-badge coding"></div>
+                        </div>
+                        <div class="agent-name">Elena</div>
+                        <div class="agent-role">Game Dev Puzzle</div>
+                        <div class="agent-task-bubble">Balanceando grilla y touch controls en ArrowEscape...</div>
+                    </div>
+                </div>
+
+                <!-- Room 4: Cyber Bunker & QA -->
+                <div class="room room-security" id="room-cipher">
+                    <div class="room-sign">🛡️ BÚNKER ANTI-CHEAT & QA</div>
+                    <div class="agent-desk" data-agent-id="cipher">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-cipher">🕵️‍♂️</div>
+                            <div class="status-badge secure"></div>
+                        </div>
+                        <div class="agent-name">Cipher</div>
+                        <div class="agent-role">QA & Security Sentinel</div>
+                        <div class="agent-task-bubble">Escaneando memoria y validando firmas HMAC Telegram...</div>
+                    </div>
+                </div>
+
+                <!-- Room 5: War Room Viral & TikTok -->
+                <div class="room room-growth" id="room-valeria">
+                    <div class="room-sign">🔥 SALA DE VIRALIDAD TIKTOK</div>
+                    <div class="agent-desk" data-agent-id="valeria">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-valeria">📱</div>
+                            <div class="status-badge viral"></div>
+                        </div>
+                        <div class="agent-name">Valeria</div>
+                        <div class="agent-role">Growth & Viral Hacker</div>
+                        <div class="agent-task-bubble">Guionando 3 clips de frustración para TikTok (K > 1.2)...</div>
+                    </div>
+                </div>
+
+                <!-- Room 6: Treasury & Economy -->
+                <div class="room room-finance" id="room-marcus">
+                    <div class="room-sign">💰 TESORERÍA & BOTE DINÁMICO</div>
+                    <div class="agent-desk" data-agent-id="marcus">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-marcus">📊</div>
+                            <div class="status-badge finance"></div>
+                        </div>
+                        <div class="agent-name">Marcus</div>
+                        <div class="agent-role">Monetization Economist</div>
+                        <div class="agent-task-bubble">35% Bote, 15% Servidores, 50% Margen Neto LLC...</div>
+                    </div>
+                </div>
+
+                <!-- Room 7: Community Lounge -->
+                <div class="room room-community" id="room-santi">
+                    <div class="room-sign">👥 COMUNIDAD & HALL OF FAME</div>
+                    <div class="agent-desk" data-agent-id="santi">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-santi">🏆</div>
+                            <div class="status-badge hype"></div>
+                        </div>
+                        <div class="agent-name">Santi</div>
+                        <div class="agent-role">Community & Trust Hype</div>
+                        <div class="agent-task-bubble">Preparando recibos USDT verificables para domingo...</div>
+                    </div>
+                </div>
+
+                <!-- Room 8: Web Studio / Landing Page -->
+                <div class="room room-web" id="room-luna">
+                    <div class="room-sign">🌐 WEB & LANDING PAGE</div>
+                    <div class="agent-desk" data-agent-id="luna">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-luna">🎨</div>
+                            <div class="status-badge design"></div>
+                        </div>
+                        <div class="agent-name">Luna</div>
+                        <div class="agent-role">Landing Page Master</div>
+                        <div class="agent-task-bubble">Diseñando CTA directo a @GamerVerseArcadeBot...</div>
+                    </div>
+                </div>
+
+                <!-- Room 9: Backend, Supabase & Bot Server -->
+                <div class="room room-backend" id="room-dante">
+                    <div class="room-sign">⚡ SUPABASE & BOT SERVER</div>
+                    <div class="agent-desk" data-agent-id="dante">
+                        <div class="avatar-wrapper">
+                            <div class="pixel-avatar avatar-dante">💾</div>
+                            <div class="status-badge secure"></div>
+                        </div>
+                        <div class="agent-name">Dante</div>
+                        <div class="agent-role">Supabase & Bot Architect</div>
+                        <div class="agent-task-bubble">Gestionando tickets atómicos y @GamerVerseArcadeBot...</div>
+                    </div>
+                </div>
+
+                <!-- Room 10: Arcade Playroom (Real Playable Games!) -->
+                <div class="room room-arcade-zone" id="arcade-cabinet-desk">
+                    <div class="room-sign arcade-glow">🕹️ ARCADE PLAYTEST ZONE</div>
+                    <div class="arcade-cabinet-visual">
+                        <div class="cabinet-marquee">GAMERVERSE</div>
+                        <div class="cabinet-screen">
+                            <span class="screen-text">INSERT COIN<br>[CLICK TO TEST]</span>
+                        </div>
+                        <div class="cabinet-controls">🕹️ 🔴 🔵</div>
+                    </div>
+                    <div class="arcade-caption">Prueba los 3 juegos reales aquí</div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Right: Live Agent Console & Activity Feeds -->
+        <aside class="studio-sidebar">
+            
+            <!-- Active Agent Terminal Window -->
+            <div class="console-card">
+                <div class="console-header">
+                    <div class="terminal-dots">
+                        <span class="dot red"></span>
+                        <span class="dot yellow"></span>
+                        <span class="dot green"></span>
+                    </div>
+                    <div class="console-title" id="active-agent-title">Terminal: Alex (Game Dev Arcade)</div>
+                    <div class="agent-status-tag" id="active-agent-badge">ONLINE</div>
+                </div>
+
+                <div class="agent-bio-bar" id="agent-bio-bar">
+                    <div class="bio-avatar" id="bio-avatar">🚀</div>
+                    <div class="bio-text">
+                        <strong id="bio-name">Alex</strong>
+                        <span id="bio-role">Especialista en Motores Arcade 2D & GameLoop</span>
+                    </div>
+                </div>
+
+                <div class="agent-skills-bar" id="agent-skills-bar">
+                    <span class="skills-label">SKILLS:</span>
+                    <div class="skills-list" id="agent-skills-list">
+                        <!-- Dynamic skills pills -->
+                    </div>
+                </div>
+
+                <!-- Interactive Chat Box with this Agent -->
+                <div class="console-chat" id="console-chat-history">
+                    <div class="chat-msg system-msg">
+                        <span class="timestamp">[09:20:00]</span> 🟢 Sesión conectada a la estación de trabajo. Escribe una orden o selecciona una acción rápida.
+                    </div>
+                    <div class="chat-msg agent-msg">
+                        <span class="author">Alex:</span> Hola Jefe. Estoy optimizando el bucle de colisiones y enlazando la deducción de 1 ticket al pulsar 'Jugar' en <strong>AstronautRunner</strong>. ¿Qué necesitas que implemente o revise?
+                    </div>
+                </div>
+
+                <!-- Quick Action Buttons for the Active Agent -->
+                <div class="quick-actions" id="quick-actions-container">
+                    <button class="action-chip" data-cmd="status">📊 Estado de tareas</button>
+                    <button class="action-chip" data-cmd="hook-ticket">🎟️ Verificar Hook de Tickets</button>
+                    <button class="action-chip" data-cmd="audit-game">⚡ Auditar FPS & Memoria</button>
+                    <button class="action-chip" data-cmd="play-game">▶️ Abrir Astronaut Runner</button>
+                </div>
+
+                <!-- Input area for 1-on-1 chat -->
+                <form class="console-input-form" id="console-form">
+                    <input type="text" id="console-input" placeholder="Escribe una instrucción para este agente..." autocomplete="off">
+                    <button type="submit" class="btn-send">ENVIAR ↵</button>
+                </form>
+            </div>
+
+            <!-- Live Studio Activity Stream -->
+            <div class="activity-card">
+                <div class="activity-header">
+                    <span>📡 FEED DE ACTIVIDAD EN VIVO</span>
+                    <span class="live-tag">REALTIME</span>
+                </div>
+                <div class="activity-feed" id="live-activity-feed">
+                    <!-- Dynamic logs will be appended here -->
+                </div>
+            </div>
+
+        </aside>
+    </main>
+
+    <!-- Bottom: Global All-Hands Broadcast Bar (Interact with Multiple Agents at Once) -->
+    <footer class="all-hands-bar">
+        <div class="broadcast-label">
+            <span class="broadcast-icon">📢</span>
+            <div class="broadcast-text">
+                <strong>MEGÁFONO DEL CEO (ALL-HANDS)</strong>
+                <small>Envía un mensaje a toda la oficina y múltiples agentes te responderán en cadena</small>
+            </div>
+        </div>
+        <form class="broadcast-form" id="all-hands-form">
+            <input type="text" id="all-hands-input" placeholder="Ej: '¿Cómo estamos para lanzar el torneo y subir el bote este domingo?'" autocomplete="off">
+            <button type="submit" class="btn btn-primary">REUNIR EQUIPO 🚀</button>
+        </form>
+    </footer>
+
+    <!-- Modal: Interactive Arcade Playroom (Plays the real games!) -->
+    <div class="modal-backdrop" id="arcade-modal">
+        <div class="arcade-window">
+            <div class="arcade-window-header">
+                <div class="arcade-window-title">
+                    🕹️ PROBADOR DE JUEGOS GAMERVERSE (EN VIVO)
+                </div>
+                <div class="arcade-selector">
+                    <button class="game-tab active" data-game="astronaut">🚀 Astronaut Runner</button>
+                    <button class="game-tab" data-game="tropic">🌴 Tropic Escape</button>
+                    <button class="game-tab" data-game="save">👾 Save The Astronaut</button>
+                    <button class="game-tab" data-game="arrow">🧩 Arrow Escape</button>
+                    <button class="game-tab" data-game="landing">🌐 Landing Page</button>
+                </div>
+                <button class="close-modal-btn" id="close-arcade-modal">&times;</button>
+            </div>
+            <div class="arcade-window-body">
+                <div class="arcade-screen-frame">
+                    <iframe id="game-frame" src="../AstronautRunner/index.html" frameborder="0"></iframe>
+                </div>
+                <div class="arcade-hud">
+                    <div class="hud-item">🎟️ Tickets Simulados: <strong id="hud-tickets">5</strong></div>
+                    <div class="hud-item">⏱️ Duración: <strong id="hud-timer">00:00</strong></div>
+                    <div class="hud-item">🏆 Score Capturado: <strong id="hud-score">0 pts</strong></div>
+                    <div class="hud-item">🛡️ Estado Anti-Cheat: <span class="tag-pass">PASS (Firma OK)</span></div>
+                    <button class="btn btn-sm btn-action" id="hud-refresh-game">🔄 Reiniciar Partida</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: All-Hands Multi-Agent Meeting Floor -->
+    <div class="modal-backdrop" id="meeting-modal">
+        <div class="meeting-window">
+            <div class="meeting-header">
+                <div class="meeting-title">📢 SALA DE REUNIONES GENERAL (ALL-HANDS)</div>
+                <div class="meeting-meta">Preside: Fernando Goncalvez (CEO) · Asisten: 9 Agentes</div>
+                <button class="close-modal-btn" id="close-meeting-modal">&times;</button>
+            </div>
+            <div class="meeting-body" id="meeting-dialogue-thread">
+                <!-- Multi-agent replies will appear sequentially with typewriter effect -->
+            </div>
+            <div class="meeting-footer">
+                <form class="meeting-input-form" id="meeting-followup-form">
+                    <input type="text" id="meeting-input" placeholder="Pregunta algo al equipo o da una orden ejecutiva..." autocomplete="off">
+                    <button type="submit" class="btn btn-primary">DISCUTIR EN EQUIPO</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="office.js"></script>
+</body>
+</html>

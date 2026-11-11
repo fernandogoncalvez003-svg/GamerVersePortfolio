@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Astronaut Runner</string>
+    <string name="title_activity_main">Astronaut Runner</string>
+    <string name="package_name">com.fergames.astronautrunner</string>
+    <string name="custom_url_scheme">com.fergames.astronautrunner</string>
+</resources>

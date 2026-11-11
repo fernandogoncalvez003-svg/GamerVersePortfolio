@@ -1,0 +1,25 @@
+{
+  "name": "gamer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node -e \"const fs=require('fs'); ['index.html', 'gamerverse-bridge.js', 'manifest.json', 'sw.js', 'privacy-policy.html'].forEach(f => fs.copyFileSync(f, 'www/' + f));\" && npx cap sync",
+    "start": "npx -y http-server www -p 8080 -c-1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.4.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
+  }
+}

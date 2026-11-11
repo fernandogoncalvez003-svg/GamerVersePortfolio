@@ -1,0 +1,32 @@
+{
+  "name": "arrowescape",
+  "version": "1.0.0",
+  "description": "ArrowEscape: Path Puzzle - Minimalist Snake Arrow Escape Game for Android and iOS",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node -e \"const fs=require('fs'); if(!fs.existsSync('www')) fs.mkdirSync('www'); if(!fs.existsSync('www/js')) fs.mkdirSync('www/js'); ['index.html', 'manifest.json', 'sw.js', 'style.css'].forEach(f => fs.copyFileSync(f, 'www/' + f)); ['audio.js', 'solver.js', 'levels.js', 'game.js'].forEach(f => fs.copyFileSync('js/' + f, 'www/js/' + f));\"",
+    "start": "npx -y http-server www -p 8080 -c-1"
+  },
+  "keywords": [
+    "puzzle",
+    "arrow",
+    "snake",
+    "escape",
+    "casual",
+    "capacitor"
+  ],
+  "author": "GamerStudio LLC",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor-community/admob": "^8.0.0",
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.4.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "gamerverse-backend-bot",
+  "version": "1.0.0",
+  "description": "Telegram Bot & Supabase API Backend for GamerVerse Studios",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "telegraf": "^4.16.3"
+  }
+}
