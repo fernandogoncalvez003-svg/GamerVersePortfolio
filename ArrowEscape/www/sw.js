@@ -1,4 +1,4 @@
-const CACHE_NAME = 'arrow-escape-v24';
+const CACHE_NAME = 'arrow-escape-v25';
 const ASSETS = [
   './',
   './index.html',

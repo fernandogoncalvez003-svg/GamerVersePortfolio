@@ -22,8 +22,8 @@
         // Configuración centralizada de Monetag (Telegram Mini App / Web SDK)
         // Pega aquí tu Zone ID numérico de Monetag cuando lo crees, o define window.MONETAG_ZONE_ID
         monetag: {
-            zoneId: '',
-            interstitialZoneId: '',
+            zoneId: '12242572',
+            interstitialZoneId: '12242572',
             inAppStarted: false,
             loadingPromise: null
         },
