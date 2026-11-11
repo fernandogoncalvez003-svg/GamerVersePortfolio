@@ -1,4 +1,4 @@
-const CACHE_NAME = 'save-the-astronaut-v11';
+const CACHE_NAME = 'save-the-astronaut-v12';
 const ASSETS = [
   './',
   './index.html',

@@ -59,7 +59,7 @@
             } else if (this.isLocalDevEnv()) {
                 this.apiBase = 'http://localhost:3001/api';
             } else {
-                this.apiBase = '';
+                this.apiBase = 'https://gameverse307-api.onrender.com/api';
             }
             return this.apiBase;
         },
