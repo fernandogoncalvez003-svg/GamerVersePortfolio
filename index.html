@@ -430,6 +430,66 @@
       line-height: 1.5;
     }
 
+    .wallet-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .wallet-input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 11px;
+      border-radius: 11px;
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      background: rgba(5, 9, 22, 0.85);
+      color: var(--text);
+      font-size: 0.83rem;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .wallet-status {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    details.faq-item {
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 9px 11px;
+    }
+
+    details.faq-item summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--text);
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    details.faq-item summary::after {
+      content: "+";
+      color: var(--cyan);
+      font-weight: 900;
+    }
+
+    details.faq-item[open] summary::after {
+      content: "−";
+    }
+
+    details.faq-item p {
+      margin: 7px 0 2px;
+      font-size: 0.77rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
     .footer-note {
       text-align: center;
       font-size: 0.72rem;
@@ -598,13 +658,65 @@
 
     <section class="panel">
       <div class="section-title" style="margin:0;">
-        <span>📜 Reglas del Torneo</span>
+        <span>💳 Billetera de Premios (USDT)</span>
+        <span class="section-sub" id="wallet-badge">Sin configurar</span>
+      </div>
+      <p style="margin:0;font-size:0.76rem;color:var(--muted);">Guarda tu dirección USDT (TON / TRC20 / BEP20) o Binance Pay ID para recibir pagos si quedas en el Top 3.</p>
+      <div class="wallet-row">
+        <input class="wallet-input" id="wallet-input" type="text" placeholder="Ej: UQ... (TON) o Binance ID" maxlength="120" />
+        <button class="btn" id="btn-save-wallet" type="button">Guardar</button>
+      </div>
+      <div class="wallet-status" id="wallet-status"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title" style="margin:0;">
+        <span>🏅 Ganadores Recientes</span>
+      </div>
+      <div class="leaderboard-list" id="winners-list">
+        <div class="lb-row"><span class="lb-left"><span class="lb-rank">🏆</span><span class="lb-name">El primer torneo cierra el domingo 23:59 UTC</span></span><span class="lb-score">¡Compite!</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-title" style="margin:0;">
+        <span>❓ Preguntas Frecuentes (FAQ)</span>
+      </div>
+      <details class="faq-item">
+        <summary>¿Cómo consigo más Tickets (🎟️) gratis?</summary>
+        <p>Recibes <strong>3 Tickets gratis cada 24 horas</strong> al entrar al Hub. También puedes sumar <strong>+1 Ticket</strong> viendo un anuncio Monetag o <strong>+3 Tickets</strong> por cada amigo nuevo que entre con tu enlace de referido.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Cómo y cuándo se reparte el Bote Semanal en USDT?</summary>
+        <p>Cada domingo a las <strong>23:59 UTC</strong> cierra la tabla semanal y los 3 mejores puntajes se reparten el bote: <strong>60% al 1.er lugar</strong>, <strong>25% al 2.º lugar</strong> y <strong>15% al 3.er lugar</strong>.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Cómo cobro si quedo en el Top 3?</summary>
+        <p>Solo guarda tu billetera TON / USDT o Binance Pay ID arriba en la sección <strong>Billetera de Premios</strong> antes del cierre del torneo. Los premios se envían directamente sin comisiones ocultas ni depósitos previos.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Por qué a veces no me carga un anuncio al revivir o pedir tickets?</summary>
+        <p>Si tienes una VPN, DNS privado o bloqueador de anuncios activo, puede impedir la carga de anuncios. Desactívalo temporalmente y asegúrate de completar el anuncio hasta el final.</p>
+      </details>
+      <details class="faq-item">
+        <summary>¿Se permiten bots o trampas en el ranking?</summary>
+        <p>No. Cada partida se valida automáticamente en el servidor (duración, físicas y firma de sesión). Las puntuaciones anómalas o multicuentas de referidos quedan anuladas automáticamente.</p>
+      </details>
+    </section>
+
+    <section class="panel">
+      <div class="section-title" style="margin:0;">
+        <span>📜 Reglas, Términos y Privacidad</span>
       </div>
       <ul class="rules-list">
         <li>Recibes <strong>3 Tickets gratis cada 24h</strong> y <strong>+1 Ticket</strong> por anuncio Monetag.</li>
         <li>Cada partida consumida suma actividad al Bote Semanal en USDT.</li>
         <li>Los domingos a las <strong>23:59 UTC</strong> se reparte el bote (60% / 25% / 15%) y reinicia la tabla.</li>
       </ul>
+      <details class="faq-item">
+        <summary>Ver Términos del Torneo y Política de Privacidad</summary>
+        <p><strong>100% Gratuito:</strong> GameVerse 307 nunca solicita depósitos de dinero para participar ni para retirar premios. Solo guardamos tu ID numérico de Telegram, nombre público, país aproximado (para métricas de red), puntajes y la wallet que decidas registrar para pagos.</p>
+      </details>
     </section>
 
     <div class="footer-note">gameverse307.com · Portafolio Arcade Híbrido</div>
@@ -683,6 +795,16 @@
         split2El.textContent = `$${(pool * (Number(split.second || 25) / 100)).toFixed(2)}`;
         split3El.textContent = `$${(pool * (Number(split.third || 15) / 100)).toFixed(2)}`;
         countdownEl.textContent = `⏳ ${gv.jackpot?.countdown || computeClientCountdown()}`;
+
+        const savedWallet = gv.user?.walletAddress || localStorage.getItem('gv_wallet_address') || '';
+        const walletInput = document.getElementById('wallet-input');
+        const walletBadge = document.getElementById('wallet-badge');
+        if (walletInput && savedWallet && !walletInput.value) {
+          walletInput.value = savedWallet;
+        }
+        if (walletBadge) {
+          walletBadge.textContent = savedWallet ? 'Configurada ✓' : 'Sin configurar';
+        }
       }
 
       function renderLeaderboard(rows, modeLabel) {
@@ -797,6 +919,66 @@
         showToast('Invitación lista en Telegram (+3 🎟️ al unirse)');
       });
 
+      const btnSaveWallet = document.getElementById('btn-save-wallet');
+      const walletInputEl = document.getElementById('wallet-input');
+      const walletStatusEl = document.getElementById('wallet-status');
+      if (btnSaveWallet && walletInputEl) {
+        btnSaveWallet.addEventListener('click', async () => {
+          const val = walletInputEl.value.trim();
+          if (val.length < 4) {
+            walletStatusEl.textContent = 'Escribe una dirección USDT o Binance Pay ID válido.';
+            return;
+          }
+          btnSaveWallet.disabled = true;
+          localStorage.setItem('gv_wallet_address', val);
+          const gv = window.GamerVerse;
+          if (gv && gv.apiBase) {
+            try {
+              const res = await fetch(`${gv.apiBase}/user/wallet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId: gv.user?.id,
+                  walletAddress: val,
+                  initData: gv.user?.initData || ''
+                })
+              });
+              const d = await res.json();
+              if (d && d.success) {
+                gv.user.walletAddress = val;
+                walletStatusEl.textContent = '✅ Billetera guardada para pagos de premios.';
+                renderState();
+                showToast('💳 Billetera USDT guardada');
+              } else {
+                walletStatusEl.textContent = (d && d.message) || 'No se pudo guardar en el servidor.';
+              }
+            } catch (_) {
+              walletStatusEl.textContent = 'Guardada localmente (se sincronizará luego).';
+            }
+          } else {
+            walletStatusEl.textContent = '✅ Guardada localmente.';
+          }
+          btnSaveWallet.disabled = false;
+        });
+      }
+
+      async function loadRecentWinners() {
+        const gv = window.GamerVerse;
+        const el = document.getElementById('winners-list');
+        if (!el || !gv || !gv.apiBase) return;
+        try {
+          const res = await fetch(`${gv.apiBase}/winners/recent`);
+          const data = await res.json();
+          if (data && data.success && data.winners && data.winners.length) {
+            const medals = ['🥇', '🥈', '🥉'];
+            el.innerHTML = data.winners.map((w, i) => {
+              const safeName = String(w.name || 'Piloto').replace(/[<>&"]/g, '');
+              return `<div class="lb-row"><span class="lb-left"><span class="lb-rank">${medals[i] || `${w.place}.`}</span><span class="lb-name">${safeName}</span></span><span class="lb-score">Premiado</span></div>`;
+            }).join('');
+          }
+        } catch (_) {}
+      }
+
       window.addEventListener('gv-state-updated', renderState);
       window.addEventListener('message', (event) => {
         if (!event.data || !event.data.type) return;
@@ -816,6 +998,7 @@
         window.GamerVerse.init();
         renderState();
         loadLeaderboard();
+        loadRecentWinners();
       }
       setInterval(() => {
         countdownEl.textContent = `⏳ ${window.GamerVerse?.jackpot?.countdown || computeClientCountdown()}`;

@@ -233,6 +233,10 @@
                         this.saveLocalState();
                     }
                     if (typeof data.coins === 'number') this.user.coins = data.coins;
+                    if (typeof data.walletAddress === 'string') {
+                        this.user.walletAddress = data.walletAddress;
+                        if (data.walletAddress) localStorage.setItem('gv_wallet_address', data.walletAddress);
+                    }
                     if (typeof data.jackpot === 'number') this.jackpot.amount = data.jackpot;
                     if (data.countdown) this.jackpot.countdown = data.countdown;
                     if (data.tournament) this.jackpot.tournament = data.tournament;

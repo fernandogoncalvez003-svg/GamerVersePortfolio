@@ -236,7 +236,7 @@ async function getAdminStats() {
         const [{ data: users }, { data: peakRow }, { data: jackpotRows }] = await Promise.all([
             supabase
                 .from('users')
-                .select('id, username, first_name, tickets, referral_count, country_code, tier, active_game, last_seen_at, created_at')
+                .select('id, username, first_name, tickets, referral_count, country_code, tier, active_game, wallet_address, last_seen_at, created_at')
                 .order('last_seen_at', { ascending: false, nullsFirst: false })
                 .limit(5000),
             supabase.from('platform_metrics').select('peak_concurrent, peak_concurrent_at').eq('id', 1).maybeSingle(),
@@ -499,6 +499,23 @@ bot.command('admin', async (ctx) => {
     }
 });
 
+const FAQ_TEXT =
+    `❓ *PREGUNTAS FRECUENTES — GAMEVERSE 307*\n\n` +
+    `🎟️ *¿Cómo consigo Tickets?*\n` +
+    `Recibes *3 Tickets gratis cada 24 horas*, *+1 Ticket* por anuncio visto y *+3 Tickets* por cada amigo que entre con tu enlace.\n\n` +
+    `🏆 *¿Cómo y cuándo se paga el Bote Semanal?*\n` +
+    `Cada domingo a las *23:59 UTC* cierra la tabla y el bote en USDT se reparte al Top 3 (*60% / 25% / 15%*).\n\n` +
+    `💳 *¿Dónde pongo mi billetera para cobrar?*\n` +
+    `Dentro del Hub encontrarás la sección *Billetera de Premios*: guarda ahí tu dirección USDT (TON / TRC20 / BEP20) o tu Binance Pay ID.\n\n` +
+    `📺 *¿No carga el anuncio?*\n` +
+    `Si usas VPN o DNS bloqueador de anuncios, desactívalo temporalmente y completa el anuncio hasta el final para recibir la recompensa.`;
+
+bot.command(['ayuda', 'help', 'faq'], (ctx) => {
+    return ctx.replyWithMarkdown(FAQ_TEXT, Markup.inlineKeyboard([
+        [Markup.button.webApp('🕹️ Abrir GameVerse 307', WEBAPP_URL)]
+    ]));
+});
+
 // ----------------------------------------------------------------------------
 // 3. REST API PARA EL FRONTEND (JUEGOS Y LOBBY)
 // ----------------------------------------------------------------------------
@@ -626,12 +643,13 @@ app.post('/api/user/sync', async (req, res) => {
     const resolvedGame = normalizeGameId(activeGame);
     let tickets = 3;
     let coins = 0;
+    let walletAddress = '';
     let dailyClaimed = false;
 
     if (supabase) {
         const { data: existing } = await supabase
             .from('users')
-            .select('id, tickets, total_coins, last_daily_claim, country_code')
+            .select('id, tickets, total_coins, last_daily_claim, country_code, wallet_address')
             .eq('id', resolvedId)
             .maybeSingle();
 
@@ -650,14 +668,16 @@ app.post('/api/user/sync', async (req, res) => {
                     last_seen_at: nowIso,
                     last_daily_claim: nowIso
                 })
-                .select('tickets, total_coins')
+                .select('tickets, total_coins, wallet_address')
                 .single();
             tickets = inserted ? inserted.tickets : 3;
             coins = inserted ? inserted.total_coins : 0;
+            walletAddress = (inserted && inserted.wallet_address) || '';
             dailyClaimed = true;
         } else {
             tickets = existing.tickets;
             coins = existing.total_coins;
+            walletAddress = existing.wallet_address || '';
             const lastClaim = existing.last_daily_claim ? new Date(existing.last_daily_claim).getTime() : 0;
             const hoursSince = (now.getTime() - lastClaim) / 3600000;
             const patch = {
@@ -703,11 +723,62 @@ app.post('/api/user/sync', async (req, res) => {
         userId: resolvedId,
         tickets,
         coins,
+        walletAddress,
         dailyClaimed,
         jackpot,
         countdown: getJackpotCountdown(activeTournament && activeTournament.end_date),
         tournament: activeTournament
     });
+});
+
+// Endpoint: Guardar Wallet USDT / Binance Pay ID del jugador
+app.post('/api/user/wallet', async (req, res) => {
+    const { userId, walletAddress, initData } = req.body || {};
+    let resolvedId = parseInt(userId, 10);
+    if (initData && hasRealBotToken) {
+        const verified = verifyTelegramWebAppData(initData, BOT_TOKEN);
+        if (!verified) return res.status(401).json({ success: false, message: 'initData inválido' });
+        resolvedId = verified.id;
+    }
+    const cleanWallet = String(walletAddress || '').trim().slice(0, 120);
+    if (!resolvedId || isNaN(resolvedId) || cleanWallet.length < 4) {
+        return res.status(400).json({ success: false, message: 'Ingresa una dirección o Binance Pay ID válido.' });
+    }
+    if (supabase) {
+        const { error } = await supabase
+            .from('users')
+            .update({ wallet_address: cleanWallet, updated_at: new Date().toISOString() })
+            .eq('id', resolvedId);
+        if (error) return res.status(500).json({ success: false, message: error.message });
+    } else {
+        const u = memoryDB.users.get(resolvedId) || { id: resolvedId, tickets: 3, coins: 0 };
+        u.wallet_address = cleanWallet;
+        memoryDB.users.set(resolvedId, u);
+    }
+    return res.json({ success: true, walletAddress: cleanWallet });
+});
+
+// Endpoint: Últimos ganadores registrados
+app.get('/api/winners/recent', async (req, res) => {
+    if (!supabase) return res.json({ success: true, tournament: null, winners: [] });
+    const { data: closed } = await supabase
+        .from('jackpots')
+        .select('title, week_identifier, dynamic_pool, winner_1_id, winner_2_id, winner_3_id, end_date')
+        .eq('is_active', false)
+        .order('end_date', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+    if (!closed) return res.json({ success: true, tournament: null, winners: [] });
+    const ids = [closed.winner_1_id, closed.winner_2_id, closed.winner_3_id].filter(Boolean);
+    let winners = [];
+    if (ids.length) {
+        const { data: users } = await supabase.from('users').select('id, username, first_name').in('id', ids);
+        const byId = new Map((users || []).map((u) => [u.id, u.username || u.first_name || `Piloto_${String(u.id).slice(-4)}`]));
+        winners = [closed.winner_1_id, closed.winner_2_id, closed.winner_3_id]
+            .map((id, idx) => id ? { place: idx + 1, name: byId.get(id) || `Piloto_${String(id).slice(-4)}` } : null)
+            .filter(Boolean);
+    }
+    return res.json({ success: true, tournament: closed, winners });
 });
 
 // Endpoint: Latido de presencia en vivo (conectados actuales, juego activo y pico histórico)
