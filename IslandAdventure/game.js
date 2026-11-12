@@ -684,12 +684,17 @@ class TropicEscapeGame {
 
     watchAdToRevive() {
         const btn = document.getElementById('btn-revive');
-        btn.innerText = '⏳ CARGANDO ANUNCIO...';
-        btn.disabled = true;
+        const origText = btn ? btn.innerText : '';
+        if (btn) {
+            btn.innerText = '⏳ CARGANDO ANUNCIO...';
+            btn.disabled = true;
+        }
 
-        setTimeout(() => {
-            btn.innerText = '🎬 REVIVIR CON HOVER-SURF (1 AD)';
-            btn.disabled = false;
+        const proceedRevive = () => {
+            if (btn) {
+                btn.innerText = origText || '🎬 REVIVIR CON HOVER-SURF (1 AD)';
+                btn.disabled = false;
+            }
 
             this.hasRevived = true;
             this.state = 'PLAYING';
@@ -709,7 +714,21 @@ class TropicEscapeGame {
             this.addFloatingText(this.player.x, this.player.y - 30, '🏄‍♂️ ¡REVIVIDO CON ESCUDO!', '#1dd1a1');
             playSound('powerup');
             startTropicalBeat();
-        }, 1200);
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+            window.GamerVerse.showRewardedAd(
+                proceedRevive,
+                () => {
+                    if (btn) {
+                        btn.innerText = origText;
+                        btn.disabled = false;
+                    }
+                }
+            );
+        } else {
+            setTimeout(proceedRevive, 1000);
+        }
     }
 
     // ========================================================================

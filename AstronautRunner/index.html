@@ -1128,14 +1128,16 @@
             showInterstitialAd(callback) {
                 if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
                     window.GamerVerse.showInterstitialAd(callback);
-                } else if (callback) {
+                } else if (typeof callback === 'function') {
                     callback();
                 }
             },
             showRewardedAd(onRewardedSuccess, onRewardFail) {
                 if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
                     window.GamerVerse.showRewardedAd(onRewardedSuccess, onRewardFail);
-                } else if (onRewardFail) {
+                } else if (typeof onRewardedSuccess === 'function') {
+                    onRewardedSuccess();
+                } else if (typeof onRewardFail === 'function') {
                     onRewardFail('bridge_unavailable');
                 }
             }
@@ -2993,43 +2995,92 @@
         }
 
         function watchAdToRevive() {
+            if (hasRevivedThisGame) return;
             playSound('click');
-            MonetagBridge.showRewardedAd(() => {
-                hasRevivedThisGame = true;
-                document.getElementById('gameover-screen').classList.add('hidden');
-                
-                // Configurar re-entrada
-                gameState = STATE.PLAYING;
-                player.shieldActive = true;
-                player.shieldTime = Date.now() + 3000; // Escudo por 3s al revivir
-                
-                obstacles = []; // Limpiar amenazas
-                items = [];
-                shootTimer = 0;
-                lastTime = performance.now();
-                document.getElementById('hud').style.opacity = '1';
+            const reviveBtn = document.getElementById('reviveBtn');
+            const originalText = reviveBtn ? reviveBtn.innerText : '';
+            if (reviveBtn) {
+                reviveBtn.disabled = true;
+                reviveBtn.style.opacity = '0.6';
+                reviveBtn.innerText = 'Cargando...';
+            }
 
-                playSound('jump');
-                requestAnimationFrame(gameLoop);
-            });
+            MonetagBridge.showRewardedAd(
+                () => {
+                    hasRevivedThisGame = true;
+                    if (reviveBtn) {
+                        reviveBtn.classList.add('hidden');
+                        reviveBtn.disabled = false;
+                        reviveBtn.style.opacity = '1';
+                        reviveBtn.innerText = originalText;
+                    }
+                    document.getElementById('gameover-screen').classList.add('hidden');
+                    document.getElementById('pauseBtn').classList.remove('hidden');
+                    document.getElementById('hud').style.opacity = '1';
+                    
+                    // Configurar re-entrada segura y reactivación
+                    gameState = STATE.PLAYING;
+                    player.state = 'running';
+                    player.stateTimer = 0;
+                    player.shieldActive = true;
+                    player.shieldTime = Date.now() + 3500; // Escudo protector por 3.5s al revivir
+                    
+                    // Limpiar amenazas cercanas para evitar muerte inmediata al reanudar
+                    obstacles = [];
+                    items = [];
+                    shootTimer = 0;
+                    lastTime = performance.now();
+
+                    playSound('jump');
+                    requestAnimationFrame(gameLoop);
+                },
+                (err) => {
+                    console.warn('No se pudo completar el anuncio de revivir:', err);
+                    if (reviveBtn) {
+                        reviveBtn.disabled = false;
+                        reviveBtn.style.opacity = '1';
+                        reviveBtn.innerText = originalText || '📺 REVIVIR (1 ANUNCIO)';
+                    }
+                }
+            );
         }
 
         function watchAdToDoubleCoins() {
             if (hasDoubleCoinsThisGame) return;
             playSound('click');
-            MonetagBridge.showRewardedAd(() => {
-                hasDoubleCoinsThisGame = true;
-                totalCoins += coins; // Sumar las monedas otra vez
-                localStorage.setItem('totalCoins', totalCoins);
-                document.getElementById('totalCoinsVal').innerText = totalCoins;
-                document.getElementById('totalCoinsOver').innerText = totalCoins;
-
-                const doubleBtn = document.getElementById('doubleCoinsBtn');
-                doubleBtn.innerText = TRANSLATIONS[currentLanguage].double_coins_done;
+            const doubleBtn = document.getElementById('doubleCoinsBtn');
+            const originalText = doubleBtn ? doubleBtn.innerText : '';
+            if (doubleBtn) {
                 doubleBtn.disabled = true;
-                doubleBtn.style.background = "#ffd32a";
-                playSound('coin');
-            });
+                doubleBtn.style.opacity = '0.6';
+                doubleBtn.innerText = 'Cargando...';
+            }
+
+            MonetagBridge.showRewardedAd(
+                () => {
+                    hasDoubleCoinsThisGame = true;
+                    totalCoins += coins; // Sumar las monedas otra vez
+                    localStorage.setItem('totalCoins', totalCoins);
+                    document.getElementById('totalCoinsVal').innerText = totalCoins;
+                    document.getElementById('totalCoinsOver').innerText = totalCoins;
+
+                    if (doubleBtn) {
+                        doubleBtn.innerText = (TRANSLATIONS[currentLanguage] && TRANSLATIONS[currentLanguage].double_coins_done) || '✅ DUPLICADAS';
+                        doubleBtn.disabled = true;
+                        doubleBtn.style.opacity = '1';
+                        doubleBtn.style.background = "#ffd32a";
+                    }
+                    playSound('coin');
+                },
+                (err) => {
+                    console.warn('No se pudo duplicar monedas por ad:', err);
+                    if (doubleBtn) {
+                        doubleBtn.disabled = false;
+                        doubleBtn.style.opacity = '1';
+                        doubleBtn.innerText = originalText || '📺 DUPLICAR MONEDAS (+2x)';
+                    }
+                }
+            );
         }
 
         function shareHighScore() {

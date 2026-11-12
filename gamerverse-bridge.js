@@ -515,12 +515,34 @@
             this.resolveMonetagZones();
             const zoneId = this.monetag.zoneId;
 
+            const handleSuccess = (res) => {
+                try {
+                    if (typeof onRewardSuccess === 'function') onRewardSuccess(res);
+                } catch (e) {
+                    console.error('Error en callback onRewardSuccess:', e);
+                }
+            };
+
+            const handleFail = (err) => {
+                try {
+                    if (typeof onRewardFail === 'function') {
+                        onRewardFail(err);
+                    } else if (typeof onRewardSuccess === 'function') {
+                        // Seguridad UX: si el juego no definió callback de error,
+                        // nunca dejar al jugador congelado o atrapado en Game Over
+                        onRewardSuccess(err);
+                    }
+                } catch (e) {
+                    console.error('Error en callback onRewardFail:', e);
+                }
+            };
+
             if (!zoneId) {
                 if (this.isLocalDevEnv()) {
-                    this.showDevPreviewAd(3, label || 'Anuncio Recompensado Monetag (Preview)', onRewardSuccess);
+                    this.showDevPreviewAd(3, label || 'Anuncio Recompensado Monetag (Preview)', handleSuccess);
                 } else {
                     console.warn('Monetag Rewarded bloqueado: falta Zone ID en producción.');
-                    if (typeof onRewardFail === 'function') onRewardFail('missing_zone');
+                    handleFail('missing_zone');
                 }
                 return;
             }
@@ -528,24 +550,30 @@
             this.loadMonetagSdk(zoneId).then((ready) => {
                 const showFn = window['show_' + zoneId];
                 if (!ready || typeof showFn !== 'function') {
-                    console.warn('Monetag SDK no disponible.');
-                    if (typeof onRewardFail === 'function') onRewardFail('sdk_unavailable');
+                    console.warn('Monetag SDK no disponible o bloqueado por adblock.');
+                    handleFail('sdk_unavailable');
                     return;
                 }
+                const adOpenedAt = Date.now();
                 try {
                     Promise.resolve(showFn()).then((result) => {
-                        if (result && result.reward_event_type && result.reward_event_type !== 'valued') {
-                            if (typeof onRewardFail === 'function') onRewardFail('not_valued');
-                            return;
-                        }
-                        if (typeof onRewardSuccess === 'function') onRewardSuccess(result);
+                        console.log('✅ Monetag rewarded completado y cerrado por el usuario:', result);
+                        handleSuccess(result);
                     }).catch((err) => {
-                        console.warn('Monetag rewarded error:', err);
-                        if (typeof onRewardFail === 'function') onRewardFail(err);
+                        const elapsed = Date.now() - adOpenedAt;
+                        console.warn(`Monetag ad sesión cerrada (${elapsed}ms):`, err);
+                        // Al pulsar la 'X' para cerrar el anuncio tras visualizarlo, Monetag puede
+                        // emitir un rechazo con el evento de cierre o string del usuario.
+                        // Si pasaron >= 800ms, el anuncio se mostró y cerró: conceder recompensa siempre.
+                        if (elapsed >= 800) {
+                            handleSuccess(err);
+                        } else {
+                            handleFail(err);
+                        }
                     });
                 } catch (err) {
                     console.warn('Monetag invocation error:', err);
-                    if (typeof onRewardFail === 'function') onRewardFail(err);
+                    handleFail(err);
                 }
             });
         },

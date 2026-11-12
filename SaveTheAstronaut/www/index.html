@@ -5044,6 +5044,8 @@
             // Eliminar meteoritos cercanos a la pantalla para dar espacio
             obstacles = [];
             hasRevivedThisGame = true;
+            const reviveBtn = document.getElementById('reviveBtn');
+            if (reviveBtn) reviveBtn.classList.add('hidden');
             if (boss) boss.lastShoot = 0;
 
             spawnFloatingText(player.x, player.y - 60, '🛡️ ¡TRAJE RESTAURADO + ESCUDO!', '#00f0ff', 14);

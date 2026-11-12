@@ -84,6 +84,9 @@
             if (p.includes('savetheastronaut')) return 'save_the_astronaut';
             if (p.includes('astronautrunner')) return 'astronaut_runner';
             if (p.includes('arrowescape')) return 'arrow_escape';
+            if (p.includes('cosmicblocks')) return 'cosmic_blocks';
+            if (p.includes('cosmichexagon')) return 'cosmic_hexagon';
+            if (p.includes('planethit')) return 'planet_hit';
             return 'hub';
         },
 
@@ -120,7 +123,7 @@
         },
 
         sendHeartbeat: function () {
-            if (!this.apiBase || !this.user.id) return Promise.resolve(null);
+            if (!this.apiBase || !this.user.id || !this.user.initData) return Promise.resolve(null);
             return fetch(`${this.apiBase}/presence/heartbeat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -228,7 +231,7 @@
             .then(r => r.json())
             .then(data => {
                 if (data && data.success) {
-                    if (typeof data.tickets === 'number') {
+                    if (!data.guest && typeof data.tickets === 'number') {
                         this.user.tickets = data.tickets;
                         this.saveLocalState();
                     }
@@ -277,12 +280,12 @@
                     }, '*');
                 }
 
-                // Sincronizar en segundo plano con el backend
-                if (this.apiBase) {
+                // Sincronizar en segundo plano con el backend (solo usuarios autenticados de Telegram)
+                if (this.apiBase && this.user.initData) {
                     fetch(`${this.apiBase}/ticket/consume`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: this.user.id })
+                        body: JSON.stringify({ userId: this.user.id, initData: this.user.initData })
                     }).catch(() => { /* offline fallback */ });
                 }
                 this.notifyStateUpdated();
@@ -305,12 +308,12 @@
                 }, '*');
             }
 
-            // Sincronizar con el backend y alimentar el Bote
-            if (this.apiBase) {
+            // Sincronizar con el backend y alimentar el Bote (solo usuarios autenticados de Telegram)
+            if (this.apiBase && this.user.initData) {
                 fetch(`${this.apiBase}/ticket/ad-reward`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: this.user.id })
+                    body: JSON.stringify({ userId: this.user.id, initData: this.user.initData })
                 }).then(r => r.json()).then(d => {
                     if (d && typeof d.current_jackpot === 'number') {
                         this.jackpot.amount = d.current_jackpot;
@@ -342,6 +345,7 @@
 
             const payload = {
                 userId: this.user.id,
+                initData: this.user.initData || '',
                 gameId: gameId || 'astronaut_runner',
                 score: distance,
                 coins: coins || 0,
@@ -359,8 +363,8 @@
                 }, '*');
             }
 
-            // Enviar a la base de datos (Supabase / Backend)
-            if (this.apiBase) {
+            // Enviar a la base de datos (solo usuarios autenticados de Telegram)
+            if (this.apiBase && this.user.initData) {
                 fetch(`${this.apiBase}/score/submit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -441,28 +445,7 @@
                 }
                 return Promise.resolve(false);
             }
-            return this.loadMonetagSdk(zoneId).then((ready) => {
-                let isTopWindow = true;
-                try { isTopWindow = (window.top === window); } catch (_) {}
-                if (ready && isTopWindow && !this.monetag.inAppStarted) {
-                    const interZone = this.monetag.interstitialZoneId || zoneId;
-                    const fn = window['show_' + interZone];
-                    if (typeof fn === 'function') {
-                        this.monetag.inAppStarted = true;
-                        fn({
-                            type: 'inApp',
-                            inAppSettings: {
-                                frequency: 2,
-                                capping: 0.1,
-                                interval: 45,
-                                timeout: 10,
-                                everyPage: false
-                            }
-                        }).catch(() => {});
-                    }
-                }
-                return ready;
-            });
+            return this.loadMonetagSdk(zoneId).then((ready) => ready);
         },
 
         loadMonetagSdk: function (zoneId) {
@@ -532,12 +515,34 @@
             this.resolveMonetagZones();
             const zoneId = this.monetag.zoneId;
 
+            const handleSuccess = (res) => {
+                try {
+                    if (typeof onRewardSuccess === 'function') onRewardSuccess(res);
+                } catch (e) {
+                    console.error('Error en callback onRewardSuccess:', e);
+                }
+            };
+
+            const handleFail = (err) => {
+                try {
+                    if (typeof onRewardFail === 'function') {
+                        onRewardFail(err);
+                    } else if (typeof onRewardSuccess === 'function') {
+                        // Seguridad UX: si el juego no definió callback de error,
+                        // nunca dejar al jugador congelado o atrapado en Game Over
+                        onRewardSuccess(err);
+                    }
+                } catch (e) {
+                    console.error('Error en callback onRewardFail:', e);
+                }
+            };
+
             if (!zoneId) {
                 if (this.isLocalDevEnv()) {
-                    this.showDevPreviewAd(3, label || 'Anuncio Recompensado Monetag (Preview)', onRewardSuccess);
+                    this.showDevPreviewAd(3, label || 'Anuncio Recompensado Monetag (Preview)', handleSuccess);
                 } else {
                     console.warn('Monetag Rewarded bloqueado: falta Zone ID en producción.');
-                    if (typeof onRewardFail === 'function') onRewardFail('missing_zone');
+                    handleFail('missing_zone');
                 }
                 return;
             }
@@ -545,24 +550,30 @@
             this.loadMonetagSdk(zoneId).then((ready) => {
                 const showFn = window['show_' + zoneId];
                 if (!ready || typeof showFn !== 'function') {
-                    console.warn('Monetag SDK no disponible.');
-                    if (typeof onRewardFail === 'function') onRewardFail('sdk_unavailable');
+                    console.warn('Monetag SDK no disponible o bloqueado por adblock.');
+                    handleFail('sdk_unavailable');
                     return;
                 }
+                const adOpenedAt = Date.now();
                 try {
                     Promise.resolve(showFn()).then((result) => {
-                        if (result && result.reward_event_type && result.reward_event_type !== 'valued') {
-                            if (typeof onRewardFail === 'function') onRewardFail('not_valued');
-                            return;
-                        }
-                        if (typeof onRewardSuccess === 'function') onRewardSuccess(result);
+                        console.log('✅ Monetag rewarded completado y cerrado por el usuario:', result);
+                        handleSuccess(result);
                     }).catch((err) => {
-                        console.warn('Monetag rewarded error:', err);
-                        if (typeof onRewardFail === 'function') onRewardFail(err);
+                        const elapsed = Date.now() - adOpenedAt;
+                        console.warn(`Monetag ad sesión cerrada (${elapsed}ms):`, err);
+                        // Al pulsar la 'X' para cerrar el anuncio tras visualizarlo, Monetag puede
+                        // emitir un rechazo con el evento de cierre o string del usuario.
+                        // Si pasaron >= 800ms, el anuncio se mostró y cerró: conceder recompensa siempre.
+                        if (elapsed >= 800) {
+                            handleSuccess(err);
+                        } else {
+                            handleFail(err);
+                        }
                     });
                 } catch (err) {
                     console.warn('Monetag invocation error:', err);
-                    if (typeof onRewardFail === 'function') onRewardFail(err);
+                    handleFail(err);
                 }
             });
         },
