@@ -634,6 +634,19 @@
         </div>
         <button class="btn play-btn" type="button" data-game="./ArrowEscape/index.html" data-title="Arrow Escape">Jugar</button>
       </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner">🧩</div>
+        <div class="game-info">
+          <h2 class="game-name">Cosmic Block Blast</h2>
+          <p class="game-desc">Tablero 10×10, combos explosivos y 150 niveles galácticos + Modo Infinito.</p>
+          <div class="game-tags">
+            <span class="tag">10×10</span>
+            <span class="tag">150 Niveles</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./CosmicBlocks/index.html" data-title="Cosmic Block Blast">Jugar</button>
+      </article>
     </section>
 
     <section class="panel">
@@ -851,6 +864,7 @@
         if (lower.includes('savetheastronaut')) return 'save_the_astronaut';
         if (lower.includes('astronautrunner')) return 'astronaut_runner';
         if (lower.includes('arrowescape')) return 'arrow_escape';
+        if (lower.includes('cosmicblocks')) return 'cosmic_blocks';
         return 'hub';
       }
 

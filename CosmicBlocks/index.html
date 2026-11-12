@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Cosmic Block Blast — 150 Niveles | GameVerse 307</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src='//libtl.com/sdk.js' data-zone='12242572' data-sdk='show_12242572'></script>
+  <script src="../SaveTheAstronaut/gamerverse-bridge.js"></script>
+  <style>
+    :root {
+      --bg-0: #050816;
+      --bg-1: #0b132b;
+      --panel: rgba(15, 23, 42, 0.88);
+      --border: rgba(56, 189, 248, 0.24);
+      --cyan: #38bdf8;
+      --purple: #a855f7;
+      --gold: #facc15;
+      --green: #22c55e;
+      --red: #ef4444;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 20% 10%, #1e1b4b 0%, var(--bg-0) 58%, #020617 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 520px;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: max(8px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+      gap: 6px;
+    }
+
+    .topbar {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 7px 10px;
+      backdrop-filter: blur(10px);
+    }
+
+    .icon-btn {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-btn:active { transform: scale(0.95); }
+
+    .level-title-wrap {
+      text-align: center;
+      min-width: 0;
+    }
+
+    .level-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--cyan);
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .level-sub {
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .hud {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .stat-box {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      border-radius: 12px;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-val {
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text);
+      margin-top: 1px;
+    }
+
+    .stat-val.gold { color: var(--gold); }
+    .stat-val.cyan { color: var(--cyan); }
+
+    .progress-wrap {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #06b6d4, #a855f7, #facc15);
+      border-radius: 999px;
+      transition: width 0.25s ease;
+    }
+
+    .board-stage {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    canvas#boardCanvas {
+      display: block;
+      border-radius: 16px;
+      background: rgba(8, 15, 34, 0.92);
+      border: 1.5px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55), inset 0 0 28px rgba(56, 189, 248, 0.08);
+    }
+
+    .combo-banner {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.95), rgba(56, 189, 248, 0.95));
+      color: #fff;
+      font-weight: 900;
+      font-size: 15px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45);
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    .combo-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) scale(1);
+    }
+
+    .tray-bar {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .power-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .power-btn {
+      flex: 1;
+      background: rgba(30, 41, 59, 0.92);
+      border: 1px solid rgba(56, 189, 248, 0.26);
+      color: var(--text);
+      border-radius: 11px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .power-btn.ad {
+      border-color: rgba(250, 204, 21, 0.45);
+      color: var(--gold);
+    }
+
+    .power-btn:active { transform: scale(0.97); }
+
+    .tray {
+      width: 100%;
+      height: 98px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      padding: 6px;
+      align-items: center;
+      justify-items: center;
+    }
+
+    .piece-slot {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.55);
+      cursor: grab;
+      position: relative;
+    }
+
+    .piece-slot.used {
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .piece-slot.unplayable {
+      opacity: 0.42;
+    }
+
+    .piece-slot canvas {
+      pointer-events: none;
+    }
+
+    .drag-ghost {
+      position: fixed;
+      pointer-events: none;
+      z-index: 999;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.65));
+      display: none;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.84);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: 100%;
+      max-width: 420px;
+      max-height: 86dvh;
+      overflow-y: auto;
+      background: #0f172a;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 20px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.7);
+      touch-action: pan-y;
+    }
+
+    .modal h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .modal p {
+      margin: 0 0 14px;
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .btn-primary, .btn-gold, .btn-secondary {
+      width: 100%;
+      border: none;
+      border-radius: 13px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4, #6366f1);
+      color: #fff;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #facc15, #f97316);
+      color: #0f172a;
+    }
+
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.95);
+      color: var(--text);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+      max-height: 48dvh;
+      overflow-y: auto;
+      padding-right: 2px;
+      touch-action: pan-y;
+    }
+
+    .lvl-cell {
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 2px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .lvl-cell.done {
+      border-color: rgba(34, 197, 94, 0.5);
+      background: rgba(20, 83, 45, 0.35);
+    }
+
+    .lvl-cell.current {
+      border-color: var(--cyan);
+      background: rgba(14, 116, 144, 0.45);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .lvl-cell.locked {
+      opacity: 0.38;
+      cursor: not-allowed;
+    }
+
+    .lvl-stars {
+      font-size: 9px;
+      color: var(--gold);
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="icon-btn" id="btnLevels" type="button">🗺️ <span id="topLevelNum">1</span>/150</button>
+      <div class="level-title-wrap">
+        <div class="level-badge" id="chapterLabel">Órbita Baja · Nivel 1</div>
+        <div class="level-sub" id="objectiveText">Meta: 350 pts + 2 💎</div>
+      </div>
+      <div style="display:flex;gap:5px;">
+        <button class="icon-btn" id="btnSound" type="button" aria-label="Sonido">🔊</button>
+      </div>
+    </header>
+
+    <div class="hud">
+      <div class="stat-box">
+        <div class="stat-label">Puntos</div>
+        <div class="stat-val cyan" id="scoreVal">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label" id="goalLabel">Meta</div>
+        <div class="stat-val" id="goalVal">350</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Gemas 💎</div>
+        <div class="stat-val gold" id="gemsVal">0/2</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <main class="board-stage" id="boardStage">
+      <div class="combo-banner" id="comboBanner">COMBO x2!</div>
+      <canvas id="boardCanvas"></canvas>
+    </main>
+
+    <section class="tray-bar">
+      <div class="power-row">
+        <button class="power-btn" id="btnReroll" type="button">🔄 Cambiar Piezas (Gratis: 1)</button>
+        <button class="power-btn ad" id="btnBomb" type="button">💣 Bomba 4x4 (📺 Ad)</button>
+      </div>
+      <div class="tray" id="tray">
+        <div class="piece-slot" data-slot="0"><canvas width="88" height="88"></canvas></div>
+        <div class="piece-slot" data-slot="1"><canvas width="88" height="88"></canvas></div>
+        <div class="piece-slot" data-slot="2"><canvas width="88" height="88"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <canvas class="drag-ghost" id="dragGhost"></canvas>
+
+  <!-- Modal Victoria de Nivel -->
+  <div class="modal-backdrop" id="winModal">
+    <div class="modal">
+      <div style="font-size:44px;margin-bottom:4px;">🏆</div>
+      <h2 id="winTitle">¡Nivel 1 Completado!</h2>
+      <p id="winDesc">Despejaste el sector espacial con maestría.</p>
+      <div class="hud" style="margin-bottom:12px;">
+        <div class="stat-box"><div class="stat-label">Puntos</div><div class="stat-val cyan" id="winScore">0</div></div>
+        <div class="stat-box"><div class="stat-label">Estrellas</div><div class="stat-val gold" id="winStars">⭐⭐⭐</div></div>
+        <div class="stat-box"><div class="stat-label">Récord</div><div class="stat-val" id="winBest">0</div></div>
+      </div>
+      <button class="btn-primary" id="btnNextLevel" type="button">Siguiente Nivel ➡️</button>
+      <button class="btn-secondary" id="btnReplayWin" type="button">Repetir Nivel</button>
+    </div>
+  </div>
+
+  <!-- Modal Sin Movimientos / Game Over -->
+  <div class="modal-backdrop" id="loseModal">
+    <div class="modal">
+      <div style="font-size:44px;margin-bottom:4px;">💥</div>
+      <h2>¡Tablero Bloqueado!</h2>
+      <p id="loseDesc">Ninguna de las piezas restantes cabe en el tablero 10×10.</p>
+      <div class="hud" style="margin-bottom:10px;">
+        <div class="stat-box"><div class="stat-label">Puntos</div><div class="stat-val cyan" id="loseScore">0</div></div>
+        <div class="stat-box"><div class="stat-label">Nivel</div><div class="stat-val" id="loseLevel">1</div></div>
+        <div class="stat-box"><div class="stat-label">Mejor</div><div class="stat-val gold" id="loseBest">0</div></div>
+      </div>
+      <button class="btn-gold" id="btnReviveAd" type="button">📺 Revivir (Bomba Centro 4×4)</button>
+      <button class="btn-primary" id="btnRetryLose" type="button">🔄 Reintentar (1 🎟️)</button>
+    </div>
+  </div>
+
+  <!-- Modal Selector de 150 Niveles -->
+  <div class="modal-backdrop" id="levelsModal">
+    <div class="modal">
+      <h2>🗺️ Mapa Galáctico (150 Niveles)</h2>
+      <p>Desbloqueado hasta el <b>Nivel <span id="maxLevelLabel">1</span></b>. También puedes jugar en Modo Infinito para el Bote.</p>
+      <button class="btn-gold" id="btnEndlessMode" type="button">♾️ Jugar Modo Infinito (Sin límite)</button>
+      <div class="levels-grid" id="levelsGrid"></div>
+      <button class="btn-secondary" id="btnCloseLevels" type="button">Cerrar</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const GRID = 10;
+      const TOTAL_LEVELS = 150;
+      const STORAGE_MAX_LVL = 'cb_max_level_v1';
+      const STORAGE_STARS = 'cb_stars_v1';
+      const STORAGE_BEST = 'cb_best_score_v1';
+
+      const PALETTE = [
+        { fill: '#38bdf8', glow: '#0284c7', hi: '#bae6fd' }, // Cyan
+        { fill: '#a855f7', glow: '#7e22ce', hi: '#e9d5ff' }, // Purple
+        { fill: '#f59e0b', glow: '#d97706', hi: '#fde68a' }, // Amber
+        { fill: '#22c55e', glow: '#15803d', hi: '#bbf7d0' }, // Green
+        { fill: '#ec4899', glow: '#be185d', hi: '#fbcfe8' }, // Pink
+        { fill: '#6366f1', glow: '#4338ca', hi: '#c7d2fe' }  // Indigo
+      ];
+
+      // 18 formas estilo Block Blast
+      const SHAPES = [
+        [[1]],
+        [[1, 1]],
+        [[1], [1]],
+        [[1, 1, 1]],
+        [[1], [1], [1]],
+        [[1, 1, 1, 1]],
+        [[1], [1], [1], [1]],
+        [[1, 1, 1, 1, 1]],
+        [[1], [1], [1], [1], [1]],
+        [[1, 1], [1, 1]],
+        [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
+        [[1, 0], [1, 0], [1, 1]],
+        [[0, 1], [0, 1], [1, 1]],
+        [[1, 1], [1, 0], [1, 0]],
+        [[1, 1], [0, 1], [0, 1]],
+        [[1, 1, 1], [0, 1, 0]],
+        [[1, 1, 0], [0, 1, 1]],
+        [[0, 1, 1], [1, 1, 0]]
+      ];
+
+      // PRNG determinista (Mulberry32) para que cada uno de los 150 niveles sea único y reproducible
+      function mulberry32(seed) {
+        let a = seed >>> 0;
+        return function () {
+          a |= 0; a = (a + 0x6D2B79F5) | 0;
+          let t = Math.imul(a ^ (a >>> 15), 1 | a);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function getChapterName(lvl) {
+        if (lvl <= 25) return 'Órbita Baja';
+        if (lvl <= 50) return 'Cinturón Asteroides';
+        if (lvl <= 85) return 'Nebulosa Dorada';
+        if (lvl <= 120) return 'Agujero de Gusano';
+        return 'Sector Alfa';
+      }
+
+      function generateLevelConfig(lvl) {
+        const rand = mulberry32(lvl * 7919 + 307);
+        const grid = Array.from({ length: GRID }, () => Array(GRID).fill(null));
+        const targetScore = 300 + lvl * 24;
+        const targetGems = Math.min(12, 2 + Math.floor(lvl / 14));
+        const prefillCount = Math.min(28, 4 + Math.floor(lvl * 0.16));
+        const useArmor = lvl >= 45;
+
+        // Colocar obstáculos simétricos o en islas dejando espacio jugable
+        let placed = 0;
+        let guard = 0;
+        while (placed < prefillCount && guard < 300) {
+          guard++;
+          const r = Math.floor(rand() * GRID);
+          const c = Math.floor(rand() * GRID);
+          // Evitar llenar una fila/columna entera desde el inicio
+          const rowCount = grid[r].filter(Boolean).length;
+          if (grid[r][c] || rowCount >= 5) continue;
+          const colorIdx = Math.floor(rand() * PALETTE.length);
+          const armor = (useArmor && rand() < 0.25) ? 2 : 1;
+          grid[r][c] = { colorIdx, gem: false, armor };
+          placed++;
+
+          if (placed < prefillCount && rand() < 0.65) {
+            const mc = GRID - 1 - c;
+            if (!grid[r][mc] && grid[r].filter(Boolean).length < 5) {
+              grid[r][mc] = { colorIdx, gem: false, armor };
+              placed++;
+            }
+          }
+        }
+
+        // Insertar gemas objetivo
+        let gemsPlaced = 0;
+        guard = 0;
+        while (gemsPlaced < targetGems && guard < 300) {
+          guard++;
+          const r = Math.floor(rand() * GRID);
+          const c = Math.floor(rand() * GRID);
+          if (grid[r][c] && !grid[r][c].gem) {
+            grid[r][c].gem = true;
+            gemsPlaced++;
+          } else if (!grid[r][c] && grid[r].filter(Boolean).length < 6) {
+            grid[r][c] = { colorIdx: Math.floor(rand() * PALETTE.length), gem: true, armor: 1 };
+            gemsPlaced++;
+          }
+        }
+
+        return { lvl, grid, targetScore, targetGems };
+      }
+
+      // Audio sintético ligero
+      const Sound = {
+        enabled: true,
+        ctx: null,
+        init() {
+          if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        },
+        beep(freq, dur, type = 'sine', vol = 0.08) {
+          if (!this.enabled) return;
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + dur);
+        },
+        place() { this.beep(320, 0.08, 'triangle', 0.09); },
+        clear(combo) {
+          this.beep(480 + combo * 90, 0.16, 'sine', 0.12);
+          setTimeout(() => this.beep(660 + combo * 110, 0.18, 'triangle', 0.1), 60);
+        },
+        win() {
+          [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => this.beep(f, 0.18, 'triangle', 0.1), i * 85));
+        },
+        lose() {
+          [260, 210, 150].forEach((f, i) => setTimeout(() => this.beep(f, 0.2, 'sawtooth', 0.07), i * 110));
+        }
+      };
+
+      const state = {
+        mode: 'level', // 'level' | 'endless'
+        level: Math.min(TOTAL_LEVELS, Math.max(1, parseInt(localStorage.getItem(STORAGE_MAX_LVL) || '1', 10))),
+        maxLevel: Math.min(TOTAL_LEVELS, Math.max(1, parseInt(localStorage.getItem(STORAGE_MAX_LVL) || '1', 10))),
+        starsMap: JSON.parse(localStorage.getItem(STORAGE_STARS) || '{}'),
+        bestScore: parseInt(localStorage.getItem(STORAGE_BEST) || '0', 10),
+        board: [],
+        tray: [null, null, null],
+        score: 0,
+        targetScore: 350,
+        gemsCollected: 0,
+        targetGems: 2,
+        combo: 0,
+        freeRerolls: 1,
+        revivedOnce: false,
+        finished: false,
+        particles: [],
+        hoverCell: null,
+        dragging: null,
+        boardSizePx: 320,
+        cellPx: 32
+      };
+
+      const canvas = document.getElementById('boardCanvas');
+      const ctx = canvas.getContext('2d');
+      const dragGhost = document.getElementById('dragGhost');
+      const ghostCtx = dragGhost.getContext('2d');
+      const slotEls = Array.from(document.querySelectorAll('.piece-slot'));
+
+      function resizeBoard() {
+        const stage = document.getElementById('boardStage');
+        const availW = stage.clientWidth - 8;
+        const availH = stage.clientHeight - 8;
+        const size = Math.max(240, Math.min(availW, availH, 460));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        state.boardSizePx = Math.floor(size);
+        state.cellPx = state.boardSizePx / GRID;
+        canvas.style.width = `${state.boardSizePx}px`;
+        canvas.style.height = `${state.boardSizePx}px`;
+        canvas.width = Math.floor(state.boardSizePx * dpr);
+        canvas.height = Math.floor(state.boardSizePx * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawBoard();
+      }
+
+      function createPiece() {
+        const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        const colorIdx = Math.floor(Math.random() * PALETTE.length);
+        return { shape, colorIdx, used: false };
+      }
+
+      function dealTray() {
+        state.tray = [createPiece(), createPiece(), createPiece()];
+        // Garantizar que al menos 1 pieza quepa al repartir para evitar frustración injusta
+        if (!state.tray.some(p => canPlaceAnywhere(p.shape))) {
+          const small = [[[1]], [[1, 1]], [[1], [1]], [[1, 1], [1, 1]]];
+          for (const s of small) {
+            if (canPlaceAnywhere(s)) {
+              state.tray[0] = { shape: s, colorIdx: Math.floor(Math.random() * PALETTE.length), used: false };
+              break;
+            }
+          }
+        }
+        renderTray();
+      }
+
+      function canPlaceAt(shape, row, col) {
+        for (let r = 0; r < shape.length; r++) {
+          for (let c = 0; c < shape[0].length; c++) {
+            if (!shape[r][c]) continue;
+            const nr = row + r;
+            const nc = col + c;
+            if (nr < 0 || nr >= GRID || nc < 0 || nc >= GRID) return false;
+            if (state.board[nr][nc]) return false;
+          }
+        }
+        return true;
+      }
+
+      function canPlaceAnywhere(shape) {
+        for (let r = 0; r < GRID; r++) {
+          for (let c = 0; c < GRID; c++) {
+            if (canPlaceAt(shape, r, c)) return true;
+          }
+        }
+        return false;
+      }
+
+      function startLevel(lvl, mode = 'level') {
+        state.mode = mode;
+        state.level = lvl;
+        state.score = 0;
+        state.gemsCollected = 0;
+        state.combo = 0;
+        state.freeRerolls = 1;
+        state.revivedOnce = false;
+        state.finished = false;
+        state.particles = [];
+
+        if (mode === 'endless') {
+          state.board = Array.from({ length: GRID }, () => Array(GRID).fill(null));
+          state.targetScore = 0;
+          state.targetGems = 0;
+        } else {
+          const cfg = generateLevelConfig(lvl);
+          state.board = cfg.grid;
+          state.targetScore = cfg.targetScore;
+          state.targetGems = cfg.targetGems;
+        }
+
+        if (window.GamerVerse) {
+          window.GamerVerse.startSession();
+          window.GamerVerse.setActiveGame('cosmic_blocks');
+        }
+
+        closeAllModals();
+        dealTray();
+        updateHUD();
+        drawBoard();
+      }
+
+      function updateHUD() {
+        document.getElementById('topLevelNum').textContent = state.mode === 'endless' ? '♾️' : state.level;
+        document.getElementById('chapterLabel').textContent = state.mode === 'endless'
+          ? 'Modo Infinito · Bote Semanal'
+          : `${getChapterName(state.level)} · Nivel ${state.level}`;
+        document.getElementById('objectiveText').textContent = state.mode === 'endless'
+          ? `Récord personal: ${state.bestScore} pts`
+          : `Meta: ${state.targetScore} pts y ${state.targetGems} 💎`;
+
+        document.getElementById('scoreVal').textContent = state.score;
+        document.getElementById('goalLabel').textContent = state.mode === 'endless' ? 'Récord' : 'Meta';
+        document.getElementById('goalVal').textContent = state.mode === 'endless' ? state.bestScore : state.targetScore;
+        document.getElementById('gemsVal').textContent = state.mode === 'endless'
+          ? `${state.gemsCollected}`
+          : `${Math.min(state.gemsCollected, state.targetGems)}/${state.targetGems}`;
+
+        const pct = state.mode === 'endless'
+          ? Math.min(100, (state.score / Math.max(500, state.bestScore || 1000)) * 100)
+          : Math.min(100, (
+              (Math.min(1, state.score / state.targetScore) * 0.6) +
+              (Math.min(1, state.gemsCollected / Math.max(1, state.targetGems)) * 0.4)
+            ) * 100);
+        document.getElementById('progressFill').style.width = `${pct.toFixed(1)}%`;
+
+        const rerollBtn = document.getElementById('btnReroll');
+        rerollBtn.textContent = state.freeRerolls > 0
+          ? `🔄 Cambiar Piezas (Gratis: ${state.freeRerolls})`
+          : '🔄 Cambiar Piezas (📺 Ad)';
+      }
+
+      function drawCellBlock(cCtx, x, y, size, colorIdx, isGem, armor, alpha = 1) {
+        const pal = PALETTE[colorIdx % PALETTE.length];
+        const pad = 2;
+        const r = Math.max(3, size * 0.18);
+        const bx = x + pad;
+        const by = y + pad;
+        const bw = size - pad * 2;
+        const bh = size - pad * 2;
+
+        cCtx.save();
+        cCtx.globalAlpha = alpha;
+        cCtx.fillStyle = pal.fill;
+        roundRect(cCtx, bx, by, bw, bh, r);
+        cCtx.fill();
+
+        // Brillo superior
+        cCtx.fillStyle = pal.hi;
+        cCtx.globalAlpha = alpha * 0.32;
+        roundRect(cCtx, bx + 2, by + 2, bw - 4, Math.max(3, bh * 0.34), Math.max(2, r - 2));
+        cCtx.fill();
+
+        cCtx.globalAlpha = alpha;
+        if (armor > 1) {
+          cCtx.strokeStyle = '#e2e8f0';
+          cCtx.lineWidth = 2;
+          roundRect(cCtx, bx + 1, by + 1, bw - 2, bh - 2, r);
+          cCtx.stroke();
+        }
+
+        if (isGem) {
+          cCtx.font = `${Math.floor(size * 0.52)}px sans-serif`;
+          cCtx.textAlign = 'center';
+          cCtx.textBaseline = 'middle';
+          cCtx.fillText('💎', x + size / 2, y + size / 2 + 1);
+        }
+        cCtx.restore();
+      }
+
+      function roundRect(cCtx, x, y, w, h, r) {
+        cCtx.beginPath();
+        cCtx.moveTo(x + r, y);
+        cCtx.arcTo(x + w, y, x + w, y + h, r);
+        cCtx.arcTo(x + w, y + h, x, y + h, r);
+        cCtx.arcTo(x, y + h, x, y, r);
+        cCtx.arcTo(x, y, x + w, y, r);
+        cCtx.closePath();
+      }
+
+      function drawBoard() {
+        const s = state.boardSizePx;
+        const cp = state.cellPx;
+        ctx.clearRect(0, 0, s, s);
+
+        // Celdas del tablero 10x10
+        for (let r = 0; r < GRID; r++) {
+          for (let c = 0; c < GRID; c++) {
+            const x = c * cp;
+            const y = r * cp;
+            ctx.fillStyle = (r + c) % 2 === 0 ? 'rgba(15, 23, 42, 0.85)' : 'rgba(22, 33, 58, 0.72)';
+            roundRect(ctx, x + 1.5, y + 1.5, cp - 3, cp - 3, 5);
+            ctx.fill();
+
+            const cell = state.board[r][c];
+            if (cell) {
+              drawCellBlock(ctx, x, y, cp, cell.colorIdx, cell.gem, cell.armor, 1);
+            }
+          }
+        }
+
+        // Vista previa (fantasma) al arrastrar
+        if (state.dragging && state.hoverCell) {
+          const piece = state.tray[state.dragging.slotIdx];
+          const { row, col, valid } = state.hoverCell;
+          if (piece) {
+            for (let r = 0; r < piece.shape.length; r++) {
+              for (let c = 0; c < piece.shape[0].length; c++) {
+                if (!piece.shape[r][c]) continue;
+                const nr = row + r;
+                const nc = col + c;
+                if (nr >= 0 && nr < GRID && nc >= 0 && nc < GRID) {
+                  if (valid) {
+                    drawCellBlock(ctx, nc * cp, nr * cp, cp, piece.colorIdx, false, 1, 0.45);
+                  } else {
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.42)';
+                    roundRect(ctx, nc * cp + 2, nr * cp + 2, cp - 4, cp - 4, 5);
+                    ctx.fill();
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Partículas de explosión
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.life -= 0.04;
+          if (p.life <= 0) {
+            state.particles.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function renderTray() {
+        slotEls.forEach((slotEl, idx) => {
+          const p = state.tray[idx];
+          const c = slotEl.querySelector('canvas');
+          const cCtx = c.getContext('2d');
+          cCtx.clearRect(0, 0, c.width, c.height);
+
+          if (!p || p.used) {
+            slotEl.classList.add('used');
+            slotEl.classList.remove('unplayable');
+            return;
+          }
+          slotEl.classList.remove('used');
+          const playable = canPlaceAnywhere(p.shape);
+          slotEl.classList.toggle('unplayable', !playable);
+
+          const rows = p.shape.length;
+          const cols = p.shape[0].length;
+          const cell = Math.min(18, Math.floor(72 / Math.max(rows, cols)));
+          const offX = (c.width - cols * cell) / 2;
+          const offY = (c.height - rows * cell) / 2;
+
+          for (let r = 0; r < rows; r++) {
+            for (let col = 0; col < cols; col++) {
+              if (p.shape[r][col]) {
+                drawCellBlock(cCtx, offX + col * cell, offY + r * cell, cell, p.colorIdx, false, 1, 1);
+              }
+            }
+          }
+        });
+      }
+
+      function spawnClearParticles(r, c, color) {
+        const cx = (c + 0.5) * state.cellPx;
+        const cy = (r + 0.5) * state.cellPx;
+        for (let i = 0; i < 4; i++) {
+          state.particles.push({
+            x: cx,
+            y: cy,
+            vx: (Math.random() - 0.5) * 4.5,
+            vy: (Math.random() - 0.5) * 4.5,
+            size: 3 + Math.random() * 3,
+            color,
+            life: 1
+          });
+        }
+      }
+
+      let animFrameRunning = false;
+      function triggerParticleLoop() {
+        if (animFrameRunning) return;
+        animFrameRunning = true;
+        function step() {
+          drawBoard();
+          if (state.particles.length > 0) {
+            requestAnimationFrame(step);
+          } else {
+            animFrameRunning = false;
+          }
+        }
+        requestAnimationFrame(step);
+      }
+
+      function showCombo(text) {
+        const el = document.getElementById('comboBanner');
+        el.textContent = text;
+        el.classList.add('show');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 950);
+      }
+
+      function placePiece(slotIdx, row, col) {
+        const piece = state.tray[slotIdx];
+        if (!piece || piece.used || !canPlaceAt(piece.shape, row, col)) return false;
+
+        let cellsPlaced = 0;
+        for (let r = 0; r < piece.shape.length; r++) {
+          for (let c = 0; c < piece.shape[0].length; c++) {
+            if (piece.shape[r][c]) {
+              state.board[row + r][col + c] = { colorIdx: piece.colorIdx, gem: false, armor: 1 };
+              cellsPlaced++;
+            }
+          }
+        }
+        piece.used = true;
+        state.score += cellsPlaced * 5;
+        Sound.place();
+
+        // Revisar filas y columnas completas
+        const fullRows = [];
+        const fullCols = [];
+        for (let r = 0; r < GRID; r++) {
+          if (state.board[r].every(Boolean)) fullRows.push(r);
+        }
+        for (let c = 0; c < GRID; c++) {
+          let full = true;
+          for (let r = 0; r < GRID; r++) {
+            if (!state.board[r][c]) { full = false; break; }
+          }
+          if (full) fullCols.push(c);
+        }
+
+        const linesCleared = fullRows.length + fullCols.length;
+        if (linesCleared > 0) {
+          state.combo++;
+          const toClear = new Set();
+          fullRows.forEach(r => { for (let c = 0; c < GRID; c++) toClear.add(`${r},${c}`); });
+          fullCols.forEach(c => { for (let r = 0; r < GRID; r++) toClear.add(`${r},${c}`); });
+
+          toClear.forEach(key => {
+            const [r, c] = key.split(',').map(Number);
+            const cell = state.board[r][c];
+            if (!cell) return;
+            const pal = PALETTE[cell.colorIdx % PALETTE.length];
+            spawnClearParticles(r, c, pal.fill);
+            if (cell.armor > 1) {
+              cell.armor--;
+            } else {
+              if (cell.gem) state.gemsCollected++;
+              state.board[r][c] = null;
+            }
+          });
+
+          const bonus = linesCleared * 100 * state.combo;
+          state.score += bonus;
+          Sound.clear(state.combo);
+          showCombo(state.combo > 1 ? `🔥 COMBO x${state.combo} (+${bonus})` : `✨ +${bonus} PTS`);
+          triggerParticleLoop();
+        } else {
+          state.combo = 0;
+        }
+
+        if (state.score > state.bestScore) {
+          state.bestScore = state.score;
+          localStorage.setItem(STORAGE_BEST, String(state.bestScore));
+        }
+
+        if (window.GamerVerse) window.GamerVerse.recordFrame();
+
+        // Si las 3 piezas fueron usadas, repartir 3 nuevas
+        if (state.tray.every(p => !p || p.used)) {
+          dealTray();
+        } else {
+          renderTray();
+        }
+
+        updateHUD();
+        drawBoard();
+        checkOutcome();
+        return true;
+      }
+
+      function checkOutcome() {
+        if (state.finished) return;
+
+        // ¿Completó nivel?
+        if (state.mode === 'level' && state.score >= state.targetScore && state.gemsCollected >= state.targetGems) {
+          state.finished = true;
+          Sound.win();
+          const stars = state.score >= state.targetScore * 1.4 ? 3 : (state.score >= state.targetScore * 1.15 ? 2 : 1);
+          state.starsMap[state.level] = Math.max(state.starsMap[state.level] || 0, stars);
+          localStorage.setItem(STORAGE_STARS, JSON.stringify(state.starsMap));
+
+          if (state.level >= state.maxLevel && state.level < TOTAL_LEVELS) {
+            state.maxLevel = state.level + 1;
+            localStorage.setItem(STORAGE_MAX_LVL, String(state.maxLevel));
+          }
+
+          if (window.GamerVerse) {
+            window.GamerVerse.submitScore('cosmic_blocks', state.score, state.gemsCollected);
+          }
+
+          document.getElementById('winTitle').textContent = `¡Nivel ${state.level} Completado!`;
+          document.getElementById('winDesc').textContent = state.level === TOTAL_LEVELS
+            ? '¡Eres leyenda! Completaste los 150 niveles de Cosmic Block Blast.'
+            : `Siguiente destino: Nivel ${state.level + 1}`;
+          document.getElementById('winScore').textContent = state.score;
+          document.getElementById('winStars').textContent = '⭐'.repeat(stars);
+          document.getElementById('winBest').textContent = state.bestScore;
+          document.getElementById('btnNextLevel').style.display = state.level < TOTAL_LEVELS ? 'block' : 'none';
+          document.getElementById('winModal').classList.add('open');
+          return;
+        }
+
+        // ¿Queda alguna pieza restante que quepa?
+        const remaining = state.tray.filter(p => p && !p.used);
+        if (remaining.length > 0 && !remaining.some(p => canPlaceAnywhere(p.shape))) {
+          state.finished = true;
+          Sound.lose();
+          if (window.GamerVerse) {
+            window.GamerVerse.submitScore('cosmic_blocks', state.score, state.gemsCollected);
+          }
+          document.getElementById('loseScore').textContent = state.score;
+          document.getElementById('loseLevel').textContent = state.mode === 'endless' ? '♾️' : state.level;
+          document.getElementById('loseBest').textContent = state.bestScore;
+          document.getElementById('btnReviveAd').style.display = state.revivedOnce ? 'none' : 'block';
+          document.getElementById('loseModal').classList.add('open');
+        }
+      }
+
+      function clearCenterBlast() {
+        for (let r = 3; r <= 6; r++) {
+          for (let c = 3; c <= 6; c++) {
+            const cell = state.board[r][c];
+            if (cell) {
+              const pal = PALETTE[cell.colorIdx % PALETTE.length];
+              spawnClearParticles(r, c, pal.fill);
+              if (cell.gem) state.gemsCollected++;
+              state.board[r][c] = null;
+            }
+          }
+        }
+        triggerParticleLoop();
+        dealTray();
+        updateHUD();
+        drawBoard();
+      }
+
+      // Drag & Drop táctil/mouse con offset vertical para que el dedo no tape la pieza
+      function setupDrag() {
+        slotEls.forEach((slotEl, slotIdx) => {
+          slotEl.addEventListener('pointerdown', (e) => {
+            const piece = state.tray[slotIdx];
+            if (!piece || piece.used || state.finished) return;
+            e.preventDefault();
+            Sound.init();
+
+            const cp = state.cellPx;
+            const rows = piece.shape.length;
+            const cols = piece.shape[0].length;
+            dragGhost.width = cols * cp;
+            dragGhost.height = rows * cp;
+            dragGhost.style.width = `${cols * cp}px`;
+            dragGhost.style.height = `${rows * cp}px`;
+            ghostCtx.clearRect(0, 0, dragGhost.width, dragGhost.height);
+
+            for (let r = 0; r < rows; r++) {
+              for (let c = 0; c < cols; c++) {
+                if (piece.shape[r][c]) {
+                  drawCellBlock(ghostCtx, c * cp, r * cp, cp, piece.colorIdx, false, 1, 0.95);
+                }
+              }
+            }
+
+            const yOffset = e.pointerType === 'touch' ? -58 : -16;
+            state.dragging = { slotIdx, yOffset };
+            dragGhost.style.display = 'block';
+            moveDrag(e.clientX, e.clientY);
+          });
+        });
+
+        function moveDrag(clientX, clientY) {
+          if (!state.dragging) return;
+          const piece = state.tray[state.dragging.slotIdx];
+          if (!piece) return;
+
+          const gx = clientX;
+          const gy = clientY + state.dragging.yOffset;
+          dragGhost.style.left = `${gx}px`;
+          dragGhost.style.top = `${gy}px`;
+
+          const rect = canvas.getBoundingClientRect();
+          const cp = state.cellPx;
+          const rows = piece.shape.length;
+          const cols = piece.shape[0].length;
+          const topLeftX = gx - (cols * cp) / 2;
+          const topLeftY = gy - (rows * cp) / 2;
+          const col = Math.round((topLeftX - rect.left) / cp);
+          const row = Math.round((topLeftY - rect.top) / cp);
+
+          if (row >= -1 && col >= -1 && row < GRID && col < GRID) {
+            state.hoverCell = { row, col, valid: canPlaceAt(piece.shape, row, col) };
+          } else {
+            state.hoverCell = null;
+          }
+          drawBoard();
+        }
+
+        window.addEventListener('pointermove', (e) => {
+          if (state.dragging) moveDrag(e.clientX, e.clientY);
+        }, { passive: false });
+
+        function endDrag() {
+          if (!state.dragging) return;
+          const { slotIdx } = state.dragging;
+          const hover = state.hoverCell;
+          state.dragging = null;
+          state.hoverCell = null;
+          dragGhost.style.display = 'none';
+
+          if (hover && hover.valid) {
+            placePiece(slotIdx, hover.row, hover.col);
+          } else {
+            drawBoard();
+          }
+        }
+
+        window.addEventListener('pointerup', endDrag);
+        window.addEventListener('pointercancel', endDrag);
+      }
+
+      function closeAllModals() {
+        document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+      }
+
+      function renderLevelsGrid() {
+        const grid = document.getElementById('levelsGrid');
+        document.getElementById('maxLevelLabel').textContent = state.maxLevel;
+        grid.innerHTML = '';
+        for (let i = 1; i <= TOTAL_LEVELS; i++) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          const locked = i > state.maxLevel;
+          const stars = state.starsMap[i] || 0;
+          btn.className = 'lvl-cell' + (locked ? ' locked' : '') + (stars > 0 ? ' done' : '') + (i === state.level && state.mode === 'level' ? ' current' : '');
+          btn.innerHTML = `<span>${locked ? '🔒' : i}</span><span class="lvl-stars">${stars > 0 ? '⭐'.repeat(stars) : '·'}</span>`;
+          if (!locked) {
+            btn.addEventListener('click', () => startLevel(i, 'level'));
+          }
+          grid.appendChild(btn);
+        }
+      }
+
+      function runWithAd(onReward) {
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd(onReward, () => alert('Completa el anuncio para recibir la recompensa.'));
+        } else {
+          onReward();
+        }
+      }
+
+      function consumeAndRun(cb) {
+        if (!window.GamerVerse) return cb();
+        if (window.GamerVerse.consumeTicket()) return cb();
+        window.GamerVerse.showNoTicketsModal(() => {
+          if (window.GamerVerse.consumeTicket()) cb();
+        });
+      }
+
+      // Controles UI
+      document.getElementById('btnSound').addEventListener('click', () => {
+        Sound.enabled = !Sound.enabled;
+        document.getElementById('btnSound').textContent = Sound.enabled ? '🔊' : '🔇';
+      });
+
+      document.getElementById('btnLevels').addEventListener('click', () => {
+        renderLevelsGrid();
+        document.getElementById('levelsModal').classList.add('open');
+      });
+      document.getElementById('btnCloseLevels').addEventListener('click', closeAllModals);
+      document.getElementById('btnEndlessMode').addEventListener('click', () => consumeAndRun(() => startLevel(1, 'endless')));
+
+      document.getElementById('btnReroll').addEventListener('click', () => {
+        if (state.finished) return;
+        if (state.freeRerolls > 0) {
+          state.freeRerolls--;
+          dealTray();
+          updateHUD();
+        } else {
+          runWithAd(() => {
+            dealTray();
+            updateHUD();
+          });
+        }
+      });
+
+      document.getElementById('btnBomb').addEventListener('click', () => {
+        if (state.finished) return;
+        runWithAd(() => clearCenterBlast());
+      });
+
+      document.getElementById('btnNextLevel').addEventListener('click', () => {
+        const next = Math.min(TOTAL_LEVELS, state.level + 1);
+        startLevel(next, 'level');
+      });
+      document.getElementById('btnReplayWin').addEventListener('click', () => startLevel(state.level, state.mode));
+
+      document.getElementById('btnReviveAd').addEventListener('click', () => {
+        runWithAd(() => {
+          state.revivedOnce = true;
+          state.finished = false;
+          closeAllModals();
+          clearCenterBlast();
+        });
+      });
+
+      document.getElementById('btnRetryLose').addEventListener('click', () => {
+        consumeAndRun(() => startLevel(state.level, state.mode));
+      });
+
+      window.addEventListener('resize', resizeBoard);
+      setupDrag();
+      resizeBoard();
+      startLevel(state.level, 'level');
+    })();
+  </script>
+</body>
+</html>

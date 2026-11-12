@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.jackpots (
 CREATE TABLE IF NOT EXISTS public.game_scores (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id BIGINT NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    game_id TEXT NOT NULL CHECK (game_id IN ('astronaut_runner', 'save_the_astronaut', 'arrow_escape')),
+    game_id TEXT NOT NULL CHECK (game_id IN ('astronaut_runner', 'save_the_astronaut', 'arrow_escape', 'cosmic_blocks')),
     score INTEGER NOT NULL CHECK (score >= 0), -- Metros en runner o puntos
     coins INTEGER NOT NULL DEFAULT 0,
     duration_ms INTEGER NOT NULL,

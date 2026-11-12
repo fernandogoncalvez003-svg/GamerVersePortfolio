@@ -84,6 +84,7 @@
             if (p.includes('savetheastronaut')) return 'save_the_astronaut';
             if (p.includes('astronautrunner')) return 'astronaut_runner';
             if (p.includes('arrowescape')) return 'arrow_escape';
+            if (p.includes('cosmicblocks')) return 'cosmic_blocks';
             return 'hub';
         },
 
