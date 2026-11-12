@@ -1470,7 +1470,17 @@
 
       document.getElementById('btnNextLevel').addEventListener('click', () => {
         const next = Math.min(TOTAL_LEVELS, state.level + 1);
-        startLevel(next, 'level');
+        const proceed = () => startLevel(next, 'level');
+
+        // Cada 2 niveles completados o con 40% de probabilidad al pasar de nivel
+        state.levelsCompletedCount = (state.levelsCompletedCount || 0) + 1;
+        const shouldShowAd = (state.levelsCompletedCount % 2 === 0) || Math.random() < 0.4;
+
+        if (shouldShowAd && window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+          window.GamerVerse.showInterstitialAd(proceed);
+        } else {
+          proceed();
+        }
       });
       document.getElementById('btnReplayWin').addEventListener('click', () => startLevel(state.level, state.mode));
 
