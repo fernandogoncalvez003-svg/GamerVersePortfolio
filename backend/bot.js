@@ -425,14 +425,24 @@ bot.start(async (ctx) => {
         `⏳ *Cierre del Torneo:* ${getJackpotCountdown()}\n\n` +
         `*Elige una opción para empezar:*`;
 
-    return ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard([
+    const buttons = [
         [Markup.button.webApp('🕹️ ABRIR GAMEVERSE 307', WEBAPP_URL)],
         [
             Markup.button.url('👥 Invitar Amigos (+3 🎟️)', shareLink),
             Markup.button.callback('💰 Ver Bote', 'CHECK_BOTE')
         ],
-        [Markup.button.callback('🏆 Ranking Top 10', 'CHECK_RANKING')]
-    ]));
+        [
+            Markup.button.callback('🏆 Ranking Top 10', 'CHECK_RANKING'),
+            Markup.button.callback('❓ Ayuda / FAQ', 'CHECK_FAQ')
+        ]
+    ];
+
+    if (from && from.id === ADMIN_TELEGRAM_ID) {
+        const adminUrl = `${WEBAPP_URL.replace(/\/$/, '')}/admin.html`;
+        buttons.push([Markup.button.webApp('📊 Panel Admin', adminUrl)]);
+    }
+
+    return ctx.replyWithMarkdown(welcomeText, Markup.inlineKeyboard(buttons));
 });
 
 bot.action('CHECK_BOTE', async (ctx) => {
@@ -511,6 +521,13 @@ const FAQ_TEXT =
     `Si usas VPN o DNS bloqueador de anuncios, desactívalo temporalmente y completa el anuncio hasta el final para recibir la recompensa.`;
 
 bot.command(['ayuda', 'help', 'faq'], (ctx) => {
+    return ctx.replyWithMarkdown(FAQ_TEXT, Markup.inlineKeyboard([
+        [Markup.button.webApp('🕹️ Abrir GameVerse 307', WEBAPP_URL)]
+    ]));
+});
+
+bot.action('CHECK_FAQ', async (ctx) => {
+    await ctx.answerCbQuery();
     return ctx.replyWithMarkdown(FAQ_TEXT, Markup.inlineKeyboard([
         [Markup.button.webApp('🕹️ Abrir GameVerse 307', WEBAPP_URL)]
     ]));
@@ -968,6 +985,17 @@ app.listen(PORT, async () => {
         return;
     }
     try {
+        await bot.telegram.setMyCommands([
+            { command: 'start', description: '🚀 Abrir menú principal y juegos' },
+            { command: 'ayuda', description: '❓ Preguntas frecuentes y soporte' }
+        ]);
+        if (ADMIN_TELEGRAM_ID) {
+            await bot.telegram.setMyCommands([
+                { command: 'start', description: '🚀 Abrir menú principal y juegos' },
+                { command: 'ayuda', description: '❓ Preguntas frecuentes y soporte' },
+                { command: 'admin', description: '📊 Abrir Panel Admin' }
+            ], { scope: { type: 'chat', chat_id: ADMIN_TELEGRAM_ID } }).catch(() => {});
+        }
         if (WEBHOOK_URL) {
             const cleanBase = WEBHOOK_URL.replace(/\/$/, '');
             await bot.telegram.setWebhook(`${cleanBase}/telegraf`);
