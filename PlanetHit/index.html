@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Planet Hit — Lanzador de Sondas Orbitales | GameVerse 307</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="../gamerverse-bridge.js?v=20261112"></script>
+  <style>
+    :root {
+      --bg: #030712;
+      --panel: rgba(15, 23, 42, 0.85);
+      --border: rgba(56, 189, 248, 0.3);
+      --cyan: #38bdf8;
+      --purple: #c084fc;
+      --gold: #fde047;
+      --red: #f43f5e;
+      --green: #4ade80;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #1e1b4b 0%, #090e28 55%, var(--bg) 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .app {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 520px;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: max(8px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 7px 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .icon-btn {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .icon-btn:active { transform: scale(0.95); }
+
+    .brand-wrap { text-align: center; }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      background: linear-gradient(90deg, #38bdf8, #fde047, #f43f5e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .brand-sub { font-size: 10.5px; color: var(--muted); }
+
+    .hud {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .stat-box {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      padding: 5px 8px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .stat-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-val {
+      font-size: 15px;
+      font-weight: 900;
+      margin-top: 1px;
+    }
+
+    .stat-val.cyan { color: var(--cyan); text-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+    .stat-val.gold { color: var(--gold); text-shadow: 0 0 10px rgba(253, 224, 71, 0.4); }
+
+    .game-stage {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      cursor: pointer;
+    }
+
+    canvas#planetCanvas {
+      display: block;
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .probes-tray {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-height: 38px;
+      backdrop-filter: blur(8px);
+    }
+
+    .probe-dot {
+      width: 8px;
+      height: 18px;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #38bdf8, #0284c7);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .probe-dot.used {
+      opacity: 0.15;
+      transform: scale(0.7);
+      box-shadow: none;
+    }
+
+    /* Modal Game Over */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.86);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: linear-gradient(180deg, #111c3a, #0b1228);
+      border: 1px solid rgba(56, 189, 248, 0.38);
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal h2 { margin: 0 0 6px; font-size: 22px; font-weight: 900; }
+    .modal p { margin: 0 0 14px; font-size: 13px; color: #cbd5e1; line-height: 1.4; }
+
+    .btn-gold, .btn-primary {
+      width: 100%;
+      border: none;
+      border-radius: 13px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #fde047, #f97316);
+      color: #0f172a;
+      box-shadow: 0 8px 20px rgba(249, 115, 22, 0.35);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4, #6366f1);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="icon-btn" id="btnBack" type="button">🏠 Hub</button>
+      <div class="brand-wrap">
+        <div class="brand-title" id="stageTitle">Planeta 1 · Fase 1</div>
+        <div class="brand-sub">Toca la pantalla para clavar sondas</div>
+      </div>
+      <button class="icon-btn" id="btnSound" type="button" aria-label="Sonido">🔊</button>
+    </header>
+
+    <div class="hud">
+      <div class="stat-box">
+        <div class="stat-label">Puntos</div>
+        <div class="stat-val cyan" id="scoreVal">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Fase</div>
+        <div class="stat-val gold" id="stageVal">1</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Récord</div>
+        <div class="stat-val" id="bestVal">0</div>
+      </div>
+    </div>
+
+    <main class="game-stage" id="stage">
+      <canvas id="planetCanvas"></canvas>
+    </main>
+
+    <footer class="probes-tray" id="probesTray"></footer>
+  </div>
+
+  <!-- Modal Game Over -->
+  <div class="modal-backdrop" id="loseModal">
+    <div class="modal">
+      <div style="font-size:44px;margin-bottom:4px;">💥</div>
+      <h2>¡Colisión Orbital!</h2>
+      <p>Tu sonda espacial colisionó contra otro módulo en la superficie del planeta.</p>
+      <div class="hud" style="margin-bottom:12px;">
+        <div class="stat-box"><div class="stat-label">Puntos</div><div class="stat-val cyan" id="loseScore">0</div></div>
+        <div class="stat-box"><div class="stat-label">Fase Máx</div><div class="stat-val gold" id="loseStage">1</div></div>
+        <div class="stat-box"><div class="stat-label">Récord</div><div class="stat-val" id="loseBest">0</div></div>
+      </div>
+      <button class="btn-gold" id="btnReviveAd" type="button">📺 Revivir (Continúa en esta Fase)</button>
+      <button class="btn-primary" id="btnRetryLose" type="button">🔄 Reintentar (1 🎟️)</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_BEST = 'ph_best_score_v1';
+
+      // Estilos de planetas galácticos (colores y texturas procedurales)
+      const PLANETS = [
+        { name: 'Kepler-452', fill: '#0284c7', glow: 'rgba(56, 189, 248, 0.45)', surface: '#38bdf8' },
+        { name: 'Vulcano Rojo', fill: '#be123c', glow: 'rgba(244, 63, 94, 0.45)', surface: '#fb7185' },
+        { name: 'Neptuno Cósmico', fill: '#4338ca', glow: 'rgba(129, 140, 248, 0.45)', surface: '#818cf8' },
+        { name: 'Púlsar Esmeralda', fill: '#15803d', glow: 'rgba(74, 222, 128, 0.45)', surface: '#4ade80' },
+        { name: 'Titán Dorado [JEFE]', fill: '#b45309', glow: 'rgba(250, 204, 21, 0.55)', surface: '#fde047', isBoss: true }
+      ];
+
+      const Sound = {
+        enabled: true,
+        ctx: null,
+        init() {
+          if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        },
+        beep(freq, dur, type = 'sine', vol = 0.08) {
+          if (!this.enabled) return;
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + dur);
+        },
+        launch() { this.beep(420, 0.08, 'sawtooth', 0.08); },
+        hit() {
+          this.beep(240, 0.08, 'triangle', 0.12);
+          setTimeout(() => this.beep(360, 0.08, 'sine', 0.08), 30);
+        },
+        levelUp() {
+          [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.beep(f, 0.16, 'triangle', 0.09), i * 70));
+        },
+        clash() {
+          [220, 160, 100].forEach((f, i) => setTimeout(() => this.beep(f, 0.22, 'sawtooth', 0.12), i * 90));
+        }
+      };
+
+      const canvas = document.getElementById('planetCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const state = {
+        score: 0,
+        stage: 1,
+        bestScore: parseInt(localStorage.getItem(STORAGE_BEST) || '0', 10),
+        angle: 0,
+        rotSpeed: 0.032,
+        rotDirection: 1,
+        planetRadius: 65,
+        probesLeft: 8,
+        totalProbes: 8,
+        embeddedProbes: [], // ángulos relativos al planeta
+        flyingProbe: null,
+        flyingSpeed: 16,
+        gameOver: false,
+        revived: false,
+        particles: [],
+        shockwaves: [],
+        shake: 0,
+        sizePx: 320
+      };
+
+      function resize() {
+        const stage = document.getElementById('stage');
+        const minDim = Math.min(stage.clientWidth - 16, stage.clientHeight - 16, 460);
+        state.sizePx = Math.max(260, Math.floor(minDim));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.style.width = `${state.sizePx}px`;
+        canvas.style.height = `${state.sizePx}px`;
+        canvas.width = Math.floor(state.sizePx * dpr);
+        canvas.height = Math.floor(state.sizePx * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        state.planetRadius = Math.max(48, state.sizePx * 0.18);
+      }
+
+      function setupStage(stageNum) {
+        state.stage = stageNum;
+        const isBoss = stageNum % 5 === 0;
+        const baseProbes = 7 + Math.min(8, Math.floor(stageNum * 0.6));
+        state.totalProbes = isBoss ? baseProbes + 3 : baseProbes;
+        state.probesLeft = state.totalProbes;
+        state.embeddedProbes = [];
+        state.flyingProbe = null;
+
+        // Velocidad y sentido de rotación (jefes cambian de dirección o velocidad)
+        state.rotSpeed = 0.026 + Math.min(0.035, stageNum * 0.003);
+        state.rotDirection = Math.random() < 0.5 ? 1 : -1;
+
+        // En niveles avanzados, el planeta ya tiene 1 o 2 sondas/asteroides colocados
+        if (stageNum > 2) {
+          const preObstacles = Math.min(3, Math.floor(stageNum / 3));
+          for (let i = 0; i < preObstacles; i++) {
+            state.embeddedProbes.push((i * Math.PI * 2) / preObstacles);
+          }
+        }
+
+        renderProbesTray();
+        updateHUD();
+      }
+
+      function resetGame() {
+        state.score = 0;
+        state.gameOver = false;
+        state.revived = false;
+        state.particles = [];
+        state.shockwaves = [];
+        state.shake = 0;
+
+        if (window.GamerVerse) {
+          if (typeof window.GamerVerse.startSession === 'function') {
+            window.GamerVerse.startSession();
+          } else if (window.GamerVerse.session) {
+            window.GamerVerse.session.startTime = Date.now();
+            window.GamerVerse.session.endTime = null;
+            window.GamerVerse.session.framesRendered = 0;
+            window.GamerVerse.session.active = true;
+          }
+          if (typeof window.GamerVerse.setActiveGame === 'function') {
+            window.GamerVerse.setActiveGame('planet_hit');
+          }
+        }
+
+        document.getElementById('loseModal').classList.remove('open');
+        setupStage(1);
+      }
+
+      function updateHUD() {
+        document.getElementById('scoreVal').textContent = state.score;
+        document.getElementById('stageVal').textContent = state.stage;
+        document.getElementById('bestVal').textContent = state.bestScore;
+
+        const curPlanet = PLANETS[(state.stage - 1) % PLANETS.length];
+        document.getElementById('stageTitle').textContent = `${curPlanet.name} · Fase ${state.stage}`;
+      }
+
+      function renderProbesTray() {
+        const tray = document.getElementById('probesTray');
+        tray.innerHTML = '';
+        for (let i = 0; i < state.totalProbes; i++) {
+          const dot = document.createElement('div');
+          dot.className = 'probe-dot' + (i >= state.probesLeft ? ' used' : '');
+          tray.appendChild(dot);
+        }
+      }
+
+      function launchProbe() {
+        if (state.gameOver || state.flyingProbe || state.probesLeft <= 0) return;
+        Sound.launch();
+        state.probesLeft--;
+        renderProbesTray();
+
+        const center = state.sizePx / 2;
+        state.flyingProbe = {
+          x: center,
+          y: state.sizePx - 26,
+          targetY: center + state.planetRadius
+        };
+      }
+
+      function triggerClash(x, y) {
+        state.gameOver = true;
+        state.shake = 18;
+        Sound.clash();
+
+        state.shockwaves.push({ x, y, radius: 4, maxRadius: 52, color: '#f43f5e', alpha: 1 });
+        for (let i = 0; i < 28; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const spd = Math.random() * 6 + 2;
+          state.particles.push({
+            x,
+            y,
+            vx: Math.cos(a) * spd,
+            vy: Math.sin(a) * spd,
+            size: 3 + Math.random() * 3,
+            color: '#f43f5e',
+            life: 1
+          });
+        }
+
+        if (window.GamerVerse) {
+          window.GamerVerse.submitScore('planet_hit', state.score, state.stage);
+        }
+
+        document.getElementById('loseScore').textContent = state.score;
+        document.getElementById('loseStage').textContent = state.stage;
+        document.getElementById('loseBest').textContent = state.bestScore;
+        document.getElementById('btnReviveAd').style.display = state.revived ? 'none' : 'block';
+        document.getElementById('loseModal').classList.add('open');
+      }
+
+      function reviveWithShield() {
+        state.gameOver = false;
+        state.revived = true;
+        state.flyingProbe = null;
+        document.getElementById('loseModal').classList.remove('open');
+      }
+
+      // Bucle de juego
+      let lastTime = performance.now();
+      function loop(now) {
+        const dt = Math.min(32, now - lastTime);
+        lastTime = now;
+
+        const center = state.sizePx / 2;
+
+        if (!state.gameOver) {
+          // Rotación del planeta (con variaciones dinámicas en jefes)
+          if (state.stage % 5 === 0) {
+            // Planeta jefe: oscila y acelera
+            state.angle += state.rotSpeed * state.rotDirection * (1 + 0.6 * Math.sin(now * 0.003));
+          } else {
+            state.angle += state.rotSpeed * state.rotDirection;
+          }
+
+          // Mover sonda volando hacia el planeta
+          if (state.flyingProbe) {
+            state.flyingProbe.y -= state.flyingSpeed * (dt / 16.66);
+
+            if (state.flyingProbe.y <= state.flyingProbe.targetY) {
+              const impactY = state.flyingProbe.targetY;
+              // El impacto entra en el ángulo inferior (PI/2 en coordenadas estándar)
+              // Ángulo relativo respecto al planeta que rota:
+              const hitAngle = ((Math.PI / 2) - state.angle);
+              const normalizedHit = ((hitAngle % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+
+              // Comprobar colisión angular contra sondas ya clavadas
+              const minAngleDiff = 0.22; // ~12.5 grados de margen seguro
+              let collided = false;
+
+              for (const emb of state.embeddedProbes) {
+                const normEmb = ((emb % (Math.PI * 2)) + (Math.PI * 2)) % (Math.PI * 2);
+                let diff = Math.abs(normalizedHit - normEmb);
+                if (diff > Math.PI) diff = (Math.PI * 2) - diff;
+
+                if (diff < minAngleDiff) {
+                  collided = true;
+                  break;
+                }
+              }
+
+              if (collided) {
+                triggerClash(center, impactY);
+              } else {
+                Sound.hit();
+                state.embeddedProbes.push(hitAngle);
+                state.score += 10;
+                if (state.score > state.bestScore) {
+                  state.bestScore = state.score;
+                  localStorage.setItem(STORAGE_BEST, String(state.bestScore));
+                }
+                updateHUD();
+
+                state.shockwaves.push({ x: center, y: impactY, radius: 4, maxRadius: 28, color: '#38bdf8', alpha: 1 });
+                for (let i = 0; i < 8; i++) {
+                  state.particles.push({
+                    x: center,
+                    y: impactY,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: Math.random() * 3 + 1,
+                    size: 2.5,
+                    color: '#fde047',
+                    life: 0.8
+                  });
+                }
+
+                state.flyingProbe = null;
+
+                // Si se clavaron todas las sondas de la fase: ¡Fase Completada!
+                if (state.probesLeft <= 0) {
+                  Sound.levelUp();
+                  state.score += 50 * state.stage;
+                  updateHUD();
+
+                  // Pulso visual en todo el planeta
+                  state.shockwaves.push({ x: center, y: center, radius: state.planetRadius, maxRadius: state.sizePx * 0.48, color: '#4ade80', alpha: 1 });
+
+                  setTimeout(() => {
+                    setupStage(state.stage + 1);
+                  }, 450);
+                }
+              }
+            }
+          }
+        }
+
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      function render() {
+        const center = state.sizePx / 2;
+        ctx.clearRect(0, 0, state.sizePx, state.sizePx);
+
+        ctx.save();
+        if (state.shake > 0) {
+          ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
+          state.shake *= 0.88;
+        }
+
+        const curPlanet = PLANETS[(state.stage - 1) % PLANETS.length];
+
+        // 1. Planeta central rotatorio
+        ctx.save();
+        ctx.translate(center, center);
+
+        // Atmósfera con brillo neón
+        ctx.shadowColor = curPlanet.glow;
+        ctx.shadowBlur = 24;
+        ctx.fillStyle = curPlanet.fill;
+        ctx.beginPath();
+        ctx.arc(0, 0, state.planetRadius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Craters y detalles giratorios en superficie
+        ctx.save();
+        ctx.rotate(state.angle);
+        ctx.fillStyle = curPlanet.surface;
+        ctx.globalAlpha = 0.35;
+        for (let i = 0; i < 5; i++) {
+          const a = (i * Math.PI * 2) / 5;
+          const r = state.planetRadius * 0.55;
+          ctx.beginPath();
+          ctx.arc(Math.cos(a) * r, Math.sin(a) * r, state.planetRadius * 0.18, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Sondas clavadas en la superficie
+        for (const embAngle of state.embeddedProbes) {
+          ctx.save();
+          ctx.rotate(embAngle);
+
+          // Vástago de la sonda
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(0, state.planetRadius - 2);
+          ctx.lineTo(0, state.planetRadius + 38);
+          ctx.stroke();
+
+          // Cabeza luminosa de la sonda
+          ctx.fillStyle = '#38bdf8';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(0, state.planetRadius + 38, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+        ctx.restore(); // fin rotación planeta
+
+        ctx.restore(); // fin traslación centro
+
+        // 2. Sonda en espera abajo o en vuelo
+        const probeY = state.flyingProbe ? state.flyingProbe.y : (state.sizePx - 26);
+        ctx.save();
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 2.8;
+        ctx.beginPath();
+        ctx.moveTo(center, probeY);
+        ctx.lineTo(center, probeY + 36);
+        ctx.stroke();
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(center, probeY, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 3. Ondas de Choque expansivas
+        for (let i = state.shockwaves.length - 1; i >= 0; i--) {
+          const sw = state.shockwaves[i];
+          sw.radius += (sw.maxRadius - sw.radius) * 0.22 + 1.2;
+          sw.alpha -= 0.055;
+          if (sw.alpha <= 0) {
+            state.shockwaves.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, sw.alpha);
+          ctx.strokeStyle = sw.color;
+          ctx.lineWidth = 2.5;
+          ctx.shadowColor = sw.color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 4. Partículas con fusión aditiva (Glow Neón estilo LittleJS)
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.96;
+          p.vy *= 0.96;
+          p.life -= 0.04;
+          if (p.life <= 0) {
+            state.particles.splice(i, 1);
+            continue;
+          }
+          ctx.globalAlpha = Math.max(0, p.life);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.restore(); // fin shake
+      }
+
+      // Control 100% de 1 solo toque en toda la pantalla
+      document.getElementById('stage').addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        Sound.init();
+        launchProbe();
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          Sound.init();
+          launchProbe();
+        }
+      });
+
+      document.getElementById('btnSound').addEventListener('click', () => {
+        Sound.enabled = !Sound.enabled;
+        document.getElementById('btnSound').textContent = Sound.enabled ? '🔊' : '🔇';
+      });
+
+      document.getElementById('btnBack').addEventListener('click', () => {
+        window.location.href = '../index.html';
+      });
+
+      // Monetización
+      document.getElementById('btnReviveAd').addEventListener('click', () => {
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd(reviveWithShield, () => alert('Completa el anuncio para recibir la recompensa.'));
+        } else {
+          reviveWithShield();
+        }
+      });
+
+      document.getElementById('btnRetryLose').addEventListener('click', () => {
+        const restart = () => {
+          if (window.GamerVerse && !window.GamerVerse.consumeTicket()) {
+            window.GamerVerse.showNoTicketsModal(() => {
+              if (window.GamerVerse.consumeTicket()) resetGame();
+            });
+            return;
+          }
+          resetGame();
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+          window.GamerVerse.showInterstitialAd(restart);
+        } else {
+          restart();
+        }
+      });
+
+      window.addEventListener('resize', resize);
+      resize();
+      resetGame();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

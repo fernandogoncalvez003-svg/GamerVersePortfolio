@@ -647,6 +647,32 @@
         </div>
         <button class="btn play-btn" type="button" data-game="./CosmicBlocks/index.html" data-title="Cosmic Block Blast">Jugar</button>
       </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-arrow">⬡</div>
+        <div class="game-info">
+          <h2 class="game-name">Cosmic Hexagon</h2>
+          <p class="game-desc">Gira el reactor orbital, alinea 3 cristales de plasma y desata sobrecargas.</p>
+          <div class="game-tags">
+            <span class="tag">Hexagonal</span>
+            <span class="tag">Reflejos</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./CosmicHexagon/index.html" data-title="Cosmic Hexagon">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-shooter">🎯</div>
+        <div class="game-info">
+          <h2 class="game-name">Planet Hit</h2>
+          <p class="game-desc">Arcade de 1 toque: clava sondas en planetas en rotación y vence a los jefes.</p>
+          <div class="game-tags">
+            <span class="tag">1 Toque</span>
+            <span class="tag">Jefes</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./PlanetHit/index.html" data-title="Planet Hit">Jugar</button>
+      </article>
     </section>
 
     <section class="panel">
@@ -865,6 +891,8 @@
         if (lower.includes('astronautrunner')) return 'astronaut_runner';
         if (lower.includes('arrowescape')) return 'arrow_escape';
         if (lower.includes('cosmicblocks')) return 'cosmic_blocks';
+        if (lower.includes('cosmichexagon')) return 'cosmic_hexagon';
+        if (lower.includes('planethit')) return 'planet_hit';
         return 'hub';
       }
 

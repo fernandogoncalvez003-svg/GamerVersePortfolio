@@ -21,7 +21,7 @@ const ONLINE_WINDOW_MS = 90000;
 
 const TIER_1_COUNTRIES = new Set(['US', 'CA', 'GB', 'AU', 'DE', 'FR', 'NL', 'SE', 'NO', 'DK', 'FI', 'CH', 'AT', 'IE', 'NZ', 'JP', 'KR', 'SG', 'AE', 'LU']);
 const TIER_2_COUNTRIES = new Set(['ES', 'IT', 'PT', 'BR', 'MX', 'CL', 'PL', 'CZ', 'GR', 'IL', 'SA', 'QA', 'TR', 'MY', 'TH', 'UY', 'CR', 'PA', 'PR']);
-const VALID_GAMES = new Set(['hub', 'save_the_astronaut', 'astronaut_runner', 'arrow_escape', 'cosmic_blocks']);
+const VALID_GAMES = new Set(['hub', 'save_the_astronaut', 'astronaut_runner', 'arrow_escape', 'cosmic_blocks', 'cosmic_hexagon', 'planet_hit']);
 
 const adminOtpState = { code: null, expiresAt: 0 };
 
@@ -221,7 +221,7 @@ async function updatePresenceAndPeak(userId, activeGame, countryCode, languageCo
 
 async function getAdminStats() {
     const cutoffMs = Date.now() - ONLINE_WINDOW_MS;
-    const byGame = { hub: 0, save_the_astronaut: 0, astronaut_runner: 0, arrow_escape: 0, cosmic_blocks: 0 };
+    const byGame = { hub: 0, save_the_astronaut: 0, astronaut_runner: 0, arrow_escape: 0, cosmic_blocks: 0, cosmic_hexagon: 0, planet_hit: 0 };
     const byTier = { 'Tier 1': 0, 'Tier 2': 0, 'Tier 3': 0, Unknown: 0 };
     const countryCounts = new Map();
     let totalUsers = 0;
@@ -497,6 +497,8 @@ bot.command('admin', async (ctx) => {
             `• Astronaut Runner: *${stats.byGame.astronaut_runner || 0}*\n` +
             `• Arrow Escape: *${stats.byGame.arrow_escape || 0}*\n` +
             `• Cosmic Block Blast: *${stats.byGame.cosmic_blocks || 0}*\n` +
+            `• Cosmic Hexagon: *${stats.byGame.cosmic_hexagon || 0}*\n` +
+            `• Planet Hit: *${stats.byGame.planet_hit || 0}*\n` +
             `• Hub / Lobby: *${stats.byGame.hub || 0}*\n\n` +
             `🌍 *Tiers:* T1=${stats.byTier['Tier 1']} | T2=${stats.byTier['Tier 2']} | T3=${stats.byTier['Tier 3']}\n` +
             `📍 *Top países:* ${topCountries}\n\n` +
@@ -1019,7 +1021,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
 app.post('/api/admin/tournaments', requireAdmin, async (req, res) => {
     const { title, gameScope, seedAmount, startDate, endDate, prizeSplit, activateNow } = req.body || {};
     const cleanTitle = String(title || 'Torneo Semanal GameVerse 307').trim().slice(0, 90);
-    const cleanScope = ['all', 'save_the_astronaut', 'astronaut_runner', 'arrow_escape', 'cosmic_blocks'].includes(gameScope) ? gameScope : 'all';
+    const cleanScope = ['all', 'save_the_astronaut', 'astronaut_runner', 'arrow_escape', 'cosmic_blocks', 'cosmic_hexagon', 'planet_hit'].includes(gameScope) ? gameScope : 'all';
     const cleanSeed = Math.max(0, Number(seedAmount || 10));
     const startIso = startDate ? new Date(startDate).toISOString() : new Date().toISOString();
     const defaultEnd = new Date(Date.now() + 7 * 86400000).toISOString();

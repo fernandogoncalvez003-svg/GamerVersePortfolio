@@ -85,6 +85,8 @@
             if (p.includes('astronautrunner')) return 'astronaut_runner';
             if (p.includes('arrowescape')) return 'arrow_escape';
             if (p.includes('cosmicblocks')) return 'cosmic_blocks';
+            if (p.includes('cosmichexagon')) return 'cosmic_hexagon';
+            if (p.includes('planethit')) return 'planet_hit';
             return 'hub';
         },
 

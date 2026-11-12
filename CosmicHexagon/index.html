@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Cosmic Hexagon — Arcade Espacial | GameVerse 307</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="../gamerverse-bridge.js?v=20261112"></script>
+  <style>
+    :root {
+      --bg: #030712;
+      --panel: rgba(15, 23, 42, 0.85);
+      --border: rgba(56, 189, 248, 0.3);
+      --cyan: #38bdf8;
+      --purple: #c084fc;
+      --gold: #fde047;
+      --red: #f43f5e;
+      --green: #4ade80;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 30%, #1e1145 0%, #070c22 55%, var(--bg) 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .app {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 520px;
+      height: 100dvh;
+      margin: 0 auto;
+      padding: max(8px, env(safe-area-inset-top)) 12px max(10px, env(safe-area-inset-bottom));
+    }
+
+    .topbar {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 7px 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .icon-btn {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .icon-btn:active { transform: scale(0.95); }
+
+    .brand-wrap {
+      text-align: center;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.8px;
+      background: linear-gradient(90deg, #38bdf8, #c084fc, #fde047);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+    }
+
+    .brand-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+    }
+
+    .hud {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .stat-box {
+      background: var(--panel);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 12px;
+      padding: 5px 8px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .stat-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-val {
+      font-size: 15px;
+      font-weight: 900;
+      margin-top: 1px;
+    }
+
+    .stat-val.cyan { color: var(--cyan); text-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+    .stat-val.gold { color: var(--gold); text-shadow: 0 0 10px rgba(253, 224, 71, 0.4); }
+
+    .game-stage {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    canvas#hexCanvas {
+      display: block;
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .combo-banner {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: linear-gradient(135deg, #ec4899, #8b5cf6, #06b6d4);
+      color: #fff;
+      font-weight: 900;
+      font-size: 15px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s ease, transform 0.2s cubic-bezier(.2,1.4,.4,1);
+      box-shadow: 0 8px 24px rgba(168, 85, 247, 0.55);
+      z-index: 5;
+      white-space: nowrap;
+    }
+
+    .combo-banner.show {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.04);
+    }
+
+    .touch-hints {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .touch-btn {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: #cbd5e1;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 12px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .touch-btn:active {
+      background: rgba(56, 189, 248, 0.2);
+      transform: scale(0.97);
+    }
+
+    /* Modal Game Over */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.86);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 100;
+    }
+
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      width: 100%;
+      max-width: 400px;
+      background: linear-gradient(180deg, #111c3a, #0b1228);
+      border: 1px solid rgba(56, 189, 248, 0.38);
+      border-radius: 22px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.8);
+    }
+
+    .modal h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .modal p {
+      margin: 0 0 14px;
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+
+    .btn-gold, .btn-primary {
+      width: 100%;
+      border: none;
+      border-radius: 13px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #fde047, #f97316);
+      color: #0f172a;
+      box-shadow: 0 8px 20px rgba(249, 115, 22, 0.35);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #06b6d4, #6366f1);
+      color: #fff;
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="icon-btn" id="btnBack" type="button">🏠 Hub</button>
+      <div class="brand-wrap">
+        <div class="brand-title">Cosmic Hexagon</div>
+        <div class="brand-sub">Gira el Núcleo · Conecta 3 Plasma</div>
+      </div>
+      <button class="icon-btn" id="btnSound" type="button" aria-label="Sonido">🔊</button>
+    </header>
+
+    <div class="hud">
+      <div class="stat-box">
+        <div class="stat-label">Puntos</div>
+        <div class="stat-val cyan" id="scoreVal">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Combo</div>
+        <div class="stat-val gold" id="comboVal">x1</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Récord</div>
+        <div class="stat-val" id="bestVal">0</div>
+      </div>
+    </div>
+
+    <main class="game-stage" id="stage">
+      <div class="combo-banner" id="comboBanner">COMBO x2!</div>
+      <canvas id="hexCanvas"></canvas>
+    </main>
+
+    <footer class="touch-hints">
+      <button class="touch-btn" id="btnRotateLeft" type="button">↺ Girar Izquierda (60°)</button>
+      <button class="touch-btn" id="btnRotateRight" type="button">↻ Girar Derecha (60°)</button>
+    </footer>
+  </div>
+
+  <!-- Modal Game Over -->
+  <div class="modal-backdrop" id="loseModal">
+    <div class="modal">
+      <div style="font-size:44px;margin-bottom:4px;">💥</div>
+      <h2>¡Sobrecarga de Núcleo!</h2>
+      <p>Los cristales de plasma alcanzaron el límite del reactor orbital.</p>
+      <div class="hud" style="margin-bottom:12px;">
+        <div class="stat-box"><div class="stat-label">Puntos</div><div class="stat-val cyan" id="loseScore">0</div></div>
+        <div class="stat-box"><div class="stat-label">Mejor Combo</div><div class="stat-val gold" id="loseCombo">x1</div></div>
+        <div class="stat-box"><div class="stat-label">Récord</div><div class="stat-val" id="loseBest">0</div></div>
+      </div>
+      <button class="btn-gold" id="btnReviveAd" type="button">📺 Revivir con Pulso PEM (Limpia 3 capas)</button>
+      <button class="btn-primary" id="btnRetryLose" type="button">🔄 Reintentar (1 🎟️)</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_BEST = 'ch_best_score_v1';
+      const SIDES = 6;
+      const MAX_BLOCKS_PER_SIDE = 8;
+
+      // Paleta cósmica neón de 4 colores
+      const COLORS = [
+        { fill: '#38bdf8', hi: '#bae6fd', dark: '#0284c7', glow: 'rgba(56, 189, 248, 0.6)' }, // Cyan
+        { fill: '#c084fc', hi: '#f3e8ff', dark: '#9333ea', glow: 'rgba(192, 132, 252, 0.6)' }, // Violeta
+        { fill: '#fde047', hi: '#fef9c3', dark: '#ca8a04', glow: 'rgba(253, 224, 71, 0.6)' },  // Oro
+        { fill: '#f43f5e', hi: '#ffe4e6', dark: '#be123c', glow: 'rgba(244, 63, 94, 0.6)' }   // Rubí
+      ];
+
+      // Audio procedural ZzFX integrado
+      const Sound = {
+        enabled: true,
+        ctx: null,
+        init() {
+          if (!this.ctx && (window.AudioContext || window.webkitAudioContext)) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        },
+        beep(freq, dur, type = 'sine', vol = 0.08) {
+          if (!this.enabled) return;
+          this.init();
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + dur);
+        },
+        rotate() { this.beep(420, 0.06, 'triangle', 0.07); },
+        land() { this.beep(220, 0.08, 'square', 0.06); },
+        match(combo) {
+          this.beep(520 + combo * 110, 0.18, 'sine', 0.12);
+          setTimeout(() => this.beep(780 + combo * 120, 0.22, 'triangle', 0.1), 60);
+        },
+        lose() {
+          [280, 200, 140].forEach((f, i) => setTimeout(() => this.beep(f, 0.22, 'sawtooth', 0.08), i * 110));
+        }
+      };
+
+      const canvas = document.getElementById('hexCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const state = {
+        score: 0,
+        combo: 1,
+        maxCombo: 1,
+        bestScore: parseInt(localStorage.getItem(STORAGE_BEST) || '0', 10),
+        angle: 0,
+        targetAngle: 0,
+        stacks: [[], [], [], [], [], []], // 6 lados del hexágono con colores apilados
+        incoming: [], // bloques cayendo hacia el hexágono
+        spawnTimer: 0,
+        spawnInterval: 1400,
+        speed: 1.6,
+        gameOver: false,
+        revived: false,
+        particles: [],
+        shockwaves: [],
+        sizePx: 320,
+        coreRadius: 40,
+        blockThickness: 12
+      };
+
+      function resize() {
+        const stage = document.getElementById('stage');
+        const minDim = Math.min(stage.clientWidth - 16, stage.clientHeight - 16, 460);
+        state.sizePx = Math.max(260, Math.floor(minDim));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        canvas.style.width = `${state.sizePx}px`;
+        canvas.style.height = `${state.sizePx}px`;
+        canvas.width = Math.floor(state.sizePx * dpr);
+        canvas.height = Math.floor(state.sizePx * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        state.coreRadius = Math.max(28, state.sizePx * 0.13);
+        state.blockThickness = Math.max(9, state.sizePx * 0.042);
+      }
+
+      function resetGame() {
+        state.score = 0;
+        state.combo = 1;
+        state.maxCombo = 1;
+        state.angle = 0;
+        state.targetAngle = 0;
+        state.stacks = [[], [], [], [], [], []];
+        state.incoming = [];
+        state.spawnTimer = 0;
+        state.spawnInterval = 1400;
+        state.speed = 1.6;
+        state.gameOver = false;
+        state.revived = false;
+        state.particles = [];
+        state.shockwaves = [];
+
+        if (window.GamerVerse) {
+          if (typeof window.GamerVerse.startSession === 'function') {
+            window.GamerVerse.startSession();
+          } else if (window.GamerVerse.session) {
+            window.GamerVerse.session.startTime = Date.now();
+            window.GamerVerse.session.endTime = null;
+            window.GamerVerse.session.framesRendered = 0;
+            window.GamerVerse.session.active = true;
+          }
+          if (typeof window.GamerVerse.setActiveGame === 'function') {
+            window.GamerVerse.setActiveGame('cosmic_hexagon');
+          }
+        }
+
+        document.getElementById('loseModal').classList.remove('open');
+        updateHUD();
+      }
+
+      function updateHUD() {
+        document.getElementById('scoreVal').textContent = state.score;
+        document.getElementById('comboVal').textContent = `x${state.combo}`;
+        document.getElementById('bestVal').textContent = state.bestScore;
+      }
+
+      function rotate(dir) {
+        if (state.gameOver) return;
+        Sound.rotate();
+        state.targetAngle += dir * (Math.PI / 3); // 60 grados
+      }
+
+      function showCombo(text) {
+        const el = document.getElementById('comboBanner');
+        el.textContent = text;
+        el.classList.add('show');
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('show'), 950);
+      }
+
+      function spawnBlock() {
+        const side = Math.floor(Math.random() * SIDES);
+        const colorIdx = Math.floor(Math.random() * COLORS.length);
+        const dist = state.sizePx * 0.52; // Aparece fuera del área visible
+        state.incoming.push({
+          side,
+          colorIdx,
+          dist,
+          speed: state.speed
+        });
+      }
+
+      function createExplosion(side, layer, color) {
+        const center = state.sizePx / 2;
+        const rad = state.coreRadius + (layer + 0.5) * state.blockThickness;
+        const angle = state.angle + (side + 0.5) * (Math.PI / 3);
+        const x = center + Math.cos(angle) * rad;
+        const y = center + Math.sin(angle) * rad;
+
+        state.shockwaves.push({ x, y, radius: 4, maxRadius: 36, color: color.fill, alpha: 1 });
+
+        for (let i = 0; i < 14; i++) {
+          const a = Math.random() * Math.PI * 2;
+          const spd = Math.random() * 4.5 + 1.5;
+          state.particles.push({
+            x,
+            y,
+            vx: Math.cos(a) * spd,
+            vy: Math.sin(a) * spd,
+            color: color.hi,
+            size: 2.5 + Math.random() * 2.5,
+            life: 1
+          });
+        }
+      }
+
+      function checkMatches() {
+        let clearedAny = false;
+
+        // Comprobar filas de 3 o más bloques del mismo color en el mismo lado
+        for (let s = 0; s < SIDES; s++) {
+          const stack = state.stacks[s];
+          let run = 1;
+          for (let i = 1; i <= stack.length; i++) {
+            if (i < stack.length && stack[i] === stack[i - 1]) {
+              run++;
+            } else {
+              if (run >= 3) {
+                clearedAny = true;
+                const matchColorIdx = stack[i - 1];
+                const startIdx = i - run;
+                for (let k = startIdx; k < i; k++) {
+                  createExplosion(s, k, COLORS[matchColorIdx]);
+                }
+                stack.splice(startIdx, run);
+                const pts = run * 60 * state.combo;
+                state.score += pts;
+                showCombo(`✨ +${pts} PTS (x${state.combo})`);
+                Sound.match(state.combo);
+                i -= run;
+              }
+              run = 1;
+            }
+          }
+        }
+
+        // Comprobar anillos horizontales completos (mismo color alrededor de varios lados contiguos)
+        for (let layer = 0; layer < MAX_BLOCKS_PER_SIDE; layer++) {
+          let runSides = [];
+          for (let s = 0; s < SIDES * 2; s++) { // Bucle circular
+            const sideIdx = s % SIDES;
+            const c = state.stacks[sideIdx][layer];
+            if (c !== undefined && runSides.length > 0 && c === state.stacks[runSides[runSides.length - 1]][layer]) {
+              if (!runSides.includes(sideIdx)) runSides.push(sideIdx);
+            } else if (c !== undefined) {
+              if (runSides.length >= 3) break;
+              runSides = [sideIdx];
+            } else {
+              if (runSides.length >= 3) break;
+              runSides = [];
+            }
+          }
+          if (runSides.length >= 3) {
+            clearedAny = true;
+            const cIdx = state.stacks[runSides[0]][layer];
+            runSides.forEach(s => {
+              createExplosion(s, layer, COLORS[cIdx]);
+              state.stacks[s].splice(layer, 1);
+            });
+            const pts = runSides.length * 80 * state.combo;
+            state.score += pts;
+            showCombo(`🔥 ANILLO ORBITAL! +${pts}`);
+            Sound.match(state.combo);
+          }
+        }
+
+        if (clearedAny) {
+          state.combo++;
+          if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+          // Recursión suave por si caen más bloques en cascada
+          setTimeout(checkMatches, 140);
+        } else {
+          state.combo = 1;
+        }
+
+        if (state.score > state.bestScore) {
+          state.bestScore = state.score;
+          localStorage.setItem(STORAGE_BEST, String(state.bestScore));
+        }
+
+        updateHUD();
+      }
+
+      function triggerGameOver() {
+        if (state.gameOver) return;
+        state.gameOver = true;
+        Sound.lose();
+
+        if (window.GamerVerse) {
+          window.GamerVerse.submitScore('cosmic_hexagon', state.score, state.maxCombo);
+        }
+
+        document.getElementById('loseScore').textContent = state.score;
+        document.getElementById('loseCombo').textContent = `x${state.maxCombo}`;
+        document.getElementById('loseBest').textContent = state.bestScore;
+        document.getElementById('btnReviveAd').style.display = state.revived ? 'none' : 'block';
+        document.getElementById('loseModal').classList.add('open');
+      }
+
+      function reviveEMP() {
+        // Pulso PEM: despeja las 3 capas exteriores de todos los lados
+        for (let s = 0; s < SIDES; s++) {
+          const stack = state.stacks[s];
+          const keep = Math.max(0, stack.length - 3);
+          while (stack.length > keep) {
+            const poppedColor = stack.pop();
+            createExplosion(s, stack.length, COLORS[poppedColor]);
+          }
+        }
+        state.incoming = [];
+        state.gameOver = false;
+        state.revived = true;
+        document.getElementById('loseModal').classList.remove('open');
+        showCombo('⚡ PULSO PEM ACTIVADO!');
+      }
+
+      // Bucle principal de juego
+      let lastTime = performance.now();
+      function loop(now) {
+        const dt = Math.min(32, now - lastTime);
+        lastTime = now;
+
+        // Suavizado de giro (lerp angular)
+        state.angle += (state.targetAngle - state.angle) * 0.22;
+
+        if (!state.gameOver) {
+          // Generación de bloques
+          state.spawnTimer += dt;
+          if (state.spawnTimer >= state.spawnInterval) {
+            state.spawnTimer = 0;
+            spawnBlock();
+            // Aceleración gradual
+            state.spawnInterval = Math.max(700, state.spawnInterval - 4);
+            state.speed = Math.min(3.8, state.speed + 0.015);
+          }
+
+          // Mover bloques cayendo
+          for (let i = state.incoming.length - 1; i >= 0; i--) {
+            const b = state.incoming[i];
+            b.dist -= b.speed * (dt / 16.66);
+
+            // Calcular en qué lado del hexágono cae con la rotación actual
+            // El ángulo del bloque es b.side * 60deg
+            // El ángulo relativo al hexágono es (b.side * 60 - rotación)
+            const relRad = (b.side * (Math.PI / 3) - state.angle);
+            let landingSide = Math.round(relRad / (Math.PI / 3)) % SIDES;
+            if (landingSide < 0) landingSide += SIDES;
+
+            const targetStack = state.stacks[landingSide];
+            const targetDist = state.coreRadius + targetStack.length * state.blockThickness;
+
+            if (b.dist <= targetDist) {
+              state.incoming.splice(i, 1);
+              targetStack.push(b.colorIdx);
+              Sound.land();
+
+              if (targetStack.length >= MAX_BLOCKS_PER_SIDE) {
+                triggerGameOver();
+                break;
+              }
+
+              checkMatches();
+            }
+          }
+        }
+
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      // Dibujado en Canvas
+      function render() {
+        const center = state.sizePx / 2;
+        ctx.clearRect(0, 0, state.sizePx, state.sizePx);
+
+        // Anillo de peligro exterior
+        const dangerRadius = state.coreRadius + MAX_BLOCKS_PER_SIDE * state.blockThickness;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(244, 63, 94, 0.25)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.arc(center, center, dangerRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Hexágono central rotado con sus bloques apilados
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(state.angle);
+
+        // Dibujar bloques apilados en las 6 caras
+        for (let s = 0; s < SIDES; s++) {
+          const stack = state.stacks[s];
+          const a0 = s * (Math.PI / 3);
+          const a1 = (s + 1) * (Math.PI / 3);
+
+          for (let layer = 0; layer < stack.length; layer++) {
+            const color = COLORS[stack[layer]];
+            const r0 = state.coreRadius + layer * state.blockThickness;
+            const r1 = r0 + state.blockThickness - 1.5;
+
+            ctx.fillStyle = color.fill;
+            ctx.beginPath();
+            ctx.arc(0, 0, r1, a0 + 0.03, a1 - 0.03);
+            ctx.arc(0, 0, r0, a1 - 0.03, a0 + 0.03, true);
+            ctx.closePath();
+            ctx.fill();
+
+            // Brillo superior
+            ctx.fillStyle = color.hi;
+            ctx.globalAlpha = 0.35;
+            ctx.beginPath();
+            ctx.arc(0, 0, r1, a0 + 0.05, a1 - 0.05);
+            ctx.arc(0, 0, r1 - 2, a1 - 0.05, a0 + 0.05, true);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+        }
+
+        // Núcleo del Hexágono
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        for (let i = 0; i < SIDES; i++) {
+          const a = i * (Math.PI / 3);
+          const x = Math.cos(a) * state.coreRadius;
+          const y = Math.sin(a) * state.coreRadius;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+
+        // Dibujar bloques cayendo
+        for (const b of state.incoming) {
+          const color = COLORS[b.colorIdx];
+          const a0 = b.side * (Math.PI / 3);
+          const a1 = (b.side + 1) * (Math.PI / 3);
+          const r0 = b.dist;
+          const r1 = r0 + state.blockThickness;
+
+          ctx.save();
+          ctx.translate(center, center);
+          ctx.fillStyle = color.fill;
+          ctx.beginPath();
+          ctx.arc(0, 0, r1, a0 + 0.04, a1 - 0.04);
+          ctx.arc(0, 0, r0, a1 - 0.04, a0 + 0.04, true);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Ondas de Choque expansivas
+        for (let i = state.shockwaves.length - 1; i >= 0; i--) {
+          const sw = state.shockwaves[i];
+          sw.radius += (sw.maxRadius - sw.radius) * 0.22 + 1.2;
+          sw.alpha -= 0.06;
+          if (sw.alpha <= 0) {
+            state.shockwaves.splice(i, 1);
+            continue;
+          }
+          ctx.save();
+          ctx.globalAlpha = sw.alpha;
+          ctx.strokeStyle = sw.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // Partículas Neón con fusión aditiva
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = state.particles.length - 1; i >= 0; i--) {
+          const p = state.particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vx *= 0.96;
+          p.vy *= 0.96;
+          p.life -= 0.04;
+          if (p.life <= 0) {
+            state.particles.splice(i, 1);
+            continue;
+          }
+          ctx.globalAlpha = p.life;
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Control táctil directo en la pantalla:
+      // Tocar mitad izquierda = girar izquierda | Tocar mitad derecha = girar derecha
+      // Deslizar (swipe) izquierda/derecha también gira
+      let touchStartX = 0;
+      canvas.addEventListener('pointerdown', (e) => {
+        touchStartX = e.clientX;
+      });
+
+      canvas.addEventListener('pointerup', (e) => {
+        const dx = e.clientX - touchStartX;
+        if (Math.abs(dx) > 30) {
+          rotate(dx > 0 ? 1 : -1);
+        } else {
+          const rect = canvas.getBoundingClientRect();
+          const clickX = e.clientX - rect.left;
+          rotate(clickX < rect.width / 2 ? -1 : 1);
+        }
+      });
+
+      // Teclado para pruebas (Flechas izquierda/derecha o A/D)
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') rotate(-1);
+        if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') rotate(1);
+      });
+
+      // Botones táctiles inferiores
+      document.getElementById('btnRotateLeft').addEventListener('click', () => rotate(-1));
+      document.getElementById('btnRotateRight').addEventListener('click', () => rotate(1));
+
+      document.getElementById('btnSound').addEventListener('click', () => {
+        Sound.enabled = !Sound.enabled;
+        document.getElementById('btnSound').textContent = Sound.enabled ? '🔊' : '🔇';
+      });
+
+      document.getElementById('btnBack').addEventListener('click', () => {
+        window.location.href = '../index.html';
+      });
+
+      // Monetización limpia
+      document.getElementById('btnReviveAd').addEventListener('click', () => {
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd(reviveEMP, () => alert('Completa el anuncio para recibir la recompensa.'));
+        } else {
+          reviveEMP();
+        }
+      });
+
+      document.getElementById('btnRetryLose').addEventListener('click', () => {
+        const restart = () => {
+          if (window.GamerVerse && !window.GamerVerse.consumeTicket()) {
+            window.GamerVerse.showNoTicketsModal(() => {
+              if (window.GamerVerse.consumeTicket()) resetGame();
+            });
+            return;
+          }
+          resetGame();
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+          window.GamerVerse.showInterstitialAd(restart);
+        } else {
+          restart();
+        }
+      });
+
+      window.addEventListener('resize', resize);
+      resize();
+      resetGame();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
