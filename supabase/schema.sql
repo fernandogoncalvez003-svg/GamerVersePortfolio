@@ -247,8 +247,8 @@ DROP POLICY IF EXISTS "Lectura pública de jackpots" ON public.jackpots;
 CREATE POLICY "Lectura pública de jackpots" ON public.jackpots FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Lectura pública de ranking" ON public.game_scores;
 CREATE POLICY "Lectura pública de ranking" ON public.game_scores FOR SELECT USING (is_valid = true);
+-- Política segura: la tabla users NO es legible públicamente (solo backend con Secret Key)
 DROP POLICY IF EXISTS "Lectura del propio perfil" ON public.users;
-CREATE POLICY "Lectura del propio perfil" ON public.users FOR SELECT USING (true);
 
 -- ----------------------------------------------------------------------------
 -- 7. SEMILLA INICIAL: Bote Semanal Activo (si no existe ninguno activo)
@@ -285,6 +285,8 @@ CREATE TABLE IF NOT EXISTS public.platform_metrics (
     peak_concurrent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.platform_metrics ENABLE ROW LEVEL SECURITY;
 
 INSERT INTO public.platform_metrics (id, peak_concurrent)
 VALUES (1, 0)

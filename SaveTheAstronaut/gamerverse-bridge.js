@@ -277,12 +277,12 @@
                     }, '*');
                 }
 
-                // Sincronizar en segundo plano con el backend
-                if (this.apiBase) {
+                // Sincronizar en segundo plano con el backend (solo usuarios autenticados de Telegram)
+                if (this.apiBase && this.user.initData) {
                     fetch(`${this.apiBase}/ticket/consume`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ userId: this.user.id })
+                        body: JSON.stringify({ userId: this.user.id, initData: this.user.initData })
                     }).catch(() => { /* offline fallback */ });
                 }
                 this.notifyStateUpdated();
@@ -305,12 +305,12 @@
                 }, '*');
             }
 
-            // Sincronizar con el backend y alimentar el Bote
-            if (this.apiBase) {
+            // Sincronizar con el backend y alimentar el Bote (solo usuarios autenticados de Telegram)
+            if (this.apiBase && this.user.initData) {
                 fetch(`${this.apiBase}/ticket/ad-reward`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: this.user.id })
+                    body: JSON.stringify({ userId: this.user.id, initData: this.user.initData })
                 }).then(r => r.json()).then(d => {
                     if (d && typeof d.current_jackpot === 'number') {
                         this.jackpot.amount = d.current_jackpot;
@@ -342,6 +342,7 @@
 
             const payload = {
                 userId: this.user.id,
+                initData: this.user.initData || '',
                 gameId: gameId || 'astronaut_runner',
                 score: distance,
                 coins: coins || 0,
@@ -359,8 +360,8 @@
                 }, '*');
             }
 
-            // Enviar a la base de datos (Supabase / Backend)
-            if (this.apiBase) {
+            // Enviar a la base de datos (solo usuarios autenticados de Telegram)
+            if (this.apiBase && this.user.initData) {
                 fetch(`${this.apiBase}/score/submit`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

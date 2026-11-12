@@ -537,10 +537,92 @@ bot.action('CHECK_FAQ', async (ctx) => {
 // 3. REST API PARA EL FRONTEND (JUEGOS Y LOBBY)
 // ----------------------------------------------------------------------------
 const app = express();
-app.use(express.json());
+app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use(express.json({ limit: '32kb' }));
 
-// Middleware de CORS
+// Logs de seguridad para detectar ataques o abuso a tiempo
+function logSecurityEvent(eventType, req, details = '') {
+    const ip = req.ip || (req.headers && req.headers['x-forwarded-for']) || 'unknown';
+    console.warn(`[SEC] ${new Date().toISOString()} | ${eventType} | ip=${ip} | ${req.method} ${req.path}${details ? ' | ' + details : ''}`);
+}
+
+function sendSafeServerError(res, context, err) {
+    console.error(`[ERR] ${context}:`, err && err.message ? err.message : err);
+    return res.status(500).json({ success: false, message: 'Error interno del servidor. Intenta de nuevo.' });
+}
+
+// Rate limiting en memoria (por IP y ventana de tiempo)
+function createRateLimiter({ windowMs, max, name }) {
+    const hits = new Map();
+    setInterval(() => {
+        const now = Date.now();
+        for (const [k, v] of hits.entries()) {
+            if (now > v.resetAt) hits.delete(k);
+        }
+    }, Math.max(30000, windowMs)).unref();
+
+    return (req, res, next) => {
+        if (req.method === 'OPTIONS') return next();
+        const key = `${req.ip || 'unknown'}:${name}`;
+        const now = Date.now();
+        let entry = hits.get(key);
+        if (!entry || now > entry.resetAt) {
+            entry = { count: 1, resetAt: now + windowMs };
+            hits.set(key, entry);
+            return next();
+        }
+        entry.count++;
+        if (entry.count > max) {
+            logSecurityEvent('RATE_LIMIT', req, `bucket=${name} count=${entry.count}`);
+            return res.status(429).json({ success: false, message: 'Demasiadas peticiones. Espera unos segundos.' });
+        }
+        return next();
+    };
+}
+
+const globalLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 120, name: 'global' });
+const writeLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 25, name: 'write' });
+const adminAuthLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 5, name: 'admin_auth' });
+const adRewardCooldown = new Map();
+
+function resolveAuthenticatedUser(req, res) {
+    const rawInitData = (req.body && req.body.initData) || req.headers['x-telegram-init-data'] || '';
+    if (hasRealBotToken) {
+        if (!rawInitData) {
+            logSecurityEvent('MISSING_INIT_DATA', req);
+            res.status(401).json({ success: false, message: 'Sesión de Telegram requerida.' });
+            return null;
+        }
+        const verified = verifyTelegramWebAppData(String(rawInitData), BOT_TOKEN);
+        if (!verified || !verified.id) {
+            logSecurityEvent('INVALID_INIT_DATA', req);
+            res.status(401).json({ success: false, message: 'Sesión de Telegram inválida o expirada.' });
+            return null;
+        }
+        return {
+            id: verified.id,
+            username: verified.username || '',
+            firstName: verified.first_name || 'Jugador',
+            languageCode: verified.language_code || ''
+        };
+    }
+    const fallbackId = parseInt(req.body && req.body.userId, 10);
+    if (!fallbackId || isNaN(fallbackId)) {
+        res.status(400).json({ success: false, message: 'Falta userId válido.' });
+        return null;
+    }
+    return {
+        id: fallbackId,
+        username: (req.body && req.body.username) || '',
+        firstName: (req.body && req.body.firstName) || 'Jugador',
+        languageCode: (req.body && req.body.languageCode) || ''
+    };
+}
+
+// Middleware de CORS y cabeceras básicas de seguridad
 app.use((req, res, next) => {
+    res.header('X-Content-Type-Options', 'nosniff');
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, X-Telegram-Init-Data, X-Admin-Token');
@@ -548,78 +630,98 @@ app.use((req, res, next) => {
     next();
 });
 
-// Endpoint: Consumir 1 Ticket al iniciar partida
-app.post('/api/ticket/consume', async (req, res) => {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ success: false, message: 'Falta userId' });
+app.use('/api', globalLimiter);
+
+// Endpoint: Consumir 1 Ticket al iniciar partida (protegido por initData)
+app.post('/api/ticket/consume', writeLimiter, async (req, res) => {
+    const authUser = resolveAuthenticatedUser(req, res);
+    if (!authUser) return;
 
     if (supabase) {
-        const { data, error } = await supabase.rpc('consume_ticket', { p_user_id: userId });
-        if (error) return res.status(500).json({ success: false, error: error.message });
+        const { data, error } = await supabase.rpc('consume_ticket', { p_user_id: authUser.id });
+        if (error) return sendSafeServerError(res, 'consume_ticket', error);
         return res.json(data);
     } else {
-        const user = memoryDB.users.get(parseInt(userId, 10)) || { tickets: 3 };
+        const user = memoryDB.users.get(authUser.id) || { tickets: 3 };
         if (user.tickets < 1) {
             return res.json({ success: false, message: 'Sin tickets disponibles', tickets: 0 });
         }
         user.tickets--;
-        memoryDB.users.set(parseInt(userId, 10), user);
+        memoryDB.users.set(authUser.id, user);
         return res.json({ success: true, tickets: user.tickets });
     }
 });
 
-// Endpoint: Recompensa por ver anuncio Adsgram (+1 Ticket y +$0.0012 al Bote)
-app.post('/api/ticket/ad-reward', async (req, res) => {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ success: false, message: 'Falta userId' });
+// Endpoint: Recompensa por ver anuncio (+1 Ticket y +$0.0012 al Bote)
+app.post('/api/ticket/ad-reward', writeLimiter, async (req, res) => {
+    const authUser = resolveAuthenticatedUser(req, res);
+    if (!authUser) return;
+
+    const now = Date.now();
+    const lastAdAt = adRewardCooldown.get(authUser.id) || 0;
+    if (now - lastAdAt < 10000) {
+        logSecurityEvent('AD_REWARD_COOLDOWN', req, `user=${authUser.id}`);
+        return res.status(429).json({ success: false, message: 'Espera unos segundos antes de reclamar otro anuncio.' });
+    }
+    adRewardCooldown.set(authUser.id, now);
 
     if (supabase) {
-        const { data, error } = await supabase.rpc('reward_ad_watched', { p_user_id: userId });
-        if (error) return res.status(500).json({ success: false, error: error.message });
+        const { data, error } = await supabase.rpc('reward_ad_watched', { p_user_id: authUser.id });
+        if (error) return sendSafeServerError(res, 'reward_ad_watched', error);
         return res.json(data);
     } else {
-        const user = memoryDB.users.get(parseInt(userId, 10)) || { tickets: 0 };
+        const user = memoryDB.users.get(authUser.id) || { tickets: 0 };
         user.tickets++;
         memoryDB.jackpot.amount += 0.0012;
-        memoryDB.users.set(parseInt(userId, 10), user);
+        memoryDB.users.set(authUser.id, user);
         return res.json({ success: true, tickets: user.tickets, current_jackpot: memoryDB.jackpot.amount });
     }
 });
 
-// Endpoint: Enviar Puntuación con Validación Anti-Cheat
-app.post('/api/score/submit', async (req, res) => {
-    const { userId, gameId, score, coins, durationMs, frames, hash } = req.body;
+// Endpoint: Enviar Puntuación con Validación Anti-Cheat (protegido por initData)
+app.post('/api/score/submit', writeLimiter, async (req, res) => {
+    const authUser = resolveAuthenticatedUser(req, res);
+    if (!authUser) return;
 
-    // Validación básica de parámetros
-    if (!userId || !gameId || score === undefined || !durationMs) {
-        return res.status(400).json({ success: false, message: 'Parámetros incompletos' });
+    const { gameId, score, coins, durationMs, frames, hash } = req.body || {};
+    const cleanGame = normalizeGameId(gameId);
+    const numScore = Number(score);
+    const numCoins = Math.max(0, Math.floor(Number(coins || 0)));
+    const numDuration = Math.floor(Number(durationMs || 0));
+    const numFrames = Math.max(0, Math.floor(Number(frames || 0)));
+
+    if (!cleanGame || cleanGame === 'hub' || !Number.isFinite(numScore) || numScore < 0 || !Number.isFinite(numDuration) || numDuration < 1000) {
+        return res.status(400).json({ success: false, message: 'Parámetros de partida inválidos.' });
     }
 
     if (supabase) {
         const { data, error } = await supabase.rpc('submit_match_score', {
-            p_user_id: userId,
-            p_game_id: gameId,
-            p_score: score,
-            p_coins: coins || 0,
-            p_duration_ms: durationMs,
-            p_frames: frames || 0,
-            p_hash: hash || 'no_hash'
+            p_user_id: authUser.id,
+            p_game_id: cleanGame,
+            p_score: Math.floor(numScore),
+            p_coins: numCoins,
+            p_duration_ms: numDuration,
+            p_frames: numFrames,
+            p_hash: String(hash || 'no_hash').slice(0, 128)
         });
-        if (error) return res.status(500).json({ success: false, error: error.message });
+        if (error) return sendSafeServerError(res, 'submit_match_score', error);
+        if (data && data.flagged) {
+            logSecurityEvent('ANTICHEAT_FLAG', req, `user=${authUser.id} game=${cleanGame} score=${numScore} dur=${numDuration}`);
+        }
         return res.json(data);
     } else {
-        // Validación Anti-Cheat local: en AstronautRunner máximo 1 metro por cada 75ms
-        const maxScore = Math.floor(durationMs / 75) + 50;
-        const isValid = score <= maxScore && durationMs >= 4000;
+        const maxScore = Math.floor(numDuration / 75) + 50;
+        const isValid = numScore <= maxScore && numDuration >= 4000;
 
         if (isValid) {
-            memoryDB.scores.push({ userId, gameId, score, durationMs, date: new Date() });
-            return res.json({ success: true, score, flagged: false });
+            memoryDB.scores.push({ userId: authUser.id, gameId: cleanGame, score: Math.floor(numScore), durationMs: numDuration, date: new Date() });
+            return res.json({ success: true, score: Math.floor(numScore), flagged: false });
         } else {
-            return res.json({ 
-                success: false, 
-                flagged: true, 
-                reason: 'Score rechazado por inconsistencia física de tiempo/distancia' 
+            logSecurityEvent('ANTICHEAT_FLAG', req, `user=${authUser.id} game=${cleanGame} score=${numScore} dur=${numDuration}`);
+            return res.json({
+                success: false,
+                flagged: true,
+                reason: 'Score rechazado por inconsistencia física de tiempo/distancia'
             });
         }
     }
@@ -764,29 +866,25 @@ app.post('/api/user/sync', async (req, res) => {
     });
 });
 
-// Endpoint: Guardar Wallet USDT / Binance Pay ID del jugador
-app.post('/api/user/wallet', async (req, res) => {
-    const { userId, walletAddress, initData } = req.body || {};
-    let resolvedId = parseInt(userId, 10);
-    if (initData && hasRealBotToken) {
-        const verified = verifyTelegramWebAppData(initData, BOT_TOKEN);
-        if (!verified) return res.status(401).json({ success: false, message: 'initData inválido' });
-        resolvedId = verified.id;
-    }
-    const cleanWallet = String(walletAddress || '').trim().slice(0, 120);
-    if (!resolvedId || isNaN(resolvedId) || cleanWallet.length < 4) {
+// Endpoint: Guardar Wallet USDT / Binance Pay ID del jugador (protegido por initData)
+app.post('/api/user/wallet', writeLimiter, async (req, res) => {
+    const authUser = resolveAuthenticatedUser(req, res);
+    if (!authUser) return;
+
+    const cleanWallet = String((req.body && req.body.walletAddress) || '').trim().slice(0, 120);
+    if (cleanWallet.length < 4 || !/^[A-Za-z0-9_.:@-]+$/.test(cleanWallet)) {
         return res.status(400).json({ success: false, message: 'Ingresa una dirección o Binance Pay ID válido.' });
     }
     if (supabase) {
         const { error } = await supabase
             .from('users')
             .update({ wallet_address: cleanWallet, updated_at: new Date().toISOString() })
-            .eq('id', resolvedId);
-        if (error) return res.status(500).json({ success: false, message: error.message });
+            .eq('id', authUser.id);
+        if (error) return sendSafeServerError(res, 'user_wallet', error);
     } else {
-        const u = memoryDB.users.get(resolvedId) || { id: resolvedId, tickets: 3, coins: 0 };
+        const u = memoryDB.users.get(authUser.id) || { id: authUser.id, tickets: 3, coins: 0 };
         u.wallet_address = cleanWallet;
-        memoryDB.users.set(resolvedId, u);
+        memoryDB.users.set(authUser.id, u);
     }
     return res.json({ success: true, walletAddress: cleanWallet });
 });
@@ -814,25 +912,14 @@ app.get('/api/winners/recent', async (req, res) => {
     return res.json({ success: true, tournament: closed, winners });
 });
 
-// Endpoint: Latido de presencia en vivo (conectados actuales, juego activo y pico histórico)
+// Endpoint: Latido de presencia en vivo (solo usuarios autenticados de Telegram)
 app.post('/api/presence/heartbeat', async (req, res) => {
-    const { userId, activeGame, countryCode, languageCode, initData } = req.body || {};
-    let resolvedId = parseInt(userId, 10);
-    let resolvedLang = languageCode || '';
+    const authUser = resolveAuthenticatedUser(req, res);
+    if (!authUser) return;
 
-    if (initData && hasRealBotToken) {
-        const verified = verifyTelegramWebAppData(initData, BOT_TOKEN);
-        if (verified && verified.id) {
-            resolvedId = verified.id;
-            resolvedLang = verified.language_code || resolvedLang;
-        }
-    }
-    if (!resolvedId || isNaN(resolvedId)) {
-        return res.status(400).json({ success: false, message: 'Falta userId válido' });
-    }
-
+    const { activeGame, countryCode, languageCode } = req.body || {};
     const resolvedCountry = normalizeCountry(countryCode, req);
-    const presence = await updatePresenceAndPeak(resolvedId, activeGame, resolvedCountry, resolvedLang);
+    const presence = await updatePresenceAndPeak(authUser.id, activeGame, resolvedCountry, authUser.languageCode || languageCode || '');
     return res.json({ success: true, ...presence });
 });
 
@@ -878,10 +965,11 @@ function requireAdmin(req, res, next) {
         req.adminAuth = { method: 'otp_session', id: ADMIN_TELEGRAM_ID };
         return next();
     }
+    logSecurityEvent('ADMIN_AUTH_DENIED', req);
     return res.status(401).json({ success: false, message: 'Acceso denegado: solo administrador autorizado.' });
 }
 
-app.post('/api/admin/request-code', async (req, res) => {
+app.post('/api/admin/request-code', adminAuthLimiter, async (req, res) => {
     if (!hasRealBotToken) {
         return res.status(503).json({ success: false, message: 'Bot token no configurado en el servidor.' });
     }
@@ -896,19 +984,21 @@ app.post('/api/admin/request-code', async (req, res) => {
         );
         return res.json({ success: true, message: 'Código enviado por Telegram a tu cuenta admin.' });
     } catch (err) {
-        return res.status(500).json({ success: false, message: `No se pudo enviar por Telegram: ${err.message}` });
+        return sendSafeServerError(res, 'admin_request_code', err);
     }
 });
 
-app.post('/api/admin/verify-code', (req, res) => {
+app.post('/api/admin/verify-code', adminAuthLimiter, (req, res) => {
     const { code, secret } = req.body || {};
     if (ADMIN_SECRET && secret && secret === ADMIN_SECRET) {
         return res.json({ success: true, token: createAdminSessionToken() });
     }
     if (!adminOtpState.code || Date.now() > adminOtpState.expiresAt) {
+        logSecurityEvent('ADMIN_OTP_EXPIRED', req);
         return res.status(401).json({ success: false, message: 'Código expirado. Solicita uno nuevo.' });
     }
     if (String(code || '').trim() !== adminOtpState.code) {
+        logSecurityEvent('ADMIN_OTP_INVALID', req);
         return res.status(401).json({ success: false, message: 'Código incorrecto.' });
     }
     adminOtpState.code = null;
@@ -921,7 +1011,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
         const stats = await getAdminStats();
         return res.json({ success: true, stats });
     } catch (err) {
-        return res.status(500).json({ success: false, message: err.message });
+        return sendSafeServerError(res, 'admin_stats', err);
     }
 });
 
@@ -968,10 +1058,10 @@ app.post('/api/admin/tournaments', requireAdmin, async (req, res) => {
             .select('*')
             .single();
 
-        if (error) return res.status(500).json({ success: false, message: error.message });
+        if (error) return sendSafeServerError(res, 'admin_create_tournament', error);
         return res.json({ success: true, tournament: data });
     } catch (err) {
-        return res.status(500).json({ success: false, message: err.message });
+        return sendSafeServerError(res, 'admin_create_tournament_ex', err);
     }
 });
 
@@ -984,7 +1074,7 @@ app.post('/api/admin/tournaments/:id/close', requireAdmin, async (req, res) => {
         .eq('id', id)
         .select('*')
         .maybeSingle();
-    if (error) return res.status(500).json({ success: false, message: error.message });
+    if (error) return sendSafeServerError(res, 'admin_close_tournament', error);
     return res.json({ success: true, tournament: data });
 });
 
