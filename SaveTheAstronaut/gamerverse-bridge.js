@@ -443,28 +443,7 @@
                 }
                 return Promise.resolve(false);
             }
-            return this.loadMonetagSdk(zoneId).then((ready) => {
-                let isTopWindow = true;
-                try { isTopWindow = (window.top === window); } catch (_) {}
-                if (ready && isTopWindow && !this.monetag.inAppStarted) {
-                    const interZone = this.monetag.interstitialZoneId || zoneId;
-                    const fn = window['show_' + interZone];
-                    if (typeof fn === 'function') {
-                        this.monetag.inAppStarted = true;
-                        fn({
-                            type: 'inApp',
-                            inAppSettings: {
-                                frequency: 2,
-                                capping: 0.1,
-                                interval: 45,
-                                timeout: 10,
-                                everyPage: false
-                            }
-                        }).catch(() => {});
-                    }
-                }
-                return ready;
-            });
+            return this.loadMonetagSdk(zoneId).then((ready) => ready);
         },
 
         loadMonetagSdk: function (zoneId) {
