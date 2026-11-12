@@ -1344,6 +1344,7 @@
         };
         let gameState = STATE.MENU;
         let deathsCountSinceLastAd = 0;
+        let worldsBeatenSinceLastAd = 0;
 
         // Variables de configuración de Ajustes (con persistencia en localStorage)
         let controlType = localStorage.getItem('controlType') || 'joystick'; // 'joystick' o 'direct'
@@ -4184,48 +4185,9 @@
             }
         }
 
-        function winLevel() {
-            stopBGM();
-            gameState = STATE.VICTORY;
-            document.getElementById('hud').style.opacity = '0';
-            document.getElementById('victory-screen').classList.remove('hidden');
-
-            document.getElementById('pauseBtn').classList.add('hidden');
-            document.getElementById('settingsBtn').classList.remove('hidden');
-            
-            const meta = getWorldMeta(currentWorldIndex);
-            const world = meta.world;
-            const totalWorldBonus = world.levels.reduce((sum, l) => sum + (l.bonus || 0), 0);
-            document.getElementById('victoryLevelName').innerText = `${meta.title}: ${meta.desc}`;
-            document.getElementById('victoryCoins').innerText = coins;
-            document.getElementById('victoryBonus').innerText = totalWorldBonus;
-
-            // Sumar monedas al saldo total (monedas de la partida + bono del mundo)
-            const levelEarnings = coins + totalWorldBonus;
-            totalCoins += levelEarnings;
-            localStorage.setItem('totalCoins', totalCoins);
-            document.getElementById('totalCoinsVal').innerText = totalCoins;
-            document.getElementById('totalCoinsVictory').innerText = totalCoins;
-
-            if (score > bestScore) {
-                bestScore = score;
-                localStorage.setItem('bestScore', bestScore);
-                document.getElementById('bestVal').innerText = bestScore;
-            }
-            if (window.GamerVerse) {
-                window.GamerVerse.submitScore('save_the_astronaut', score, levelEarnings);
-            }
-
-            // Desbloquear el siguiente mundo al completar el mundo actual
-            if (currentWorldIndex + 1 >= highestWorldUnlocked && highestWorldUnlocked < WORLDS.length) {
-                highestWorldUnlocked = currentWorldIndex + 2;
-                highestLevelUnlocked = 1;
-                localStorage.setItem('highestWorldUnlocked', highestWorldUnlocked);
-                localStorage.setItem('highestLevelUnlocked', highestLevelUnlocked);
-            }
-
-            // Sonido de victoria (Fanfarria ascendente retro)
-            if (audioCtx) {
+        function playVictoryFanfare() {
+            if (!audioCtx) return;
+            try {
                 const now = audioCtx.currentTime;
                 // Nota C5
                 let osc1 = audioCtx.createOscillator();
@@ -4252,23 +4214,149 @@
                 gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
                 osc2.start(now + 0.15);
                 osc2.stop(now + 0.6);
+            } catch (_) {}
+        }
+
+        function winLevel() {
+            // Sonido de fanfarria
+            playVictoryFanfare();
+
+            const meta = getWorldMeta(currentWorldIndex);
+            const world = meta.world;
+            const totalWorldBonus = world.levels.reduce((sum, l) => sum + (l.bonus || 0), 0);
+
+            // Sumar monedas al saldo total y a la corrida en curso
+            coins += totalWorldBonus;
+            totalCoins += totalWorldBonus;
+            localStorage.setItem('totalCoins', totalCoins);
+            document.getElementById('coinVal').innerText = coins;
+            document.getElementById('totalCoinsVal').innerText = totalCoins;
+
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('bestScore', bestScore);
+                document.getElementById('bestVal').innerText = bestScore;
             }
+            if (window.GamerVerse) {
+                window.GamerVerse.submitScore('save_the_astronaut', score, totalWorldBonus);
+            }
+
+            // Desbloquear el siguiente mundo en el mapa
+            if (currentWorldIndex + 1 >= highestWorldUnlocked && highestWorldUnlocked < WORLDS.length) {
+                highestWorldUnlocked = currentWorldIndex + 2;
+                highestLevelUnlocked = 1;
+                localStorage.setItem('highestWorldUnlocked', highestWorldUnlocked);
+                localStorage.setItem('highestLevelUnlocked', highestLevelUnlocked);
+            }
+
+            // Si completó el último mundo disponible (Mundo 10 - Final del juego)
+            if (currentWorldIndex >= WORLDS.length - 1) {
+                stopBGM();
+                gameState = STATE.VICTORY;
+                document.getElementById('hud').style.opacity = '0';
+                showFinalEndingPopup();
+                return;
+            }
+
+            // Celebración arcade fluida en pantalla SIN cortar la partida
+            screenShake = 12;
+            triggerHaptic('success');
+            spawnFloatingText(canvas.width / 2, canvas.height * 0.35, `🏆 ¡${meta.title} SUPERADO! +${totalWorldBonus}🪙`, '#ffd32a', 18);
+
+            // Blindar al astronauta durante el viaje hiperespacial
+            player.hp = player.maxHp;
+            player.shield = 100;
+            player.shieldActive = true;
+            player.shieldTime = Date.now() + 5000;
+            player.invulnTime = Date.now() + 5000;
+            updateSuitHUD();
+
+            // Limpiar proyectiles y meteoritos residuales para viaje limpio
+            obstacles = [];
+            bullets = [];
+            enemyBullets = [];
+            warnings = [];
+
+            // Avanzar al siguiente mundo unificado
+            currentWorldIndex++;
+            currentLevelIndex = 0;
+            localStorage.setItem('currentWorldIndex', currentWorldIndex);
+
+            worldsBeatenSinceLastAd++;
+
+            const nextMeta = getWorldMeta(currentWorldIndex);
+            spawnFloatingText(canvas.width / 2, canvas.height * 0.45, `🚀 VIAJANDO A ${nextMeta.title}...`, '#00f0ff', 16);
+
+            // Frecuencia balanceada de intersticial: cada 2 mundos superados
+            if (worldsBeatenSinceLastAd >= 2) {
+                worldsBeatenSinceLastAd = 0;
+                setTimeout(() => {
+                    MonetagBridge.showInterstitialAd(() => {
+                        startNextWorldSmoothly();
+                    });
+                }, 1200);
+            } else {
+                // Transición continua directa sin interrupción
+                setTimeout(() => {
+                    startNextWorldSmoothly();
+                }, 1400);
+            }
+        }
+
+        function startNextWorldSmoothly() {
+            const meta = getWorldMeta(currentWorldIndex);
+            const lvl = meta.world.levels[0];
+
+            // Reanudar / actualizar BGM con el tema del nuevo mundo
+            stopBGM();
+            playBGM();
+
+            // HUD y transición cósmica de fondo
+            document.getElementById('hudLevelName').innerText = `${meta.title}: ${meta.desc}`;
+            canvas.style.transition = 'background 2s ease';
+            canvas.style.background = `radial-gradient(circle at center, ${lvl.bgGradient[1]} 0%, ${lvl.bgGradient[0]} 100%)`;
+
+            // Resetear parámetros y objetivos del nuevo mundo
+            levelTimer = 0;
+            levelEnemiesKilled = 0;
+            levelCoinsCollected = 0;
+            baseSpawnRate = lvl.spawnRate;
+            spawnRate = baseSpawnRate;
+            baseObstacleSpeed = lvl.obstacleSpeed;
+            maxObstacleSpeed = baseObstacleSpeed + 3;
+
+            obstacleSpawnTimer = 0;
+            squadronSpawnTimer = 3500;
+            bonusWaveSpawnTimer = 0;
+            itemSpawnTimer = 0;
+            powerSpawnTimer = 0;
+            cometSpawnTimer = 0;
+            coinSpawnTimer = 0;
+            shootTimer = 0;
+            boss = null;
+            bossDelayTimer = 0;
+
+            // Escudo de re-entrada seguro
+            player.invulnTime = Date.now() + 3500;
+            player.shieldActive = true;
+            player.shieldTime = Date.now() + 3500;
+            updateSuitHUD();
+
+            gameState = STATE.PLAYING;
+            document.getElementById('hud').style.opacity = '1';
+            document.getElementById('pauseBtn').classList.remove('hidden');
+
+            playSound('jump');
+            spawnFloatingText(canvas.width / 2, canvas.height * 0.35, `🌌 ¡BIENVENIDO A ${meta.title}!`, '#7bed9f', 16);
         }
 
         function loadNextLevel() {
             document.getElementById('victory-screen').classList.add('hidden');
-            
-            // Si completó el último mundo disponible
             if (currentWorldIndex >= WORLDS.length - 1) {
                 showFinalEndingPopup();
                 return;
             }
-            
-            // Pasar directamente al siguiente Mundo unificado sin cobrar ticket extra
-            currentWorldIndex++;
-            currentLevelIndex = 0;
-            localStorage.setItem('currentWorldIndex', currentWorldIndex);
-            startGame(true);
+            startNextWorldSmoothly();
         }
 
         function showFinalEndingPopup() {
