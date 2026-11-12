@@ -758,8 +758,17 @@
         }
 
         if (window.GamerVerse) {
-          window.GamerVerse.startSession();
-          window.GamerVerse.setActiveGame('cosmic_blocks');
+          if (typeof window.GamerVerse.startSession === 'function') {
+            window.GamerVerse.startSession();
+          } else if (window.GamerVerse.session) {
+            window.GamerVerse.session.startTime = Date.now();
+            window.GamerVerse.session.endTime = null;
+            window.GamerVerse.session.framesRendered = 0;
+            window.GamerVerse.session.active = true;
+          }
+          if (typeof window.GamerVerse.setActiveGame === 'function') {
+            window.GamerVerse.setActiveGame('cosmic_blocks');
+          }
         }
 
         closeAllModals();
@@ -860,7 +869,7 @@
             roundRect(ctx, x + 1.5, y + 1.5, cp - 3, cp - 3, 5);
             ctx.fill();
 
-            const cell = state.board[r][c];
+            const cell = (state.board[r] && state.board[r][c]) || null;
             if (cell) {
               drawCellBlock(ctx, x, y, cp, cell.colorIdx, cell.gem, cell.armor, 1);
             }
@@ -1022,7 +1031,7 @@
 
           toClear.forEach(key => {
             const [r, c] = key.split(',').map(Number);
-            const cell = state.board[r][c];
+            const cell = (state.board[r] && state.board[r][c]) || null;
             if (!cell) return;
             const pal = PALETTE[cell.colorIdx % PALETTE.length];
             spawnClearParticles(r, c, pal.fill);
@@ -1114,7 +1123,7 @@
       function clearCenterBlast() {
         for (let r = 3; r <= 6; r++) {
           for (let c = 3; c <= 6; c++) {
-            const cell = state.board[r][c];
+            const cell = (state.board[r] && state.board[r][c]) || null;
             if (cell) {
               const pal = PALETTE[cell.colorIdx % PALETTE.length];
               spawnClearParticles(r, c, pal.fill);
@@ -1303,8 +1312,8 @@
 
       window.addEventListener('resize', resizeBoard);
       setupDrag();
-      resizeBoard();
       startLevel(state.level, 'level');
+      resizeBoard();
     })();
   </script>
 </body>
