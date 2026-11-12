@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Neon Breaker · GameVerse 307</title>
+  <meta name="monetag-zone" content="12242572" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="./gamerverse-bridge.js?v=20261112"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #050713;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      background: radial-gradient(circle at 50% 20%, #101432 0%, #050713 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: rgba(8, 12, 30, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      z-index: 10;
+    }
+    .hud-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hud-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #7d8bb6;
+      text-transform: uppercase;
+    }
+    .hud-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 20px;
+      font-weight: 800;
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      line-height: 1.1;
+    }
+    .hud-record .hud-val {
+      color: #ffd32a;
+      text-shadow: 0 0 10px rgba(255, 211, 42, 0.5);
+    }
+    .btn-ctrl {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-ctrl:active {
+      transform: scale(0.94);
+      background: rgba(0, 240, 255, 0.2);
+    }
+    .btn-speed {
+      color: #ff9f43;
+      border-color: rgba(255, 159, 67, 0.35);
+      min-width: 52px;
+      justify-content: center;
+    }
+    .sub-hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 14px;
+      font-size: 11px;
+      color: #a4b0be;
+      background: rgba(6, 9, 24, 0.6);
+      z-index: 9;
+    }
+    .ball-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Orbitron', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .ball-badge span {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00f0ff;
+      box-shadow: 0 0 8px #00f0ff;
+    }
+    .btn-recall {
+      background: linear-gradient(135deg, #ff4757 0%, #ff6b81 100%);
+      border: none;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 71, 87, 0.4);
+      display: none;
+      align-items: center;
+      gap: 4px;
+      animation: pulseBtn 1s infinite alternate;
+    }
+    @keyframes pulseBtn {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* Modales y Overlays */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 5, 15, 0.88);
+      backdrop-filter: blur(10px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 100;
+      text-align: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 340px;
+      background: rgba(16, 22, 50, 0.95);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      border-radius: 18px;
+      padding: 24px 20px;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: #ff4757;
+      text-shadow: 0 0 14px rgba(255, 71, 87, 0.6);
+      letter-spacing: 1px;
+    }
+    .modal-score {
+      font-family: 'Orbitron', monospace;
+      font-size: 40px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+      margin: 4px 0;
+    }
+    .modal-desc {
+      font-size: 13px;
+      color: #a4b0be;
+      line-height: 1.4;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+    .btn-revive {
+      background: linear-gradient(135deg, #ffd32a 0%, #ff9f43 100%);
+      color: #050713;
+      box-shadow: 0 0 20px rgba(255, 211, 42, 0.4);
+    }
+    .btn-retry {
+      background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+    }
+    .btn-share {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn-hub {
+      background: transparent;
+      color: #7d8bb6;
+      border: 1px solid rgba(125, 139, 182, 0.25);
+      font-size: 12px;
+      padding: 10px;
+    }
+    /* Toast temporal */
+    .toast {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(0, 240, 255, 0.95);
+      color: #050713;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 80;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <header>
+      <button class="btn-ctrl" id="btn-back" title="Volver al Hub">🏠 Hub</button>
+      <div class="hud-stat">
+        <span class="hud-label">Ronda</span>
+        <span class="hud-val" id="hud-round">1</span>
+      </div>
+      <div class="hud-stat hud-record">
+        <span class="hud-label">Récord</span>
+        <span class="hud-val" id="hud-best">0</span>
+      </div>
+      <button class="btn-ctrl btn-speed" id="btn-speed" title="Velocidad">⚡ 1x</button>
+      <button class="btn-ctrl" id="btn-sound" title="Sonido">🔊</button>
+    </header>
+
+    <div class="sub-hud">
+      <div class="ball-badge">
+        <span></span> <span id="hud-balls">x1</span>
+      </div>
+      <button class="btn-recall" id="btn-recall">⏬ RECOGER BOLAS</button>
+      <div style="font-family: 'Orbitron', monospace; font-size: 11px; color: #ffd32a;">
+        🪙 <span id="hud-coins">0</span>
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal Game Over -->
+    <div class="modal-overlay" id="modal-gameover">
+      <div class="modal-card">
+        <div style="font-size: 38px;">💥</div>
+        <h2 class="modal-title">¡TABLERO BLOQUEADO!</h2>
+        <p class="modal-desc">Los bloques llegaron a la zona defensiva.</p>
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: #7d8bb6; letter-spacing: 1px;">Ronda Alcanzada</div>
+          <div class="modal-score" id="final-score">1</div>
+        </div>
+        
+        <!-- Botón Revivir con Monetag -->
+        <button class="btn-action btn-revive" id="btn-revive">
+          <span>📺</span> REVIVIR CON LÁSER (1 AD)
+        </button>
+
+        <button class="btn-action btn-retry" id="btn-retry">
+          <span>🔄</span> JUGAR OTRA VEZ (1 🎟️)
+        </button>
+
+        <button class="btn-action btn-share" id="btn-share">
+          <span>📢</span> COMPARTIR RÉCORD
+        </button>
+
+        <button class="btn-action btn-hub" id="btn-exit-hub">
+          VOLVER AL HUB ARCADE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // --- CONFIGURACIÓN & AUDIO PROCEDURAL (Cero latencia / Cero assets) ---
+      let audioCtx = null;
+      let soundEnabled = true;
+
+      function initAudio() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+
+      function playTone(freq, duration, type = 'sine', gainVal = 0.08) {
+        if (!soundEnabled || !audioCtx) return;
+        try {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(gainVal, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (_) {}
+      }
+
+      function playBounceChime(combo) {
+        // Escala pentatónica que sube con combos rápidos
+        const notes = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+        const freq = notes[combo % notes.length];
+        playTone(freq, 0.09, 'triangle', 0.06);
+      }
+
+      function playShatterSound() {
+        playTone(180, 0.18, 'sawtooth', 0.09);
+        playTone(420, 0.12, 'square', 0.05);
+      }
+
+      function playLaserSound() {
+        if (!soundEnabled || !audioCtx) return;
+        try {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(950, now);
+          osc.frequency.exponentialRampToValueAtTime(120, now + 0.28);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        } catch (_) {}
+      }
+
+      function playOrbPickup() {
+        playTone(660, 0.12, 'sine', 0.08);
+        setTimeout(() => playTone(880, 0.18, 'sine', 0.08), 50);
+      }
+
+      // --- CONSTANTES DE JUEGO ---
+      const COLS = 7;
+      const BALL_RADIUS = 5;
+      const BASE_BALL_SPEED = 14;
+      const SUB_STEPS = 3; // Blindaje anti-túneling a velocidades altas
+      const DANGER_ROW_INDEX = 8; // Fila límite inferior antes de Game Over
+
+      // --- ELEMENTOS DEL DOM ---
+      const canvasWrap = document.getElementById('canvas-wrap');
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+      const hudRound = document.getElementById('hud-round');
+      const hudBest = document.getElementById('hud-best');
+      const hudBalls = document.getElementById('hud-balls');
+      const hudCoins = document.getElementById('hud-coins');
+      const btnRecall = document.getElementById('btn-recall');
+      const btnSpeed = document.getElementById('btn-speed');
+      const btnSound = document.getElementById('btn-sound');
+      const btnBack = document.getElementById('btn-back');
+      const modalGameOver = document.getElementById('modal-gameover');
+      const finalScoreEl = document.getElementById('final-score');
+      const btnRevive = document.getElementById('btn-revive');
+      const btnRetry = document.getElementById('btn-retry');
+      const btnShare = document.getElementById('btn-share');
+      const btnExitHub = document.getElementById('btn-exit-hub');
+      const toastEl = document.getElementById('toast');
+
+      // --- ESTADO DEL JUEGO ---
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let cellWidth = 0;
+      let cellHeight = 0;
+      let gridTop = 15;
+      let groundY = 0;
+
+      let round = 1;
+      let bestScore = parseInt(localStorage.getItem('gv_nb_best') || '1', 10);
+      let coins = parseInt(localStorage.getItem('gv_nb_coins') || '0', 10);
+      let totalBalls = 1;
+      let ballsRemainingToLaunch = 0;
+      let launchInterval = 30; // ms entre bolas disparadas
+      let lastLaunchTime = 0;
+
+      let launcherX = 0;
+      let nextLauncherX = 0;
+      let hasSetNextLauncher = false;
+      let isAiming = false;
+      let aimVector = { x: 0, y: -1 };
+      let state = 'IDLE'; // 'IDLE', 'LAUNCHING', 'FLYING', 'GAMEOVER'
+      let speedMultiplier = 1; // 1, 2, 4
+      let isRecalling = false;
+      let comboCounter = 0;
+      let hasRevivedThisMatch = false;
+
+      // Entidades
+      let balls = [];
+      let blocks = []; // { col, row, hp, maxHp, hitFlash }
+      let items = [];  // { col, row, type: 'BALL' | 'LASER_HORIZ' | 'LASER_VERT' | 'BOMB' | 'COIN' }
+      let particles = [];
+      let laserAnimations = []; // Rayos láser activos dibujados en pantalla
+      let toastTimer = null;
+
+      function showToast(text) {
+        toastEl.innerText = text;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+      }
+
+      // --- COLOR PALETTE PARA BLOQUES SEGÚN DIFICULTAD ---
+      function getBlockTheme(hp, currentRound) {
+        const ratio = hp / Math.max(1, currentRound);
+        if (ratio < 0.35) {
+          return { bg: '#00f0ff', border: '#70f7ff', shadow: 'rgba(0, 240, 255, 0.45)' };
+        } else if (ratio < 0.7) {
+          return { bg: '#10ac84', border: '#1dd1a1', shadow: 'rgba(29, 209, 161, 0.45)' };
+        } else if (ratio < 1.1) {
+          return { bg: '#ff9f43', border: '#ffd32a', shadow: 'rgba(255, 211, 42, 0.45)' };
+        } else if (ratio < 1.6) {
+          return { bg: '#ee5253', border: '#ff6b6b', shadow: 'rgba(255, 107, 107, 0.45)' };
+        } else {
+          return { bg: '#9b59b6', border: '#a29bfe', shadow: 'rgba(162, 155, 254, 0.45)' };
+        }
+      }
+
+      // --- AJUSTE RESPONSIVE CANVAS ---
+      function resize() {
+        const rect = canvasWrap.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+
+        cellWidth = (width - 24) / COLS;
+        cellHeight = cellWidth * 0.72; // Proporción áurea de ladrillo compacto
+        gridTop = 20;
+        groundY = height - 35;
+
+        if (launcherX === 0) {
+          launcherX = width / 2;
+          nextLauncherX = launcherX;
+        }
+      }
+      window.addEventListener('resize', resize);
+      window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+      // --- SISTEMA DE PARTÍCULAS ---
+      function spawnShatterParticles(x, y, color) {
+        for (let i = 0; i < 10; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 2 + Math.random() * 5;
+          particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            size: 2 + Math.random() * 3,
+            color: color,
+            alpha: 1,
+            decay: 0.035 + Math.random() * 0.03
+          });
+        }
+      }
+
+      // --- CREACIÓN DE FILAS DE BLOQUES ---
+      function spawnRow() {
+        // 1. Mover todos los bloques e ítems existentes una fila hacia abajo
+        for (let i = 0; i < blocks.length; i++) {
+          blocks[i].row++;
+        }
+        for (let i = 0; i < items.length; i++) {
+          items[i].row++;
+        }
+
+        // 2. Verificar Game Over si algún bloque alcanzó o superó el peligro
+        for (let i = 0; i < blocks.length; i++) {
+          const blockY = gridTop + blocks[i].row * cellHeight;
+          if (blockY + cellHeight >= groundY - 10) {
+            triggerGameOver();
+            return;
+          }
+        }
+
+        // 3. Generar nueva fila en row = 0
+        let placedBallOrb = false;
+        const slots = [0, 1, 2, 3, 4, 5, 6].sort(() => Math.random() - 0.5);
+        const blockCount = Math.floor(2 + Math.random() * 4); // 2 a 5 bloques por fila
+
+        for (let i = 0; i < blockCount; i++) {
+          const col = slots[i];
+          // Vida del bloque escalada con la ronda (a veces salen bloques dobles x2)
+          let hp = round;
+          if (Math.random() < 0.22) hp = Math.floor(round * 1.8);
+          blocks.push({
+            col: col,
+            row: 0,
+            hp: hp,
+            maxHp: hp,
+            hitFlash: 0
+          });
+        }
+
+        // Siempre generar al menos 1 orbe de bola extra por ronda
+        for (let i = blockCount; i < slots.length; i++) {
+          const col = slots[i];
+          if (!placedBallOrb) {
+            items.push({ col: col, row: 0, type: 'BALL', anim: Math.random() });
+            placedBallOrb = true;
+          } else if (Math.random() < 0.18) {
+            // Ítem especial: Láser o Moneda o Bomba
+            const roll = Math.random();
+            let type = 'COIN';
+            if (roll < 0.4) type = 'LASER_HORIZ';
+            else if (roll < 0.7) type = 'LASER_VERT';
+            else if (roll < 0.85) type = 'BOMB';
+            items.push({ col: col, row: 0, type: type, anim: Math.random() });
+          }
+        }
+      }
+
+      // --- DETONADORES ESPECIALES ---
+      function triggerLaserHoriz(rowY) {
+        playLaserSound();
+        laserAnimations.push({ y: rowY, dir: 'H', alpha: 1 });
+        // Dañar 10 HP a todos los bloques en esa fila horizontal
+        for (let i = blocks.length - 1; i >= 0; i--) {
+          const b = blocks[i];
+          const bY = gridTop + b.row * cellHeight;
+          if (Math.abs(bY - rowY) < cellHeight * 0.8) {
+            b.hp = Math.max(0, b.hp - Math.max(5, Math.ceil(round * 0.5)));
+            b.hitFlash = 1;
+            if (b.hp <= 0) {
+              spawnShatterParticles(12 + b.col * cellWidth + cellWidth / 2, bY + cellHeight / 2, '#00f0ff');
+              blocks.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      function triggerLaserVert(colX) {
+        playLaserSound();
+        laserAnimations.push({ x: colX, dir: 'V', alpha: 1 });
+        // Dañar a todos los bloques en esa columna vertical
+        for (let i = blocks.length - 1; i >= 0; i--) {
+          const b = blocks[i];
+          const bX = 12 + b.col * cellWidth;
+          if (Math.abs(bX - colX) < cellWidth * 0.8) {
+            b.hp = Math.max(0, b.hp - Math.max(5, Math.ceil(round * 0.5)));
+            b.hitFlash = 1;
+            if (b.hp <= 0) {
+              spawnShatterParticles(bX + cellWidth / 2, gridTop + b.row * cellHeight + cellHeight / 2, '#ffd32a');
+              blocks.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      function triggerBomb(col, row) {
+        playShatterSound();
+        // Dañar en área 3x3
+        for (let i = blocks.length - 1; i >= 0; i--) {
+          const b = blocks[i];
+          if (Math.abs(b.col - col) <= 1 && Math.abs(b.row - row) <= 1) {
+            b.hp = Math.max(0, b.hp - Math.max(8, round));
+            b.hitFlash = 1;
+            if (b.hp <= 0) {
+              spawnShatterParticles(12 + b.col * cellWidth + cellWidth / 2, gridTop + b.row * cellHeight + cellHeight / 2, '#ff4757');
+              blocks.splice(i, 1);
+            }
+          }
+        }
+      }
+
+      // --- GESTIÓN DE DISPARO ---
+      function startTurn() {
+        if (state !== 'IDLE') return;
+        initAudio();
+        state = 'LAUNCHING';
+        ballsRemainingToLaunch = totalBalls;
+        lastLaunchTime = performance.now();
+        hasSetNextLauncher = false;
+        comboCounter = 0;
+        isRecalling = false;
+        btnRecall.style.display = 'inline-flex';
+      }
+
+      function fireOneBall() {
+        const spd = BASE_BALL_SPEED;
+        balls.push({
+          x: launcherX,
+          y: groundY - BALL_RADIUS,
+          vx: aimVector.x * spd,
+          vy: aimVector.y * spd,
+          active: true,
+          returning: false
+        });
+        ballsRemainingToLaunch--;
+        hudBalls.innerText = `x${ballsRemainingToLaunch}`;
+      }
+
+      function recallAllBalls() {
+        if (state !== 'LAUNCHING' && state !== 'FLYING') return;
+        isRecalling = true;
+        btnRecall.style.display = 'none';
+        showToast('⚡ RECOGIENDO BOLAS');
+        // Acelerar todas las bolas al máximo directamente hacia el piso
+        for (let i = 0; i < balls.length; i++) {
+          const b = balls[i];
+          b.returning = true;
+          b.vx = (launcherX - b.x) * 0.15;
+          b.vy = Math.max(b.vy, 25);
+        }
+      }
+
+      function finishTurn() {
+        state = 'IDLE';
+        btnRecall.style.display = 'none';
+        balls = [];
+        launcherX = nextLauncherX;
+        hudBalls.innerText = `x${totalBalls}`;
+        round++;
+        hudRound.innerText = round;
+
+        if (round > bestScore) {
+          bestScore = round;
+          localStorage.setItem('gv_nb_best', bestScore);
+          hudBest.innerText = bestScore;
+        }
+
+        // Spawn nueva fila y bajar existentes
+        spawnRow();
+      }
+
+      // --- GAME OVER & REVIVIR ---
+      function triggerGameOver() {
+        state = 'GAMEOVER';
+        btnRecall.style.display = 'none';
+        finalScoreEl.innerText = round;
+        modalGameOver.classList.add('active');
+        playTone(180, 0.4, 'sawtooth', 0.12);
+
+        // Notificar puntaje a GamerVerse / Supabase
+        if (window.GamerVerse) {
+          window.GamerVerse.submitScore('neon_breaker', round, coins);
+        }
+
+        // Si ya revivió en esta partida, ocultar botón de revivir
+        if (hasRevivedThisMatch) {
+          btnRevive.style.display = 'none';
+        } else {
+          btnRevive.style.display = 'flex';
+          btnRevive.disabled = false;
+          btnRevive.innerText = '📺 REVIVIR CON LÁSER (1 AD)';
+        }
+      }
+
+      function reviveMatch() {
+        btnRevive.disabled = true;
+        btnRevive.innerText = 'Cargando...';
+
+        const onReward = () => {
+          hasRevivedThisMatch = true;
+          modalGameOver.classList.remove('active');
+          state = 'IDLE';
+
+          // Disparar Láser de Fusión que vaporiza las 3 filas inferiores completas
+          let removedCount = 0;
+          for (let i = blocks.length - 1; i >= 0; i--) {
+            const b = blocks[i];
+            const bY = gridTop + b.row * cellHeight;
+            if (bY >= groundY - cellHeight * 3.8) {
+              spawnShatterParticles(12 + b.col * cellWidth + cellWidth / 2, bY + cellHeight / 2, '#00f0ff');
+              blocks.splice(i, 1);
+              removedCount++;
+            }
+          }
+
+          // Otorgar 5 bolas extra de bonificación
+          totalBalls += 5;
+          hudBalls.innerText = `x${totalBalls}`;
+          playLaserSound();
+          showToast(`🛡️ ¡LÁSER ORBITAL ACTIVO! +5 BOLAS`);
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd(onReward, (err) => {
+            console.warn('Revive ad failed:', err);
+            btnRevive.disabled = false;
+            btnRevive.innerText = '📺 REVIVIR CON LÁSER (1 AD)';
+          });
+        } else {
+          onReward();
+        }
+      }
+
+      function resetNewGame() {
+        modalGameOver.classList.remove('active');
+        // Consumir ticket de GamerVerse si aplica
+        if (window.GamerVerse && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => resetNewGame());
+          return;
+        }
+        if (window.GamerVerse) {
+          window.GamerVerse.consumeTicket();
+        }
+
+        round = 1;
+        totalBalls = 1;
+        hasRevivedThisMatch = false;
+        hudRound.innerText = round;
+        hudBalls.innerText = `x${totalBalls}`;
+        launcherX = width / 2;
+        nextLauncherX = launcherX;
+        blocks = [];
+        items = [];
+        balls = [];
+        particles = [];
+        laserAnimations = [];
+        state = 'IDLE';
+
+        // Generar 2 filas iniciales de inicio amigable
+        spawnRow();
+        spawnRow();
+      }
+
+      // --- APUNTADO TÁCTIL / RATÓN CON GUÍA LÁSER ---
+      function updateAim(clientX, clientY) {
+        const rect = canvas.getBoundingClientRect();
+        const touchX = clientX - rect.left;
+        const touchY = clientY - rect.top;
+
+        let dx = touchX - launcherX;
+        let dy = touchY - groundY;
+
+        // Impedir disparar hacia abajo o demasiado horizontal
+        if (dy >= -15) dy = -15;
+
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+          aimVector.x = dx / len;
+          aimVector.y = dy / len;
+        }
+      }
+
+      function handleTouchStart(e) {
+        if (state !== 'IDLE') return;
+        const t = e.touches ? e.touches[0] : e;
+        isAiming = true;
+        updateAim(t.clientX, t.clientY);
+      }
+
+      function handleTouchMove(e) {
+        if (!isAiming || state !== 'IDLE') return;
+        const t = e.touches ? e.touches[0] : e;
+        updateAim(t.clientX, t.clientY);
+      }
+
+      function handleTouchEnd() {
+        if (!isAiming || state !== 'IDLE') return;
+        isAiming = false;
+        startTurn();
+      }
+
+      canvasWrap.addEventListener('mousedown', handleTouchStart);
+      window.addEventListener('mousemove', handleTouchMove);
+      window.addEventListener('mouseup', handleTouchEnd);
+
+      canvasWrap.addEventListener('touchstart', handleTouchStart, { passive: true });
+      window.addEventListener('touchmove', handleTouchMove, { passive: true });
+      window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+      // --- FÍSICA Y ACTUALIZACIÓN (60 FPS CON SUB-STEPS) ---
+      function updatePhysics(dt) {
+        // 1. Lanzamiento secuencial de bolas
+        if (state === 'LAUNCHING') {
+          const now = performance.now();
+          const currentInterval = launchInterval / speedMultiplier;
+          if (ballsRemainingToLaunch > 0 && now - lastLaunchTime >= currentInterval) {
+            fireOneBall();
+            lastLaunchTime = now;
+          } else if (ballsRemainingToLaunch <= 0) {
+            state = 'FLYING';
+          }
+        }
+
+        // 2. Movimiento de bolas con sub-pasos para precisión milimétrica
+        const activeBalls = balls.filter(b => b.active);
+        const steps = isRecalling ? 1 : SUB_STEPS;
+        const subSpeedMul = speedMultiplier / steps;
+
+        for (let s = 0; s < steps; s++) {
+          for (let i = 0; i < balls.length; i++) {
+            const b = balls[i];
+            if (!b.active) continue;
+
+            b.x += b.vx * subSpeedMul;
+            b.y += b.vy * subSpeedMul;
+
+            // Rebote con paredes laterales
+            if (b.x - BALL_RADIUS <= 12) {
+              b.x = 12 + BALL_RADIUS;
+              b.vx = Math.abs(b.vx);
+              playBounceChime(comboCounter);
+            } else if (b.x + BALL_RADIUS >= width - 12) {
+              b.x = width - 12 - BALL_RADIUS;
+              b.vx = -Math.abs(b.vx);
+              playBounceChime(comboCounter);
+            }
+
+            // Rebote con techo
+            if (b.y - BALL_RADIUS <= gridTop - 5) {
+              b.y = gridTop - 5 + BALL_RADIUS;
+              b.vy = Math.abs(b.vy);
+              playBounceChime(comboCounter);
+            }
+
+            // Colisión con el suelo (Baseline)
+            if (b.y + BALL_RADIUS >= groundY) {
+              b.y = groundY - BALL_RADIUS;
+              b.active = false;
+              b.vx = 0;
+              b.vy = 0;
+
+              // La primera bola que toca el suelo define la nueva posición del cañón
+              if (!hasSetNextLauncher) {
+                nextLauncherX = Math.max(25, Math.min(width - 25, b.x));
+                hasSetNextLauncher = true;
+              }
+              continue;
+            }
+
+            // Colisión con ítems (Orbes de bola extra, bombas, etc.)
+            for (let j = items.length - 1; j >= 0; j--) {
+              const item = items[j];
+              const ix = 12 + item.col * cellWidth + cellWidth / 2;
+              const iy = gridTop + item.row * cellHeight + cellHeight / 2;
+              const dist = Math.hypot(b.x - ix, b.y - iy);
+
+              if (dist <= BALL_RADIUS + 12) {
+                if (item.type === 'BALL') {
+                  totalBalls++;
+                  playOrbPickup();
+                  spawnShatterParticles(ix, iy, '#00f0ff');
+                  showToast('+1 BOLA');
+                } else if (item.type === 'LASER_HORIZ') {
+                  triggerLaserHoriz(gridTop + item.row * cellHeight + cellHeight / 2);
+                } else if (item.type === 'LASER_VERT') {
+                  triggerLaserVert(12 + item.col * cellWidth + cellWidth / 2);
+                } else if (item.type === 'BOMB') {
+                  triggerBomb(item.col, item.row);
+                } else if (item.type === 'COIN') {
+                  coins += 5;
+                  localStorage.setItem('gv_nb_coins', coins);
+                  hudCoins.innerText = coins;
+                  playOrbPickup();
+                  showToast('+5 🪙');
+                }
+                items.splice(j, 1);
+              }
+            }
+
+            // Colisión con Bloques (AABB vs Círculo con reflexión normal exacta)
+            for (let j = blocks.length - 1; j >= 0; j--) {
+              const block = blocks[j];
+              const bx = 12 + block.col * cellWidth + 2;
+              const by = gridTop + block.row * cellHeight + 2;
+              const bw = cellWidth - 4;
+              const bh = cellHeight - 4;
+
+              // Encontrar punto más cercano del rectángulo al centro de la bola
+              const closestX = Math.max(bx, Math.min(b.x, bx + bw));
+              const closestY = Math.max(by, Math.min(b.y, by + bh));
+              const distX = b.x - closestX;
+              const distY = b.y - closestY;
+              const distSquared = distX * distX + distY * distY;
+
+              if (distSquared <= BALL_RADIUS * BALL_RADIUS) {
+                // Determinar cara de impacto para invertir componente de velocidad
+                const overlapLeft = Math.abs(b.x - bx);
+                const overlapRight = Math.abs(b.x - (bx + bw));
+                const overlapTop = Math.abs(b.y - by);
+                const overlapBottom = Math.abs(b.y - (by + bh));
+                const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+
+                if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+                  b.vx = -b.vx;
+                  b.x += b.vx > 0 ? 1 : -1;
+                } else {
+                  b.vy = -b.vy;
+                  b.y += b.vy > 0 ? 1 : -1;
+                }
+
+                // Dañar bloque
+                block.hp--;
+                block.hitFlash = 0.25;
+                comboCounter++;
+                playBounceChime(comboCounter);
+
+                if (block.hp <= 0) {
+                  playShatterSound();
+                  const theme = getBlockTheme(block.maxHp, round);
+                  spawnShatterParticles(bx + bw / 2, by + bh / 2, theme.border);
+                  blocks.splice(j, 1);
+                }
+                break; // 1 colisión por bola por sub-paso
+              }
+            }
+          }
+        }
+
+        // 3. Verificar si todas las bolas terminaron su vuelo
+        if (state === 'FLYING' || state === 'LAUNCHING') {
+          const anyActive = balls.some(b => b.active);
+          if (!anyActive && ballsRemainingToLaunch <= 0) {
+            finishTurn();
+          }
+        }
+
+        // 4. Actualizar partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= p.decay;
+          if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        // 5. Animaciones de láser
+        for (let i = laserAnimations.length - 1; i >= 0; i--) {
+          const l = laserAnimations[i];
+          l.alpha -= 0.08;
+          if (l.alpha <= 0) laserAnimations.splice(i, 1);
+        }
+      }
+
+      // --- RENDERIZADO VISUAL EN CANVAS (60 FPS NEON STYLE) ---
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Dibujar línea de peligro (Bottom Warning Line)
+        const dangerY = groundY - 10;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 71, 87, 0.45)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(10, dangerY);
+        ctx.lineTo(width - 10, dangerY);
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. Dibujar Bloques
+        for (let i = 0; i < blocks.length; i++) {
+          const b = blocks[i];
+          const bx = 12 + b.col * cellWidth + 2;
+          const by = gridTop + b.row * cellHeight + 2;
+          const bw = cellWidth - 4;
+          const bh = cellHeight - 4;
+          const theme = getBlockTheme(b.hp, round);
+
+          ctx.save();
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = theme.shadow;
+
+          // Color con flash al recibir impacto
+          if (b.hitFlash > 0) {
+            b.hitFlash -= 0.04;
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#ffffff';
+          } else {
+            ctx.fillStyle = theme.bg;
+            ctx.strokeStyle = theme.border;
+          }
+
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(bx, by, bw, bh, 6) : ctx.rect(bx, by, bw, bh);
+          ctx.fill();
+          ctx.stroke();
+
+          // Texto con la vida restante del bloque
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 13px Orbitron, monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.shadowBlur = 4;
+          ctx.shadowColor = '#000';
+          ctx.fillText(b.hp, bx + bw / 2, by + bh / 2 + 1);
+          ctx.restore();
+        }
+
+        // 3. Dibujar Ítems (Bolas extra, rayos, bombas, monedas)
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          const ix = 12 + item.col * cellWidth + cellWidth / 2;
+          const iy = gridTop + item.row * cellHeight + cellHeight / 2;
+          item.anim += 0.05;
+          const pulse = Math.sin(item.anim) * 2;
+
+          ctx.save();
+          if (item.type === 'BALL') {
+            ctx.fillStyle = '#00f0ff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc(ix, iy, 7 + pulse, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 9px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('+1', ix, iy);
+          } else if (item.type === 'LASER_HORIZ') {
+            ctx.fillStyle = '#ffd32a';
+            ctx.font = '16px Outfit';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⚡↔', ix, iy);
+          } else if (item.type === 'LASER_VERT') {
+            ctx.fillStyle = '#ffd32a';
+            ctx.font = '16px Outfit';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('⚡↕', ix, iy);
+          } else if (item.type === 'BOMB') {
+            ctx.font = '16px Outfit';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('💣', ix, iy);
+          } else if (item.type === 'COIN') {
+            ctx.font = '16px Outfit';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🪙', ix, iy);
+          }
+          ctx.restore();
+        }
+
+        // 4. Rayos Láser Activos en pantalla
+        for (let i = 0; i < laserAnimations.length; i++) {
+          const l = laserAnimations[i];
+          ctx.save();
+          ctx.globalAlpha = l.alpha;
+          ctx.strokeStyle = '#00f0ff';
+          ctx.shadowColor = '#00f0ff';
+          ctx.shadowBlur = 18;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          if (l.dir === 'H') {
+            ctx.moveTo(10, l.y);
+            ctx.lineTo(width - 10, l.y);
+          } else {
+            ctx.moveTo(l.x, gridTop);
+            ctx.lineTo(l.x, groundY);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 5. Guía Láser de Apuntado (con reflejo en la primera pared)
+        if (isAiming && state === 'IDLE') {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(0, 240, 255, 0.7)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 6]);
+          ctx.shadowColor = '#00f0ff';
+          ctx.shadowBlur = 10;
+
+          let rayX = launcherX;
+          let rayY = groundY;
+          let rVx = aimVector.x;
+          let rVy = aimVector.y;
+
+          ctx.beginPath();
+          ctx.moveTo(rayX, rayY);
+
+          // Simular rayo hasta chocar con pared o techo
+          for (let step = 0; step < 500; step++) {
+            rayX += rVx * 3;
+            rayY += rVy * 3;
+
+            if (rayX <= 14) {
+              rayX = 14;
+              rVx = -rVx;
+              ctx.lineTo(rayX, rayY);
+            } else if (rayX >= width - 14) {
+              rayX = width - 14;
+              rVx = -rVx;
+              ctx.lineTo(rayX, rayY);
+            }
+            if (rayY <= gridTop) {
+              rayY = gridTop;
+              ctx.lineTo(rayX, rayY);
+              break;
+            }
+          }
+          ctx.lineTo(rayX, rayY);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 6. Dibujar Cañón / Lanzador en el piso
+        ctx.save();
+        ctx.fillStyle = '#00f0ff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(launcherX, groundY, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Anillo exterior
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(launcherX, groundY, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // 7. Dibujar Bolas en vuelo
+        for (let i = 0; i < balls.length; i++) {
+          const b = balls[i];
+          if (!b.active) continue;
+          ctx.save();
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#00f0ff';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, BALL_RADIUS, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 8. Dibujar Partículas
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      // --- BUCLE PRINCIPAL (60 FPS) ---
+      let lastFrameTime = performance.now();
+      function loop(currentTime) {
+        const dt = Math.min(32, currentTime - lastFrameTime);
+        lastFrameTime = currentTime;
+
+        updatePhysics(dt);
+        draw();
+
+        requestAnimationFrame(loop);
+      }
+
+      // --- CONTROLADORES DE EVENTOS EN BOTONES ---
+      btnSpeed.addEventListener('click', () => {
+        if (speedMultiplier === 1) speedMultiplier = 2;
+        else if (speedMultiplier === 2) speedMultiplier = 4;
+        else speedMultiplier = 1;
+        btnSpeed.innerText = `⚡ ${speedMultiplier}x`;
+        showToast(`Velocidad ${speedMultiplier}x`);
+      });
+
+      btnRecall.addEventListener('click', recallAllBalls);
+
+      btnSound.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        btnSound.innerText = soundEnabled ? '🔊' : '🔇';
+      });
+
+      btnBack.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      btnRevive.addEventListener('click', reviveMatch);
+      btnRetry.addEventListener('click', resetNewGame);
+
+      btnShare.addEventListener('click', () => {
+        if (window.GamerVerse && typeof window.GamerVerse.shareOnTelegram === 'function') {
+          window.GamerVerse.shareOnTelegram(round);
+        } else {
+          const text = encodeURIComponent(`¡Llegué a la ronda ${round} en Neon Breaker! ⚪⚡ ¿Puedes superarme en GamerVerse? 🎟️`);
+          window.open(`https://t.me/share/url?url=https://gameverse307.pages.dev&text=${text}`, '_blank');
+        }
+      });
+
+      btnExitHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // --- INICIALIZACIÓN ---
+      function initGame() {
+        resize();
+        hudBest.innerText = bestScore;
+        hudCoins.innerText = coins;
+
+        // Comprobar ticket de entrada con GamerVerse
+        if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => initGame());
+          return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+          window.GamerVerse.consumeTicket();
+        }
+
+        // Generar las primeras 2 filas
+        spawnRow();
+        spawnRow();
+
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('DOMContentLoaded', initGame);
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        initGame();
+      }
+    })();
+  </script>
+</body>
+</html>

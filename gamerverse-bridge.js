@@ -87,6 +87,7 @@
             if (p.includes('cosmicblocks')) return 'cosmic_blocks';
             if (p.includes('cosmichexagon')) return 'cosmic_hexagon';
             if (p.includes('planethit')) return 'planet_hit';
+            if (p.includes('neonbreaker')) return 'neon_breaker';
             return 'hub';
         },
 
