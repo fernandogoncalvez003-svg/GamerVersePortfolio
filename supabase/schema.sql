@@ -262,3 +262,55 @@ SELECT
     10.00,
     true
 WHERE NOT EXISTS (SELECT 1 FROM public.jackpots WHERE is_active = true);
+
+-- ----------------------------------------------------------------------------
+-- 8. ANALÍTICA EN VIVO, PAÍSES / TIERS, PICO DE CONECTADOS Y TORNEOS ADMIN
+-- ----------------------------------------------------------------------------
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS country_code TEXT NOT NULL DEFAULT 'UN';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS tier TEXT NOT NULL DEFAULT 'Unknown';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS language_code TEXT;
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS active_game TEXT NOT NULL DEFAULT 'hub';
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMPTZ DEFAULT now();
+
+CREATE INDEX IF NOT EXISTS idx_users_last_seen ON public.users(last_seen_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_country_tier ON public.users(tier, country_code);
+
+ALTER TABLE public.jackpots ADD COLUMN IF NOT EXISTS title TEXT NOT NULL DEFAULT 'Torneo Semanal GameVerse 307';
+ALTER TABLE public.jackpots ADD COLUMN IF NOT EXISTS game_scope TEXT NOT NULL DEFAULT 'all';
+ALTER TABLE public.jackpots ADD COLUMN IF NOT EXISTS prize_split JSONB NOT NULL DEFAULT '{"first":60,"second":25,"third":15}'::jsonb;
+
+CREATE TABLE IF NOT EXISTS public.platform_metrics (
+    id INTEGER PRIMARY KEY DEFAULT 1,
+    peak_concurrent INTEGER NOT NULL DEFAULT 0,
+    peak_concurrent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO public.platform_metrics (id, peak_concurrent)
+VALUES (1, 0)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE OR REPLACE FUNCTION public.update_peak_concurrent(p_current INTEGER)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_peak INTEGER;
+    v_peak_at TIMESTAMPTZ;
+BEGIN
+    INSERT INTO public.platform_metrics (id, peak_concurrent, peak_concurrent_at, updated_at)
+    VALUES (1, GREATEST(0, p_current), now(), now())
+    ON CONFLICT (id) DO UPDATE
+    SET
+        peak_concurrent = GREATEST(public.platform_metrics.peak_concurrent, EXCLUDED.peak_concurrent),
+        peak_concurrent_at = CASE
+            WHEN EXCLUDED.peak_concurrent > public.platform_metrics.peak_concurrent THEN now()
+            ELSE public.platform_metrics.peak_concurrent_at
+        END,
+        updated_at = now()
+    RETURNING peak_concurrent, peak_concurrent_at INTO v_peak, v_peak_at;
+
+    RETURN jsonb_build_object('peak_concurrent', v_peak, 'peak_concurrent_at', v_peak_at);
+END;
+$$;

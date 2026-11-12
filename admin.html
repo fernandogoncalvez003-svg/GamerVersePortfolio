@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>GameVerse 307 — Panel Admin</title>
+  <meta name="theme-color" content="#050711" />
+  <meta name="gameverse-api" content="https://gameverse307-api.onrender.com/api" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-0: #050711;
+      --bg-1: #0b1024;
+      --card: rgba(15, 22, 46, 0.92);
+      --border: rgba(86, 178, 255, 0.22);
+      --cyan: #38bdf8;
+      --gold: #fbbf24;
+      --green: #34d399;
+      --pink: #f472b6;
+      --red: #fb7185;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: radial-gradient(circle at 12% 8%, #172554 0%, var(--bg-1) 45%, var(--bg-0) 100%);
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100dvh;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 16px 14px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .title-group h1 {
+      margin: 0;
+      font-size: 1.18rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .title-group p {
+      margin: 3px 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 11px;
+      padding: 9px 13px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: #04101f;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+    }
+
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-gold { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1c1002; }
+    .btn-green { background: linear-gradient(135deg, #34d399, #10b981); color: #032217; }
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .btn-danger {
+      background: rgba(251, 113, 133, 0.16);
+      color: #fecdd3;
+      border: 1px solid rgba(251, 113, 133, 0.35);
+      padding: 6px 10px;
+      font-size: 0.75rem;
+    }
+
+    .auth-card {
+      max-width: 430px;
+      margin: 36px auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .auth-card h2 { margin: 0; font-size: 1.15rem; }
+    .auth-card p { margin: 0; font-size: 0.83rem; color: var(--muted); line-height: 1.45; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 14px;
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kpi-val {
+      font-size: 1.7rem;
+      font-weight: 900;
+      margin-top: 4px;
+      color: var(--text);
+    }
+
+    .kpi-sub {
+      font-size: 0.72rem;
+      color: var(--cyan);
+      margin-top: 2px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .bar-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.82rem;
+    }
+
+    .bar-head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+    }
+
+    .bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #38bdf8, #34d399);
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    .tier-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .tier-chip {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 12px;
+      padding: 9px 6px;
+      text-align: center;
+      font-size: 0.74rem;
+      color: var(--muted);
+    }
+
+    .tier-chip strong {
+      display: block;
+      font-size: 1.1rem;
+      color: var(--text);
+      margin-top: 2px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .list-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.035);
+      font-size: 0.81rem;
+    }
+
+    .badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.16);
+      color: #bae6fd;
+    }
+
+    .badge-live {
+      background: rgba(52, 211, 153, 0.18);
+      color: #6ee7b7;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 10px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 0.74rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      background: rgba(5, 9, 22, 0.85);
+      color: var(--text);
+      font-size: 0.86rem;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--text);
+    }
+
+    .status-msg {
+      font-size: 0.8rem;
+      color: var(--gold);
+      min-height: 1.1em;
+    }
+
+    .hidden { display: none !important; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+    th, td {
+      text-align: left;
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      white-space: nowrap;
+    }
+    th { color: var(--muted); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section id="auth-view" class="auth-card">
+      <h2>🔐 Panel Admin — GameVerse 307</h2>
+      <p>Acceso restringido a tu cuenta administrador. Desde Telegram entra automático con <code>/admin</code>; desde navegador solicita un código de 6 dígitos a tu Telegram.</p>
+      <button class="btn btn-gold" id="btn-request-otp" type="button">📩 Enviar código a mi Telegram (@GameServer307_bot)</button>
+      <div class="field">
+        <label for="otp-input">Código de 6 dígitos (o Admin Secret)</label>
+        <input id="otp-input" type="text" inputmode="numeric" placeholder="Ej: 482910" autocomplete="one-time-code" />
+      </div>
+      <button class="btn" id="btn-verify-otp" type="button">Entrar al Panel</button>
+      <div class="status-msg" id="auth-status"></div>
+    </section>
+
+    <main id="dashboard-view" class="hidden" style="display:flex; flex-direction:column; gap:14px;">
+      <header class="header">
+        <div class="title-group">
+          <h1>📊 GameVerse 307 · Admin</h1>
+          <p id="last-refresh">Sincronizando datos en vivo...</p>
+        </div>
+        <div class="header-actions">
+          <a class="btn btn-ghost" href="./index.html" style="text-decoration:none;">🕹️ Ver Hub</a>
+          <button class="btn" id="btn-refresh" type="button">🔄 Actualizar</button>
+          <button class="btn btn-ghost" id="btn-logout" type="button">Salir</button>
+        </div>
+      </header>
+
+      <section class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">👥 Inscritos</div>
+          <div class="kpi-val" id="kpi-total-users">0</div>
+          <div class="kpi-sub">Usuarios registrados</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">🟢 Online ahora</div>
+          <div class="kpi-val" id="kpi-online-now">0</div>
+          <div class="kpi-sub">Últimos 90 seg</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">📈 Pico máximo</div>
+          <div class="kpi-val" id="kpi-peak">0</div>
+          <div class="kpi-sub" id="kpi-peak-date">Sin récord aún</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">🤝 Referidos</div>
+          <div class="kpi-val" id="kpi-referrals">0</div>
+          <div class="kpi-sub">Invitaciones exitosas</div>
+        </div>
+      </section>
+
+      <section class="two-col">
+        <div class="card">
+          <h2><span>🎮 Conectados por Juego</span><span class="badge badge-live" id="online-badge">0 activos</span></h2>
+          <div id="games-bars" style="display:flex; flex-direction:column; gap:10px;"></div>
+        </div>
+
+        <div class="card">
+          <h2><span>🌍 Tráfico por Tier y Países</span></h2>
+          <div class="tier-grid">
+            <div class="tier-chip">Tier 1<strong id="tier-1">0</strong></div>
+            <div class="tier-chip">Tier 2<strong id="tier-2">0</strong></div>
+            <div class="tier-chip">Tier 3<strong id="tier-3">0</strong></div>
+            <div class="tier-chip">Sin dato<strong id="tier-u">0</strong></div>
+          </div>
+          <div class="list" id="country-list"></div>
+        </div>
+      </section>
+
+      <section class="two-col">
+        <div class="card">
+          <h2><span>🏆 Crear Nuevo Torneo</span></h2>
+          <form id="tournament-form" style="display:flex; flex-direction:column; gap:10px;">
+            <div class="field">
+              <label for="t-title">Nombre del Torneo</label>
+              <input id="t-title" type="text" required value="Torneo Relámpago GameVerse 307" />
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="t-scope">Juego</label>
+                <select id="t-scope">
+                  <option value="all">Todos los juegos (Hub)</option>
+                  <option value="save_the_astronaut">Save The Astronaut</option>
+                  <option value="astronaut_runner">Astronaut Runner</option>
+                  <option value="arrow_escape">Arrow Escape</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="t-seed">Bote Inicial (USDT)</label>
+                <input id="t-seed" type="number" step="0.5" min="0" value="10" required />
+              </div>
+              <div class="field">
+                <label for="t-start">Inicio</label>
+                <input id="t-start" type="datetime-local" required />
+              </div>
+              <div class="field">
+                <label for="t-end">Cierre</label>
+                <input id="t-end" type="datetime-local" required />
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="t-p1">% 1.er Lugar</label>
+                <input id="t-p1" type="number" min="1" max="100" value="60" required />
+              </div>
+              <div class="field">
+                <label for="t-p2">% 2.º Lugar</label>
+                <input id="t-p2" type="number" min="0" max="100" value="25" required />
+              </div>
+              <div class="field">
+                <label for="t-p3">% 3.er Lugar</label>
+                <input id="t-p3" type="number" min="0" max="100" value="15" required />
+              </div>
+            </div>
+            <label class="check-row">
+              <input id="t-activate" type="checkbox" checked />
+              Activar inmediatamente (reemplaza el torneo activo actual en el Hub)
+            </label>
+            <button class="btn btn-green" id="btn-create-tournament" type="submit">🚀 Publicar Torneo</button>
+            <div class="status-msg" id="tournament-status"></div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2><span>📅 Torneos Recientes</span></h2>
+          <div class="list" id="tournament-list" style="max-height:360px;"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span>🧑‍🚀 Últimos Jugadores Activos / Inscritos</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Jugador</th>
+                <th>País / Tier</th>
+                <th>Ubicación</th>
+                <th>Tickets</th>
+                <th>Ref.</th>
+                <th>Última vez</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (function initAdminDashboard() {
+      const apiMeta = document.querySelector('meta[name="gameverse-api"]')?.content?.trim();
+      const isLocal = ['localhost', '127.0.0.1', ''].includes(window.location.hostname);
+      const API_BASE = (isLocal ? 'http://localhost:3001/api' : (apiMeta || 'https://gameverse307-api.onrender.com/api')).replace(/\/$/, '');
+
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (tg) { tg.ready(); tg.expand(); }
+      const tgInitData = (tg && tg.initData) ? tg.initData : '';
+
+      const authView = document.getElementById('auth-view');
+      const dashView = document.getElementById('dashboard-view');
+      const authStatus = document.getElementById('auth-status');
+      const tourStatus = document.getElementById('tournament-status');
+
+      function esc(val) {
+        return String(val ?? '').replace(/[&<>"']/g, (ch) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[ch]);
+      }
+
+      function authHeaders() {
+        const headers = { 'Content-Type': 'application/json' };
+        if (tgInitData) headers['X-Telegram-Init-Data'] = tgInitData;
+        const savedToken = localStorage.getItem('gv_admin_token');
+        if (savedToken) headers['X-Admin-Token'] = savedToken;
+        return headers;
+      }
+
+      function setDefaultTournamentDates() {
+        const toLocalInput = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        const now = new Date();
+        const nextWeek = new Date(now.getTime() + 7 * 86400000);
+        document.getElementById('t-start').value = toLocalInput(now);
+        document.getElementById('t-end').value = toLocalInput(nextWeek);
+      }
+
+      async function loadStats() {
+        try {
+          const res = await fetch(`${API_BASE}/admin/stats`, { headers: authHeaders() });
+          if (res.status === 401) {
+            localStorage.removeItem('gv_admin_token');
+            dashView.classList.add('hidden');
+            authView.classList.remove('hidden');
+            return false;
+          }
+          const json = await res.json();
+          if (!json || !json.success) throw new Error(json?.message || 'Error');
+
+          authView.classList.add('hidden');
+          dashView.classList.remove('hidden');
+          renderDashboard(json.stats);
+          return true;
+        } catch (err) {
+          authStatus.textContent = 'No se pudo conectar con el servidor.';
+          return false;
+        }
+      }
+
+      function renderDashboard(s) {
+        document.getElementById('last-refresh').textContent = `Actualizado: ${new Date().toLocaleTimeString('es-ES')}`;
+        document.getElementById('kpi-total-users').textContent = s.totalUsers ?? 0;
+        document.getElementById('kpi-online-now').textContent = s.onlineNow ?? 0;
+        document.getElementById('kpi-peak').textContent = s.peakConcurrent ?? 0;
+        document.getElementById('kpi-referrals').textContent = s.totalReferrals ?? 0;
+        document.getElementById('kpi-peak-date').textContent = s.peakConcurrentAt
+          ? `Logrado: ${new Date(s.peakConcurrentAt).toLocaleString('es-ES')}`
+          : 'Sin récord aún';
+        document.getElementById('online-badge').textContent = `${s.onlineNow || 0} activos`;
+
+        const gameMeta = [
+          { key: 'save_the_astronaut', label: '🛸 Save The Astronaut' },
+          { key: 'astronaut_runner', label: '☄️ Astronaut Runner' },
+          { key: 'arrow_escape', label: '🏹 Arrow Escape' },
+          { key: 'hub', label: '🏠 Hub / Lobby' }
+        ];
+        const totalOnline = Math.max(1, s.onlineNow || 0);
+        document.getElementById('games-bars').innerHTML = gameMeta.map((g) => {
+          const count = (s.byGame && s.byGame[g.key]) || 0;
+          const pct = Math.round((count / totalOnline) * 100);
+          return `<div class="bar-row">
+            <div class="bar-head"><span>${g.label}</span><span>${count}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+          </div>`;
+        }).join('');
+
+        document.getElementById('tier-1').textContent = (s.byTier && s.byTier['Tier 1']) || 0;
+        document.getElementById('tier-2').textContent = (s.byTier && s.byTier['Tier 2']) || 0;
+        document.getElementById('tier-3').textContent = (s.byTier && s.byTier['Tier 3']) || 0;
+        document.getElementById('tier-u').textContent = (s.byTier && s.byTier.Unknown) || 0;
+
+        const cList = document.getElementById('country-list');
+        cList.innerHTML = (s.byCountry && s.byCountry.length)
+          ? s.byCountry.map((c) => `<div class="list-row"><span><strong>${esc(c.country)}</strong> <span class="badge">${esc(c.tier)}</span></span><strong>${c.count} usuarios</strong></div>`).join('')
+          : '<div class="list-row">Sin registros por país todavía.</div>';
+
+        const tList = document.getElementById('tournament-list');
+        tList.innerHTML = (s.tournaments && s.tournaments.length)
+          ? s.tournaments.map((t) => {
+              const activeTag = t.is_active ? '<span class="badge badge-live">ACTIVO</span>' : `<span class="badge">${esc(t.payout_status || 'cerrado')}</span>`;
+              const closeBtn = t.is_active ? `<button class="btn-danger" data-close-id="${esc(t.id)}">Cerrar</button>` : '';
+              return `<div class="list-row">
+                <div>
+                  <div><strong>${esc(t.title || t.week_identifier)}</strong> ${activeTag}</div>
+                  <div style="font-size:0.73rem;color:#94a3b8;">Bote: $${Number(t.dynamic_pool || 0).toFixed(2)} · Juego: ${esc(t.game_scope || 'all')} · Fin: ${new Date(t.end_date).toLocaleDateString('es-ES')}</div>
+                </div>
+                ${closeBtn}
+              </div>`;
+            }).join('')
+          : '<div class="list-row">Sin torneos aún.</div>';
+
+        tList.querySelectorAll('[data-close-id]').forEach((btn) => {
+          btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            await fetch(`${API_BASE}/admin/tournaments/${encodeURIComponent(btn.dataset.closeId)}/close`, {
+              method: 'POST',
+              headers: authHeaders()
+            });
+            loadStats();
+          });
+        });
+
+        const tbody = document.getElementById('users-tbody');
+        tbody.innerHTML = (s.recentUsers || []).map((u) => {
+          const name = u.username ? `@${u.username}` : (u.first_name || `ID ${u.id}`);
+          const seen = u.last_seen_at ? new Date(u.last_seen_at).toLocaleString('es-ES') : '--';
+          return `<tr>
+            <td><strong>${esc(name)}</strong></td>
+            <td>${esc(u.country_code || 'UN')} · ${esc(u.tier || 'Unknown')}</td>
+            <td>${esc(u.active_game || 'hub')}</td>
+            <td>🎟️ ${Number(u.tickets || 0)}</td>
+            <td>${Number(u.referral_count || 0)}</td>
+            <td>${esc(seen)}</td>
+          </tr>`;
+        }).join('');
+      }
+
+      document.getElementById('btn-request-otp').addEventListener('click', async () => {
+        authStatus.textContent = 'Enviando código por Telegram...';
+        try {
+          const res = await fetch(`${API_BASE}/admin/request-code`, { method: 'POST' });
+          const data = await res.json();
+          authStatus.textContent = data.message || 'Revisa @GameServer307_bot en Telegram.';
+        } catch (_) {
+          authStatus.textContent = 'Error enviando código.';
+        }
+      });
+
+      document.getElementById('btn-verify-otp').addEventListener('click', async () => {
+        const val = document.getElementById('otp-input').value.trim();
+        if (!val) { authStatus.textContent = 'Ingresa el código recibido.'; return; }
+        authStatus.textContent = 'Verificando...';
+        try {
+          const res = await fetch(`${API_BASE}/admin/verify-code`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: val, secret: val })
+          });
+          const data = await res.json();
+          if (data && data.success && data.token) {
+            localStorage.setItem('gv_admin_token', data.token);
+            authStatus.textContent = '';
+            loadStats();
+          } else {
+            authStatus.textContent = (data && data.message) || 'Código inválido.';
+          }
+        } catch (_) {
+          authStatus.textContent = 'Error de conexión.';
+        }
+      });
+
+      document.getElementById('tournament-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const p1 = Number(document.getElementById('t-p1').value);
+        const p2 = Number(document.getElementById('t-p2').value);
+        const p3 = Number(document.getElementById('t-p3').value);
+        if (p1 + p2 + p3 !== 100) {
+          tourStatus.textContent = 'La suma de porcentajes (1º + 2º + 3º) debe dar 100%.';
+          return;
+        }
+        tourStatus.textContent = 'Creando torneo...';
+        try {
+          const res = await fetch(`${API_BASE}/admin/tournaments`, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({
+              title: document.getElementById('t-title').value,
+              gameScope: document.getElementById('t-scope').value,
+              seedAmount: Number(document.getElementById('t-seed').value),
+              startDate: new Date(document.getElementById('t-start').value).toISOString(),
+              endDate: new Date(document.getElementById('t-end').value).toISOString(),
+              prizeSplit: { first: p1, second: p2, third: p3 },
+              activateNow: document.getElementById('t-activate').checked
+            })
+          });
+          const data = await res.json();
+          if (data && data.success) {
+            tourStatus.textContent = '✅ Torneo creado y guardado en Supabase.';
+            loadStats();
+          } else {
+            tourStatus.textContent = (data && data.message) || 'Error creando torneo.';
+          }
+        } catch (_) {
+          tourStatus.textContent = 'Error de red.';
+        }
+      });
+
+      document.getElementById('btn-refresh').addEventListener('click', loadStats);
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        localStorage.removeItem('gv_admin_token');
+        dashView.classList.add('hidden');
+        authView.classList.remove('hidden');
+      });
+
+      setDefaultTournamentDates();
+      loadStats();
+      setInterval(() => {
+        if (!dashView.classList.contains('hidden')) loadStats();
+      }, 15000);
+    })();
+  </script>
+</body>
+</html>

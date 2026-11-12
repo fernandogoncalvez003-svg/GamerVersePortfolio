@@ -519,7 +519,7 @@
 
     <section class="jackpot-card" aria-label="Bote Semanal">
       <div class="jackpot-head">
-        <span class="jackpot-label">🏆 Bote Semanal USDT</span>
+        <span class="jackpot-label" id="jackpot-title">🏆 Bote Semanal USDT</span>
         <span class="countdown-pill" id="jackpot-countdown">⏳ 7d 00h</span>
       </div>
       <div class="jackpot-amount" id="jackpot-amount">$10.00 USDT</div>
@@ -626,6 +626,7 @@
 
       const ticketEl = document.getElementById('ticket-count');
       const playerMetaEl = document.getElementById('player-meta');
+      const jackpotTitleEl = document.getElementById('jackpot-title');
       const jackpotAmountEl = document.getElementById('jackpot-amount');
       const countdownEl = document.getElementById('jackpot-countdown');
       const split1El = document.getElementById('split-1');
@@ -671,11 +672,16 @@
         const name = gv.user?.firstName || gv.user?.username || 'Piloto';
         playerMetaEl.textContent = `${name} · ID ${gv.user?.id || 'Guest'}`;
 
+        const tour = gv.jackpot?.tournament;
+        if (tour && tour.title && jackpotTitleEl) {
+          jackpotTitleEl.textContent = `🏆 ${tour.title}`;
+        }
+        const split = (tour && tour.prize_split) || { first: 60, second: 25, third: 15 };
         const pool = Number(gv.jackpot?.amount || 10);
         jackpotAmountEl.textContent = `$${pool.toFixed(2)} USDT`;
-        split1El.textContent = `$${(pool * 0.60).toFixed(2)}`;
-        split2El.textContent = `$${(pool * 0.25).toFixed(2)}`;
-        split3El.textContent = `$${(pool * 0.15).toFixed(2)}`;
+        split1El.textContent = `$${(pool * (Number(split.first || 60) / 100)).toFixed(2)}`;
+        split2El.textContent = `$${(pool * (Number(split.second || 25) / 100)).toFixed(2)}`;
+        split3El.textContent = `$${(pool * (Number(split.third || 15) / 100)).toFixed(2)}`;
         countdownEl.textContent = `⏳ ${gv.jackpot?.countdown || computeClientCountdown()}`;
       }
 
@@ -718,6 +724,14 @@
         }
       }
 
+      function detectGameKey(url) {
+        const lower = String(url || '').toLowerCase();
+        if (lower.includes('savetheastronaut')) return 'save_the_astronaut';
+        if (lower.includes('astronautrunner')) return 'astronaut_runner';
+        if (lower.includes('arrowescape')) return 'arrow_escape';
+        return 'hub';
+      }
+
       function openGame(url, title) {
         if (window.GamerVerse && !window.GamerVerse.canPlay()) {
           window.GamerVerse.showNoTicketsModal(() => {
@@ -725,6 +739,9 @@
             showToast('¡+1 🎟️ añadido! Ya puedes entrar.');
           });
           return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.setActiveGame === 'function') {
+          window.GamerVerse.setActiveGame(detectGameKey(url));
         }
         frameEl.title = title;
         frameEl.src = url;
@@ -737,6 +754,9 @@
         overlayEl.setAttribute('aria-hidden', 'true');
         frameEl.src = 'about:blank';
         if (window.GamerVerse) {
+          if (typeof window.GamerVerse.setActiveGame === 'function') {
+            window.GamerVerse.setActiveGame('hub');
+          }
           window.GamerVerse.syncUser(() => {
             renderState();
             loadLeaderboard();

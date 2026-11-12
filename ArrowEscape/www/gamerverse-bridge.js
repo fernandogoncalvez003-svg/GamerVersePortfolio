@@ -71,12 +71,82 @@
             this.loadLocalState();
             this.injectStylesAndModals();
             this.initMonetag();
-            this.syncUser();
+            this.activeGame = this.detectActiveGame();
+            this.resolveCountryCode().then(() => {
+                this.syncUser();
+                this.startHeartbeat();
+            });
             console.log('🚀 GameVerse 307 SDK initialized. User:', this.user);
+        },
+
+        detectActiveGame: function () {
+            const p = ((window.location && window.location.pathname) || '').toLowerCase();
+            if (p.includes('savetheastronaut')) return 'save_the_astronaut';
+            if (p.includes('astronautrunner')) return 'astronaut_runner';
+            if (p.includes('arrowescape')) return 'arrow_escape';
+            return 'hub';
+        },
+
+        setActiveGame: function (gameId) {
+            this.activeGame = gameId || 'hub';
+            this.sendHeartbeat();
+        },
+
+        resolveCountryCode: function () {
+            if (this.countryCode && this.countryCode !== 'UN') {
+                return Promise.resolve(this.countryCode);
+            }
+            const cached = sessionStorage.getItem('gv_country_code');
+            if (cached && /^[A-Z]{2}$/.test(cached)) {
+                this.countryCode = cached;
+                return Promise.resolve(cached);
+            }
+            if (this.isLocalDevEnv()) {
+                this.countryCode = 'UN';
+                return Promise.resolve('UN');
+            }
+            return fetch('/api/geo')
+                .then(r => (r.ok ? r.json() : null))
+                .then(d => {
+                    const code = (d && d.country && /^[A-Z]{2}$/.test(d.country)) ? d.country : 'UN';
+                    this.countryCode = code;
+                    if (code !== 'UN') sessionStorage.setItem('gv_country_code', code);
+                    return code;
+                })
+                .catch(() => {
+                    this.countryCode = 'UN';
+                    return 'UN';
+                });
+        },
+
+        sendHeartbeat: function () {
+            if (!this.apiBase || !this.user.id) return Promise.resolve(null);
+            return fetch(`${this.apiBase}/presence/heartbeat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: this.user.id,
+                    activeGame: this.activeGame || this.detectActiveGame(),
+                    countryCode: this.countryCode || 'UN',
+                    languageCode: this.languageCode || navigator.language || '',
+                    initData: this.user.initData || ''
+                })
+            }).catch(() => null);
+        },
+
+        startHeartbeat: function () {
+            if (this._heartbeatTimer) return;
+            let isTop = true;
+            try { isTop = (window.top === window); } catch (_) {}
+            if (!isTop) return; // El Hub padre reporta por la sesión completa
+            this._heartbeatTimer = setInterval(() => {
+                if (!document.hidden) this.sendHeartbeat();
+            }, 30000);
         },
 
         // 1. Configuración de Telegram WebApp
         initTelegram: function () {
+            this.languageCode = (navigator && navigator.language) || '';
             if (window.Telegram && window.Telegram.WebApp) {
                 const tg = window.Telegram.WebApp;
                 tg.ready();
@@ -93,6 +163,9 @@
                     this.user.id = tg.initDataUnsafe.user.id;
                     this.user.username = tg.initDataUnsafe.user.username || 'Astro';
                     this.user.firstName = tg.initDataUnsafe.user.first_name || 'Piloto';
+                    if (tg.initDataUnsafe.user.language_code) {
+                        this.languageCode = tg.initDataUnsafe.user.language_code;
+                    }
                 }
             }
 
@@ -146,7 +219,10 @@
                     userId: this.user.id,
                     username: this.user.username,
                     firstName: this.user.firstName,
-                    initData: this.user.initData
+                    initData: this.user.initData,
+                    countryCode: this.countryCode || 'UN',
+                    languageCode: this.languageCode || '',
+                    activeGame: this.activeGame || this.detectActiveGame()
                 })
             })
             .then(r => r.json())
@@ -159,6 +235,7 @@
                     if (typeof data.coins === 'number') this.user.coins = data.coins;
                     if (typeof data.jackpot === 'number') this.jackpot.amount = data.jackpot;
                     if (data.countdown) this.jackpot.countdown = data.countdown;
+                    if (data.tournament) this.jackpot.tournament = data.tournament;
                     this.notifyStateUpdated();
                 }
                 if (typeof callback === 'function') callback(data);
