@@ -466,6 +466,8 @@
       let isRecalling = false;
       let comboCounter = 0;
       let hasRevivedThisMatch = false;
+      const INTERSTITIAL_INTERVAL_MS = 120000; // 2 minutos exactos de juego activo
+      let lastInterstitialAdTime = Date.now();
 
       // Entidades
       let balls = [];
@@ -691,7 +693,6 @@
       }
 
       function finishTurn() {
-        state = 'IDLE';
         btnRecall.style.display = 'none';
         balls = [];
         launcherX = nextLauncherX;
@@ -705,6 +706,26 @@
           hudBest.innerText = bestScore;
         }
 
+        // Anuncio intersticial cada 2 minutos de juego continuo (entre tiros, nunca a mitad de tiro)
+        const now = Date.now();
+        if (now - lastInterstitialAdTime >= INTERSTITIAL_INTERVAL_MS) {
+          lastInterstitialAdTime = now;
+          state = 'AD'; // Previene toques durante la apertura del anuncio
+          const resumeAfterAd = () => {
+            state = 'IDLE';
+            spawnRow();
+          };
+
+          if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+            window.GamerVerse.showInterstitialAd(resumeAfterAd);
+            return;
+          } else {
+            resumeAfterAd();
+            return;
+          }
+        }
+
+        state = 'IDLE';
         // Spawn nueva fila y bajar existentes
         spawnRow();
       }
@@ -756,6 +777,7 @@
           // Otorgar 5 bolas extra de bonificación
           totalBalls += 5;
           hudBalls.innerText = `x${totalBalls}`;
+          lastInterstitialAdTime = Date.now(); // Resetear reloj de 2 minutos tras ver ad
           playLaserSound();
           showToast(`🛡️ ¡LÁSER ORBITAL ACTIVO! +5 BOLAS`);
         };
@@ -782,23 +804,34 @@
           window.GamerVerse.consumeTicket();
         }
 
-        round = 1;
-        totalBalls = 1;
-        hasRevivedThisMatch = false;
-        hudRound.innerText = round;
-        hudBalls.innerText = `x${totalBalls}`;
-        launcherX = width / 2;
-        nextLauncherX = launcherX;
-        blocks = [];
-        items = [];
-        balls = [];
-        particles = [];
-        laserAnimations = [];
-        state = 'IDLE';
+        const startFresh = () => {
+          round = 1;
+          totalBalls = 1;
+          hasRevivedThisMatch = false;
+          hudRound.innerText = round;
+          hudBalls.innerText = `x${totalBalls}`;
+          launcherX = width / 2;
+          nextLauncherX = launcherX;
+          blocks = [];
+          items = [];
+          balls = [];
+          particles = [];
+          laserAnimations = [];
+          state = 'IDLE';
 
-        // Generar 2 filas iniciales de inicio amigable
-        spawnRow();
-        spawnRow();
+          // Generar 2 filas iniciales de inicio amigable
+          spawnRow();
+          spawnRow();
+        };
+
+        // Mostrar intersticial al reiniciar si transcurrieron más de 90s
+        const now = Date.now();
+        if (now - lastInterstitialAdTime >= 90000 && window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+          lastInterstitialAdTime = now;
+          window.GamerVerse.showInterstitialAd(startFresh);
+        } else {
+          startFresh();
+        }
       }
 
       // --- APUNTADO TÁCTIL / RATÓN CON GUÍA LÁSER ---

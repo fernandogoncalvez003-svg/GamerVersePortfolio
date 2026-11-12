@@ -3103,9 +3103,9 @@
         function restartGame() {
             document.getElementById('gameover-screen').classList.add('hidden');
             
-            // Frecuencia inteligente de intersticiales (No invasiva)
+            // Frecuencia inteligente de intersticiales: tras 2 minutos de juego o 3 muertes
             const duration = Date.now() - matchStartTime;
-            if (deathsCountSinceLastAd >= 3 && duration > 30000) { // Mayor a 3 muertes y partida larga
+            if (duration >= 120000 || (deathsCountSinceLastAd >= 3 && duration > 25000)) {
                 deathsCountSinceLastAd = 0;
                 localStorage.setItem('deathsCountSinceLastAd', 0);
                 MonetagBridge.showInterstitialAd(() => {
@@ -3120,7 +3120,7 @@
             document.getElementById('gameover-screen').classList.add('hidden');
             
             const duration = Date.now() - matchStartTime;
-            if (deathsCountSinceLastAd >= 3 && duration > 30000) {
+            if (duration >= 120000 || (deathsCountSinceLastAd >= 3 && duration > 25000)) {
                 deathsCountSinceLastAd = 0;
                 localStorage.setItem('deathsCountSinceLastAd', 0);
                 MonetagBridge.showInterstitialAd(() => {
