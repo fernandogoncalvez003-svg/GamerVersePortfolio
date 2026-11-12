@@ -647,6 +647,22 @@ app.post('/api/user/sync', async (req, res) => {
         resolvedUsername = verified.username || resolvedUsername;
         resolvedFirst = verified.first_name || resolvedFirst;
         resolvedLang = verified.language_code || resolvedLang;
+    } else if (hasRealBotToken) {
+        // Visitantes web fuera de Telegram: modo demo local sin ensuciar la tabla de inscritos
+        const activeTournament = await getActiveJackpot();
+        const jackpot = parseFloat((activeTournament && activeTournament.dynamic_pool) || 10);
+        return res.json({
+            success: true,
+            guest: true,
+            userId: resolvedId || null,
+            tickets: 5,
+            coins: 0,
+            walletAddress: '',
+            dailyClaimed: false,
+            jackpot,
+            countdown: getJackpotCountdown(activeTournament && activeTournament.end_date),
+            tournament: activeTournament
+        });
     }
 
     if (!resolvedId || isNaN(resolvedId)) {

@@ -120,7 +120,7 @@
         },
 
         sendHeartbeat: function () {
-            if (!this.apiBase || !this.user.id) return Promise.resolve(null);
+            if (!this.apiBase || !this.user.id || !this.user.initData) return Promise.resolve(null);
             return fetch(`${this.apiBase}/presence/heartbeat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -228,7 +228,7 @@
             .then(r => r.json())
             .then(data => {
                 if (data && data.success) {
-                    if (typeof data.tickets === 'number') {
+                    if (!data.guest && typeof data.tickets === 'number') {
                         this.user.tickets = data.tickets;
                         this.saveLocalState();
                     }
