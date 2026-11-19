@@ -88,6 +88,8 @@
             if (p.includes('cosmichexagon')) return 'cosmic_hexagon';
             if (p.includes('planethit')) return 'planet_hit';
             if (p.includes('neonbreaker')) return 'neon_breaker';
+            if (p.includes('cosmichelix')) return 'cosmic_helix';
+            if (p.includes('cosmicmerge')) return 'cosmic_merge';
             return 'hub';
         },
 

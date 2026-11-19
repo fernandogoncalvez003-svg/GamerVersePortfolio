@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Cosmic Merge · GameVerse 307</title>
+  <meta name="monetag-zone" content="12242572" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="./gamerverse-bridge.js?v=20261112"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #030614;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      background: radial-gradient(circle at 50% 20%, #0d1233 0%, #030614 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(6, 10, 30, 0.9);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      z-index: 20;
+    }
+    .hud-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hud-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #7b8dbb;
+      text-transform: uppercase;
+    }
+    .hud-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+      line-height: 1.1;
+    }
+    .hud-next {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 4px 10px;
+    }
+    .btn-ctrl {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-ctrl:active {
+      transform: scale(0.95);
+    }
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* Modales */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 5, 18, 0.88);
+      backdrop-filter: blur(10px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 100;
+      text-align: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 330px;
+      background: rgba(14, 20, 50, 0.95);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 18px;
+      padding: 24px 20px;
+      box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: #ff4757;
+      text-shadow: 0 0 14px rgba(255, 71, 87, 0.6);
+    }
+    .modal-score {
+      font-family: 'Orbitron', monospace;
+      font-size: 38px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+    }
+    .btn-action {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-revive {
+      background: linear-gradient(135deg, #ffd32a 0%, #ff9f43 100%);
+      color: #050713;
+      box-shadow: 0 0 20px rgba(255, 211, 42, 0.4);
+    }
+    .btn-retry {
+      background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+    }
+    .btn-hub {
+      background: transparent;
+      color: #7b8dbb;
+      border: 1px solid rgba(123, 141, 187, 0.25);
+      font-size: 11px;
+    }
+    .toast {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(0, 240, 255, 0.95);
+      color: #050713;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 80;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <header>
+      <button class="btn-ctrl" id="btn-back">🏠 Hub</button>
+      <div class="hud-stat">
+        <span class="hud-label">Puntos</span>
+        <span class="hud-val" id="hud-score">0</span>
+      </div>
+      <div class="hud-next">
+        <span style="font-size: 10px; font-weight: 800; color: #7b8dbb;">SIG:</span>
+        <canvas id="next-canvas" width="30" height="30" style="display:block;"></canvas>
+      </div>
+      <div style="font-family: 'Orbitron', monospace; font-size: 12px; color: #ffd32a;">
+        Récord: <span id="hud-best">0</span>
+      </div>
+      <button class="btn-ctrl" id="btn-sound">🔊</button>
+    </header>
+
+    <div id="canvas-wrap">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal Game Over -->
+    <div class="modal-overlay" id="modal-gameover">
+      <div class="modal-card">
+        <div style="font-size: 40px;">💥</div>
+        <h2 class="modal-title">¡REBALSE GRAVITATORIO!</h2>
+        <p style="font-size: 13px; color: #a4b0be;">Los planetas superaron la línea de contención.</p>
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: #7b8dbb; letter-spacing: 1px;">Puntuación Final</div>
+          <div class="modal-score" id="final-score">0</div>
+        </div>
+
+        <button class="btn-action btn-revive" id="btn-revive">
+          <span>📺</span> VÓRTICE AGUJERO NEGRO (1 AD)
+        </button>
+
+        <button class="btn-action btn-retry" id="btn-retry">
+          <span>🔄</span> JUGAR OTRA VEZ (1 🎟️)
+        </button>
+
+        <button class="btn-action btn-hub" id="btn-exit-hub">
+          VOLVER AL HUB ARCADE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // --- AUDIO PROCEDURAL SINTETIZADO ---
+      let audioCtx = null;
+      let soundEnabled = true;
+
+      function initAudio() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      }
+
+      function playTone(freq, dur, type = 'sine', gainVal = 0.08) {
+        if (!soundEnabled || !audioCtx) return;
+        try {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(gainVal, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + dur);
+        } catch (_) {}
+      }
+
+      function playMergePop(tier) {
+        const baseFreq = 260 + tier * 55;
+        playTone(baseFreq, 0.12, 'sine', 0.1);
+        setTimeout(() => playTone(baseFreq * 1.5, 0.16, 'triangle', 0.08), 35);
+      }
+
+      function playDropSound() {
+        playTone(180, 0.08, 'sine', 0.05);
+      }
+
+      // --- DEFINICIÓN DE LOS 11 NIVELES DE CUERPOS CELESTES ---
+      const PLANET_TIERS = [
+        { name: 'Polvo Cósmico', radius: 14, color: '#ecf0f1', shadow: '#00f0ff', points: 2, icon: '⚪' },
+        { name: 'Luna Menor', radius: 20, color: '#bdc3c7', shadow: '#95a5a6', points: 4, icon: '🌑' },
+        { name: 'Cometa Helado', radius: 28, color: '#74b9ff', shadow: '#0984e3', points: 8, icon: '☄️' },
+        { name: 'Asteroide Dorado', radius: 36, color: '#f1c40f', shadow: '#f39c12', points: 16, icon: '🟡' },
+        { name: 'Planeta Marte', radius: 46, color: '#e74c3c', shadow: '#c0392b', points: 32, icon: '🔴' },
+        { name: 'Planeta Tierra', radius: 56, color: '#2ecc71', shadow: '#27ae60', points: 64, icon: '🌍' },
+        { name: 'Planeta Neptuno', radius: 68, color: '#3498db', shadow: '#2980b9', points: 128, icon: '🔵' },
+        { name: 'Planeta Saturno', radius: 80, color: '#e67e22', shadow: '#d35400', points: 256, icon: '🪐', hasRing: true },
+        { name: 'Planeta Júpiter', radius: 94, color: '#d35400', shadow: '#e17055', points: 512, icon: '🟠' },
+        { name: 'Estrella Solar', radius: 110, color: '#f39c12', shadow: '#ff7675', points: 1024, icon: '☀️' },
+        { name: 'Agujero Negro', radius: 128, color: '#6c5ce7', shadow: '#a29bfe', points: 2048, icon: '🕳️', isSingularity: true }
+      ];
+
+      // --- ELEMENTOS DOM ---
+      const canvasWrap = document.getElementById('canvas-wrap');
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+      const nextCanvas = document.getElementById('next-canvas');
+      const nextCtx = nextCanvas.getContext('2d');
+      const hudScore = document.getElementById('hud-score');
+      const hudBest = document.getElementById('hud-best');
+      const modalGameOver = document.getElementById('modal-gameover');
+      const finalScoreEl = document.getElementById('final-score');
+      const btnRevive = document.getElementById('btn-revive');
+      const btnRetry = document.getElementById('btn-retry');
+      const btnBack = document.getElementById('btn-back');
+      const btnExitHub = document.getElementById('btn-exit-hub');
+      const btnSound = document.getElementById('btn-sound');
+      const toastEl = document.getElementById('toast');
+
+      function showToast(text) {
+        toastEl.innerText = text;
+        toastEl.classList.add('show');
+        setTimeout(() => toastEl.classList.remove('show'), 2200);
+      }
+
+      // --- ESTADO DEL JUEGO ---
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let score = 0;
+      let bestScore = parseInt(localStorage.getItem('gv_merge_best') || '0', 10);
+      let gameState = 'PLAYING'; // 'PLAYING', 'GAMEOVER'
+      let screenShake = 0;
+
+      // Publicidad: cada 2 minutos
+      const INTERSTITIAL_INTERVAL_MS = 120000;
+      let lastInterstitialAdTime = Date.now();
+      let hasRevivedThisRun = false;
+
+      // Contenedor / Cámara de fusión
+      let jarLeft = 14;
+      let jarRight = 0;
+      let jarTop = 85; // Línea de peligro
+      let jarBottom = 0;
+
+      // Sistema de caída
+      let dropX = 0;
+      let currentDropTier = 0;
+      let nextDropTier = 0;
+      let canDrop = true;
+      let isAiming = false;
+      let dangerWarningTimer = 0;
+
+      // Cuerpos celestes en el juego
+      let bodies = [];
+      let particles = [];
+
+      // --- AJUSTE RESPONSIVE CANVAS ---
+      function resize() {
+        const rect = canvasWrap.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+
+        jarLeft = 16;
+        jarRight = width - 16;
+        jarTop = 90;
+        jarBottom = height - 16;
+        dropX = width / 2;
+      }
+      window.addEventListener('resize', resize);
+      window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+      // --- SELECCIÓN ALEATORIA DE PLANETA INICIAL (Tier 0 a 3) ---
+      function rollDropTier() {
+        // Al caer solo salen de los primeros 4 niveles más pequeños
+        return Math.floor(Math.random() * 4);
+      }
+
+      function drawNextPreview() {
+        nextCtx.clearRect(0, 0, 30, 30);
+        const p = PLANET_TIERS[nextDropTier];
+        nextCtx.fillStyle = p.color;
+        nextCtx.shadowColor = p.shadow;
+        nextCtx.shadowBlur = 8;
+        nextCtx.beginPath();
+        nextCtx.arc(15, 15, Math.min(13, p.radius * 0.45), 0, Math.PI * 2);
+        nextCtx.fill();
+      }
+
+      // --- CONTROLES DE APUNTADO Y CAÍDA ---
+      function updatePointer(clientX) {
+        const rect = canvas.getBoundingClientRect();
+        const touchX = clientX - rect.left;
+        const r = PLANET_TIERS[currentDropTier].radius;
+        dropX = Math.max(jarLeft + r + 2, Math.min(jarRight - r - 2, touchX));
+      }
+
+      function handleTouchStart(e) {
+        initAudio();
+        if (gameState !== 'PLAYING') return;
+        isAiming = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        updatePointer(clientX);
+      }
+
+      function handleTouchMove(e) {
+        if (!isAiming || gameState !== 'PLAYING') return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        updatePointer(clientX);
+      }
+
+      function handleTouchEnd() {
+        if (!isAiming || gameState !== 'PLAYING') return;
+        isAiming = false;
+        dropCurrentBody();
+      }
+
+      canvasWrap.addEventListener('mousedown', handleTouchStart);
+      window.addEventListener('mousemove', handleTouchMove);
+      window.addEventListener('mouseup', handleTouchEnd);
+
+      canvasWrap.addEventListener('touchstart', handleTouchStart, { passive: true });
+      window.addEventListener('touchmove', handleTouchMove, { passive: true });
+      window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+      function dropCurrentBody() {
+        if (!canDrop) return;
+        canDrop = false;
+        playDropSound();
+
+        const p = PLANET_TIERS[currentDropTier];
+        bodies.push({
+          x: dropX,
+          y: jarTop - 25,
+          vx: 0,
+          vy: 2.5,
+          tier: currentDropTier,
+          radius: p.radius,
+          merged: false,
+          settledTime: 0
+        });
+
+        // Pasar al siguiente
+        currentDropTier = nextDropTier;
+        nextDropTier = rollDropTier();
+        drawNextPreview();
+
+        // Enfriamiento de 0.45s antes de soltar el siguiente
+        setTimeout(() => {
+          if (gameState === 'PLAYING') canDrop = true;
+        }, 450);
+      }
+
+      // --- SISTEMA DE PARTÍCULAS ---
+      function spawnMergeParticles(x, y, color) {
+        screenShake = 8;
+        for (let i = 0; i < 16; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 2 + Math.random() * 6;
+          particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            color: color,
+            size: 3 + Math.random() * 4,
+            alpha: 1
+          });
+        }
+      }
+
+      // --- FÍSICA CIRCULAR 2D CON IMPULSO Y SUB-STEPS ---
+      function updatePhysics() {
+        if (gameState !== 'PLAYING') return;
+
+        const subSteps = 4;
+        const gravity = 0.42 / subSteps;
+        const restitution = 0.22; // Rebote suave natural
+        const friction = 0.985;
+
+        for (let step = 0; step < subSteps; step++) {
+          // 1. Integración de movimiento y límites
+          for (let i = 0; i < bodies.length; i++) {
+            const b = bodies[i];
+            b.vy += gravity;
+            b.vx *= friction;
+            b.vy *= friction;
+            b.x += b.vx;
+            b.y += b.vy;
+
+            // Colisión con paredes laterales
+            if (b.x - b.radius < jarLeft) {
+              b.x = jarLeft + b.radius;
+              b.vx = -b.vx * restitution;
+            } else if (b.x + b.radius > jarRight) {
+              b.x = jarRight - b.radius;
+              b.vx = -b.vx * restitution;
+            }
+
+            // Colisión con el fondo
+            if (b.y + b.radius > jarBottom) {
+              b.y = jarBottom - b.radius;
+              b.vy = -b.vy * restitution;
+            }
+          }
+
+          // 2. Colisión círculo-círculo y fusión
+          for (let i = 0; i < bodies.length; i++) {
+            const b1 = bodies[i];
+            for (let j = i + 1; j < bodies.length; j++) {
+              const b2 = bodies[j];
+              const dx = b2.x - b1.x;
+              const dy = b2.y - b1.y;
+              const dist = Math.hypot(dx, dy);
+              const minDist = b1.radius + b2.radius;
+
+              if (dist < minDist && dist > 0) {
+                // Si son del mismo nivel: ¡FUSIÓN EN UNO SUPERIOR!
+                if (b1.tier === b2.tier && !b1.merged && !b2.merged && b1.tier < PLANET_TIERS.length - 1) {
+                  b1.merged = true;
+                  b2.merged = true;
+
+                  const nextTier = b1.tier + 1;
+                  const newX = (b1.x + b2.x) / 2;
+                  const newY = (b1.y + b2.y) / 2;
+                  const nextP = PLANET_TIERS[nextTier];
+
+                  playMergePop(nextTier);
+                  spawnMergeParticles(newX, newY, nextP.color);
+
+                  score += nextP.points;
+                  hudScore.innerText = score;
+                  if (score > bestScore) {
+                    bestScore = score;
+                    localStorage.setItem('gv_merge_best', bestScore);
+                    hudBest.innerText = bestScore;
+                  }
+
+                  if (nextP.isSingularity) {
+                    showToast('🕳️ ¡AGUJERO NEGRO CREADO!');
+                  } else {
+                    showToast(`✨ ¡${nextP.name}! +${nextP.points}`);
+                  }
+
+                  // Añadir nuevo cuerpo fusionado
+                  bodies.push({
+                    x: newX,
+                    y: newY,
+                    vx: (b1.vx + b2.vx) * 0.3,
+                    vy: (b1.vy + b2.vy) * 0.3 - 1.5,
+                    tier: nextTier,
+                    radius: nextP.radius,
+                    merged: false,
+                    settledTime: 0
+                  });
+                  break;
+                } else {
+                  // Separación elástica suave sin traspaso
+                  const nx = dx / dist;
+                  const ny = dy / dist;
+                  const overlap = (minDist - dist) * 0.5;
+
+                  b1.x -= nx * overlap;
+                  b1.y -= ny * overlap;
+                  b2.x += nx * overlap;
+                  b2.y += ny * overlap;
+
+                  // Intercambio de momentos proyectados
+                  const kx = b1.vx - b2.vx;
+                  const ky = b1.vy - b2.vy;
+                  const p = 2 * (nx * kx + ny * ky) / 2;
+
+                  b1.vx -= p * nx * restitution;
+                  b1.vy -= p * ny * restitution;
+                  b2.vx += p * nx * restitution;
+                  b2.vy += p * ny * restitution;
+                }
+              }
+            }
+          }
+
+          // Eliminar cuerpos marcados como fusionados
+          bodies = bodies.filter(b => !b.merged);
+        }
+
+        // 3. Comprobar rebalse / Game Over (si algún planeta asentado supera la línea superior)
+        let inDangerZone = false;
+        for (let i = 0; i < bodies.length; i++) {
+          const b = bodies[i];
+          if (b.y - b.radius < jarTop && Math.abs(b.vy) < 0.8) {
+            b.settledTime += 1 / 60;
+            if (b.settledTime > 3.2) {
+              inDangerZone = true;
+              break;
+            }
+          } else {
+            b.settledTime = 0;
+          }
+        }
+
+        if (inDangerZone) {
+          triggerGameOver();
+          return;
+        }
+
+        // 4. Actualizar partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= 0.04;
+          if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        if (screenShake > 0) screenShake *= 0.85;
+      }
+
+      // --- DIBUJADO EN CANVAS (60 FPS) ---
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.save();
+        if (screenShake > 0.5) {
+          ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        }
+
+        // 1. Dibujar Contenedor / Cámara de fusión
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.lineWidth = 2.5;
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.moveTo(jarLeft, jarTop - 15);
+        ctx.lineTo(jarLeft, jarBottom);
+        ctx.lineTo(jarRight, jarBottom);
+        ctx.lineTo(jarRight, jarTop - 15);
+        ctx.stroke();
+        ctx.restore();
+
+        // 2. Línea de peligro (Danger Line)
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 71, 87, 0.5)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(jarLeft + 5, jarTop);
+        ctx.lineTo(jarRight - 5, jarTop);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Guía de lanzamiento y planeta preparado
+        if (canDrop && gameState === 'PLAYING') {
+          const p = PLANET_TIERS[currentDropTier];
+
+          // Línea guía discontinua
+          ctx.save();
+          ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 6]);
+          ctx.beginPath();
+          ctx.moveTo(dropX, jarTop - 25);
+          ctx.lineTo(dropX, jarBottom);
+          ctx.stroke();
+          ctx.restore();
+
+          // Planeta listo para soltar
+          ctx.save();
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.shadow;
+          ctx.shadowBlur = 12;
+          ctx.beginPath();
+          ctx.arc(dropX, jarTop - 25, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `${Math.max(10, p.radius * 0.7)}px Outfit`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.icon, dropX, jarTop - 25);
+          ctx.restore();
+        }
+
+        // 4. Dibujar todos los cuerpos celestes
+        for (let i = 0; i < bodies.length; i++) {
+          const b = bodies[i];
+          const p = PLANET_TIERS[b.tier];
+
+          ctx.save();
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.shadow;
+          ctx.shadowBlur = 12;
+
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Anillos de Saturno
+          if (p.hasRing) {
+            ctx.strokeStyle = '#ffd32a';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(b.x, b.y, b.radius * 1.45, b.radius * 0.45, -0.25, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // Icono / Detalle
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `${Math.max(12, b.radius * 0.65)}px Outfit`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(p.icon, b.x, b.y);
+
+          ctx.restore();
+        }
+
+        // 5. Partículas de explosión
+        for (let i = 0; i < particles.length; i++) {
+          const pt = particles[i];
+          ctx.save();
+          ctx.globalAlpha = pt.alpha;
+          ctx.fillStyle = pt.color;
+          ctx.shadowColor = pt.color;
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
+
+      // --- BUCLE PRINCIPAL (60 FPS) ---
+      function loop() {
+        updatePhysics();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // --- GAME OVER & REVIVIR ---
+      function triggerGameOver() {
+        gameState = 'GAMEOVER';
+        finalScoreEl.innerText = score;
+        modalGameOver.classList.add('active');
+        playTone(150, 0.4, 'sawtooth', 0.15);
+
+        if (window.GamerVerse) {
+          window.GamerVerse.submitScore('cosmic_merge', score, 0);
+        }
+
+        if (hasRevivedThisRun) {
+          btnRevive.style.display = 'none';
+        } else {
+          btnRevive.style.display = 'flex';
+          btnRevive.disabled = false;
+        }
+      }
+
+      function reviveGame() {
+        btnRevive.disabled = true;
+        btnRevive.innerText = 'Cargando...';
+
+        const onReward = () => {
+          hasRevivedThisRun = true;
+          modalGameOver.classList.remove('active');
+          gameState = 'PLAYING';
+          lastInterstitialAdTime = Date.now();
+
+          // Efecto Vórtice: desintegra todos los planetas en la mitad superior del frasco
+          const midY = (jarTop + jarBottom) * 0.55;
+          let removedCount = 0;
+          for (let i = bodies.length - 1; i >= 0; i--) {
+            if (bodies[i].y < midY) {
+              spawnMergeParticles(bodies[i].x, bodies[i].y, '#a29bfe');
+              bodies.splice(i, 1);
+              removedCount++;
+            }
+          }
+          playMergePop(9);
+          showToast(`🕳️ ¡VÓRTICE ACTIVADO! ${removedCount} PLANETAS LIMPIADOS`);
+          canDrop = true;
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd(onReward, (err) => {
+            btnRevive.disabled = false;
+            btnRevive.innerText = '📺 VÓRTICE AGUJERO NEGRO (1 AD)';
+          });
+        } else {
+          onReward();
+        }
+      }
+
+      function resetNewGame() {
+        modalGameOver.classList.remove('active');
+
+        if (window.GamerVerse && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => resetNewGame());
+          return;
+        }
+        if (window.GamerVerse) {
+          window.GamerVerse.consumeTicket();
+        }
+
+        const startFresh = () => {
+          score = 0;
+          hudScore.innerText = score;
+          hasRevivedThisRun = false;
+          bodies = [];
+          particles = [];
+          currentDropTier = rollDropTier();
+          nextDropTier = rollDropTier();
+          drawNextPreview();
+          canDrop = true;
+          gameState = 'PLAYING';
+        };
+
+        const now = Date.now();
+        if (now - lastInterstitialAdTime >= INTERSTITIAL_INTERVAL_MS && window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+          lastInterstitialAdTime = now;
+          window.GamerVerse.showInterstitialAd(startFresh);
+        } else {
+          startFresh();
+        }
+      }
+
+      // --- BOTONES ---
+      btnRevive.addEventListener('click', reviveGame);
+      btnRetry.addEventListener('click', resetNewGame);
+      btnSound.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        btnSound.innerText = soundEnabled ? '🔊' : '🔇';
+      });
+      btnBack.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+      btnExitHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // --- INICIALIZACIÓN ---
+      function init() {
+        resize();
+        hudBest.innerText = bestScore;
+        currentDropTier = rollDropTier();
+        nextDropTier = rollDropTier();
+        drawNextPreview();
+
+        if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => init());
+          return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+          window.GamerVerse.consumeTicket();
+        }
+
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
