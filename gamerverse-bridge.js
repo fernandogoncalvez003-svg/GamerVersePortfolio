@@ -90,6 +90,8 @@
             if (p.includes('neonbreaker')) return 'neon_breaker';
             if (p.includes('cosmichelix')) return 'cosmic_helix';
             if (p.includes('cosmicmerge')) return 'cosmic_merge';
+            if (p.includes('colorswitch')) return 'color_switch';
+            if (p.includes('stacktower')) return 'stack_tower';
             return 'hub';
         },
 
