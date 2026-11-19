@@ -738,6 +738,84 @@
         </div>
         <button class="btn play-btn" type="button" data-game="./StackTower/index.html" data-title="Stack Tower Neon">Jugar</button>
       </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner" style="background: radial-gradient(circle at 30% 30%, #f97316, #ef4444); box-shadow: 0 0 15px rgba(249, 115, 22, 0.4);">🚀</div>
+        <div class="game-info">
+          <h2 class="game-name">Jetpack Astro</h2>
+          <p class="game-desc">Vuela con propulsores de plasma. Esquiva electro-rayos y misiles teledirigidos.</p>
+          <div class="game-tags">
+            <span class="tag">Jetpack</span>
+            <span class="tag">Acción 1-Tap</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./JetpackAstro/index.html" data-title="Jetpack Astro">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner" style="background: radial-gradient(circle at 30% 30%, #38bdf8, #818cf8); box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);">⭕</div>
+        <div class="game-info">
+          <h2 class="game-name">Orbit Pong 360°</h2>
+          <p class="game-desc">Tenis orbital en 360 grados: desliza la paleta en circunferencia y destruye núcleos.</p>
+          <div class="game-tags">
+            <span class="tag">Pong 360°</span>
+            <span class="tag">Reflejos</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./OrbitPong/index.html" data-title="Orbit Pong 360°">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner" style="background: radial-gradient(circle at 30% 30%, #38bdf8, #a855f7); box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);">🐸</div>
+        <div class="game-info">
+          <h2 class="game-name">Crossy Comet</h2>
+          <p class="game-desc">Salta entre autopistas espaciales, naves de carga y rayos láser sin que te alcance la tormenta.</p>
+          <div class="game-tags">
+            <span class="tag">Crossy Road</span>
+            <span class="tag">Endless Hopper</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./CrossyComet/index.html" data-title="Crossy Comet">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner" style="background: radial-gradient(circle at 30% 30%, #c084fc, #ec4899); box-shadow: 0 0 15px rgba(192, 132, 252, 0.4);">🪐</div>
+        <div class="game-info">
+          <h2 class="game-name">Orbit Leap</h2>
+          <p class="game-desc">Salta verticalmente hacia el infinito cósmico con resortes y cohetes propulsores.</p>
+          <div class="game-tags">
+            <span class="tag">Doodle Jump</span>
+            <span class="tag">Salto Cósmico</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./OrbitLeap/index.html" data-title="Orbit Leap">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner" style="background: radial-gradient(circle at 30% 30%, #fb7185, #f43f5e); box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);">⚔️</div>
+        <div class="game-info">
+          <h2 class="game-name">Space Blade</h2>
+          <p class="game-desc">Corta cristales y cometas con tu espada láser con cortes rápidos. ¡Cuidado con las bombas!</p>
+          <div class="game-tags">
+            <span class="tag">Fruit Ninja</span>
+            <span class="tag">Corte Láser</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./SpaceBlade/index.html" data-title="Space Blade">Jugar</button>
+      </article>
+
+      <article class="game-card">
+        <div class="game-icon icon-runner" style="background: radial-gradient(circle at 30% 30%, #34d399, #10b981); box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);">🐍</div>
+        <div class="game-info">
+          <h2 class="game-name">Plasma Snake</h2>
+          <p class="game-desc">Control fluido 360° en el espacio: devora energía pura y extiende tu cuerpo de plasma.</p>
+          <div class="game-tags">
+            <span class="tag">Snake 360°</span>
+            <span class="tag">Plasma Arcade</span>
+          </div>
+        </div>
+        <button class="btn play-btn" type="button" data-game="./PlasmaSnake/index.html" data-title="Plasma Snake">Jugar</button>
+      </article>
     </section>
 
     <section class="panel">
@@ -958,6 +1036,17 @@
         if (lower.includes('cosmicblocks')) return 'cosmic_blocks';
         if (lower.includes('cosmichexagon')) return 'cosmic_hexagon';
         if (lower.includes('planethit')) return 'planet_hit';
+        if (lower.includes('neonbreaker')) return 'neon_breaker';
+        if (lower.includes('cosmichelix')) return 'cosmic_helix';
+        if (lower.includes('cosmicmerge')) return 'cosmic_merge';
+        if (lower.includes('colorswitch')) return 'color_switch';
+        if (lower.includes('stacktower')) return 'stack_tower';
+        if (lower.includes('jetpackastro')) return 'jetpack_astro';
+        if (lower.includes('orbitpong')) return 'orbit_pong';
+        if (lower.includes('crossycomet')) return 'crossy_comet';
+        if (lower.includes('orbitleap')) return 'orbit_leap';
+        if (lower.includes('spaceblade')) return 'space_blade';
+        if (lower.includes('plasmasnake')) return 'plasma_snake';
         return 'hub';
       }
 

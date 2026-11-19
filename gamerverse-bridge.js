@@ -92,6 +92,12 @@
             if (p.includes('cosmicmerge')) return 'cosmic_merge';
             if (p.includes('colorswitch')) return 'color_switch';
             if (p.includes('stacktower')) return 'stack_tower';
+            if (p.includes('jetpackastro')) return 'jetpack_astro';
+            if (p.includes('orbitpong')) return 'orbit_pong';
+            if (p.includes('crossycomet')) return 'crossy_comet';
+            if (p.includes('orbitleap')) return 'orbit_leap';
+            if (p.includes('spaceblade')) return 'space_blade';
+            if (p.includes('plasmasnake')) return 'plasma_snake';
             return 'hub';
         },
 

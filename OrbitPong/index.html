@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Orbit Pong 360° - GamerVerse</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #0c102b 0%, #050714 65%, #020308 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #fff;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10;
+      pointer-events: none;
+      padding: max(12px, env(safe-area-inset-top)) 16px 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hud-left, .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .hud-pill {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .hud-score {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.4);
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    }
+    .hud-coins {
+      color: #facc15;
+      border-color: rgba(250, 204, 21, 0.4);
+    }
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      font-size: 16px;
+      transition: transform 0.1s, background 0.2s;
+    }
+    .hud-btn:active {
+      transform: scale(0.92);
+      background: rgba(56, 189, 248, 0.3);
+    }
+
+    /* Modales */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 24px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.2);
+      transform: translateY(20px) scale(0.95);
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .modal-overlay.active .modal-card {
+      transform: translateY(0) scale(1);
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .modal-score {
+      font-size: 48px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+      margin: 12px 0;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(2, 6, 23, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 16px 0 20px 0;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      margin-bottom: 10px;
+      transition: transform 0.1s, filter 0.15s;
+    }
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+    .btn-revive {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+    .btn-restart {
+      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+    }
+    .btn-hub {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    /* Tutorial overlay */
+    .touch-guide {
+      position: absolute;
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #38bdf8;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      z-index: 10;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+      50% { transform: translateX(-50%) scale(1.05); opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-pill hud-score">⚡ <span id="hud-score">0</span></div>
+      <div class="hud-pill hud-coins">🪙 <span id="hud-coins">0</span></div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-pill" style="color: #a78bfa;">🔥 <span id="hud-combo">0x</span></div>
+      <button class="hud-btn" id="btn-pause" title="Pausar">⏸️</button>
+      <button class="hud-btn" id="btn-hub" title="Salir al Hub">🏠</button>
+    </div>
+  </div>
+
+  <div class="touch-guide" id="touch-guide">Desliza el dedo alrededor para mover la paleta</div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Modal Game Over -->
+  <div class="modal-overlay" id="modal-gameover">
+    <div class="modal-card">
+      <div class="modal-title">ORBIT DESTROYED</div>
+      <div class="modal-score" id="go-score">0</div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-label">Récord</span>
+          <span class="stat-value" id="go-best">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Rally Máx</span>
+          <span class="stat-value" id="go-rally">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Monedas</span>
+          <span class="stat-value" id="go-coins">+0</span>
+        </div>
+      </div>
+      <button class="btn-action btn-revive" id="btn-revive">
+        🛡️ Revivir con Escudo 360° (Anuncio)
+      </button>
+      <button class="btn-action btn-restart" id="btn-restart">
+        🔄 Nueva Partida
+      </button>
+      <button class="btn-action btn-hub" id="btn-exit-hub">
+        🏠 Menú Principal
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Pausa -->
+  <div class="modal-overlay" id="modal-pause">
+    <div class="modal-card">
+      <div class="modal-title">PAUSA</div>
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Órbita suspendida en el hiperespacio</p>
+      <button class="btn-action btn-restart" id="btn-resume">▶️ Continuar</button>
+      <button class="btn-action btn-hub" id="btn-pause-hub">🏠 Salir al Menú</button>
+    </div>
+  </div>
+
+  <script src="./gamerverse-bridge.js?v=20261112"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const hudScore = document.getElementById('hud-score');
+      const hudCoins = document.getElementById('hud-coins');
+      const hudCombo = document.getElementById('hud-combo');
+      const touchGuide = document.getElementById('touch-guide');
+
+      const modalGameOver = document.getElementById('modal-gameover');
+      const goScore = document.getElementById('go-score');
+      const goBest = document.getElementById('go-best');
+      const goRally = document.getElementById('go-rally');
+      const goCoins = document.getElementById('go-coins');
+      const btnRevive = document.getElementById('btn-revive');
+      const btnRestart = document.getElementById('btn-restart');
+      const btnExitHub = document.getElementById('btn-exit-hub');
+
+      const modalPause = document.getElementById('modal-pause');
+      const btnPause = document.getElementById('btn-pause');
+      const btnResume = document.getElementById('btn-resume');
+      const btnPauseHub = document.getElementById('btn-pause-hub');
+
+      // --- AUDIO PROCEDURAL SINTETIZADO (Web Audio API) ---
+      let audioCtx = null;
+      function getAudioCtx() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      function playTone(freq, type = 'sine', duration = 0.1, vol = 0.25) {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, actx.currentTime);
+          gain.gain.setValueAtTime(vol, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + duration);
+        } catch (_) {}
+      }
+
+      function sfxBounce(combo) {
+        const base = 440;
+        const note = base * Math.pow(1.059463, (combo % 12));
+        playTone(note, 'triangle', 0.12, 0.3);
+      }
+
+      function sfxCoreHit() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(880, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1760, actx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.3, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.2);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.2);
+        } catch (_) {}
+      }
+
+      function sfxCoin() {
+        playTone(987.77, 'sine', 0.08, 0.2);
+        setTimeout(() => playTone(1318.51, 'sine', 0.14, 0.25), 60);
+      }
+
+      function sfxGameOver() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(260, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(45, actx.currentTime + 0.45);
+          gain.gain.setValueAtTime(0.4, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.5);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.5);
+        } catch (_) {}
+      }
+
+      // --- DIMENSIONES Y DPR ---
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      let dpr = window.devicePixelRatio || 1;
+      let centerX = width / 2;
+      let centerY = height / 2;
+      let arenaRadius = Math.min(width, height) * 0.42;
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        centerX = width / 2;
+        centerY = height / 2;
+        arenaRadius = Math.min(width, height) * 0.41;
+      }
+      window.addEventListener('resize', resize);
+
+      // --- ESTADO DEL JUEGO ---
+      let score = 0;
+      let bestScore = parseInt(localStorage.getItem('gv_orbit_pong_best') || '0', 10);
+      let coinsSession = 0;
+      let rally = 0;
+      let maxRally = 0;
+      let isPaused = false;
+      let isGameOver = false;
+      let hasRevived = false;
+
+      // Tiempo activo de juego y control de anuncios (2 minutos)
+      let sessionStartTime = Date.now();
+      let lastInterstitialTime = Date.now();
+      const INTERSTITIAL_INTERVAL_MS = 120000;
+
+      // --- ENTIDADES ---
+      // Paleta en la circunferencia exterior
+      const paddle = {
+        angle: -Math.PI / 2, // Posición angular
+        widthAngle: Math.PI / 4, // Tamaño del arco (~45 grados)
+        thickness: 14,
+        color: '#38bdf8'
+      };
+
+      // Pelota
+      const ball = {
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        radius: 8,
+        speed: 5.5,
+        baseSpeed: 5.5,
+        trail: []
+      };
+
+      // Escudo 360° temporal de revivir
+      let emergencyShieldTime = 0; // ms restantes
+
+      // Núcleos y gemas orbitales que aparecen en el centro
+      let cores = [];
+      let particles = [];
+      let shockwaves = [];
+      let stars = [];
+
+      // Inicializar estrellas de fondo
+      for (let i = 0; i < 60; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.7 + 0.3,
+          speed: Math.random() * 0.02 + 0.01
+        });
+      }
+
+      function spawnCore() {
+        // Generar un núcleo en un radio interior (15% a 70% del radio)
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * (arenaRadius * 0.6) + (arenaRadius * 0.15);
+        const isCoin = Math.random() < 0.35;
+        cores.push({
+          x: centerX + Math.cos(angle) * dist,
+          y: centerY + Math.sin(angle) * dist,
+          radius: isCoin ? 11 : 16,
+          isCoin: isCoin,
+          health: isCoin ? 1 : 2,
+          pulse: 0,
+          color: isCoin ? '#facc15' : '#ec4899'
+        });
+      }
+
+      function resetBall(directionAngle = null) {
+        ball.x = centerX;
+        ball.y = centerY;
+        ball.speed = ball.baseSpeed + Math.min(rally * 0.15, 6);
+        const ang = directionAngle !== null ? directionAngle : (Math.random() * Math.PI * 2);
+        ball.vx = Math.cos(ang) * ball.speed;
+        ball.vy = Math.sin(ang) * ball.speed;
+        ball.trail = [];
+      }
+
+      function startNewGame() {
+        score = 0;
+        coinsSession = 0;
+        rally = 0;
+        maxRally = 0;
+        isGameOver = false;
+        hasRevived = false;
+        emergencyShieldTime = 0;
+        cores = [];
+        particles = [];
+        shockwaves = [];
+        sessionStartTime = Date.now();
+
+        paddle.angle = -Math.PI / 2;
+        paddle.widthAngle = Math.PI / 4;
+
+        // Generar 3 núcleos iniciales
+        for (let i = 0; i < 4; i++) {
+          spawnCore();
+        }
+
+        resetBall();
+        updateHUD();
+
+        modalGameOver.classList.remove('active');
+        modalPause.classList.remove('active');
+        isPaused = false;
+      }
+
+      function updateHUD() {
+        hudScore.innerText = score;
+        hudCoins.innerText = coinsSession;
+        hudCombo.innerText = `${rally}x`;
+      }
+
+      // --- CONTROLES TÁCTILES Y RATÓN (ÁNGULO 360°) ---
+      let isTouching = false;
+
+      function updatePaddleAngleFromEvent(clientX, clientY) {
+        const dx = clientX - centerX;
+        const dy = clientY - centerY;
+        paddle.angle = Math.atan2(dy, dx);
+        if (touchGuide && touchGuide.style.display !== 'none') {
+          touchGuide.style.display = 'none';
+        }
+      }
+
+      window.addEventListener('pointerdown', (e) => {
+        if (isGameOver || isPaused) return;
+        getAudioCtx();
+        isTouching = true;
+        updatePaddleAngleFromEvent(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (isTouching && !isGameOver && !isPaused) {
+          updatePaddleAngleFromEvent(e.clientX, e.clientY);
+        }
+      });
+
+      window.addEventListener('pointerup', () => { isTouching = false; });
+      window.addEventListener('pointercancel', () => { isTouching = false; });
+
+      // Controles de teclado opcionales (Flechas)
+      window.addEventListener('keydown', (e) => {
+        if (isGameOver || isPaused) return;
+        if (e.key === 'ArrowLeft' || e.key === 'a') {
+          paddle.angle -= 0.15;
+        } else if (e.key === 'ArrowRight' || e.key === 'd') {
+          paddle.angle += 0.15;
+        }
+      });
+
+      // --- SHOCKWAVES & PARTÍCULAS ---
+      function addShockwave(x, y, color = '#38bdf8', maxR = 60) {
+        shockwaves.push({ x, y, r: 4, maxR, color, alpha: 1 });
+      }
+
+      function addParticles(x, y, color, count = 12) {
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = Math.random() * 4 + 1.5;
+          particles.push({
+            x, y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            r: Math.random() * 2.5 + 1.5,
+            color,
+            alpha: 1,
+            decay: Math.random() * 0.03 + 0.02
+          });
+        }
+      }
+
+      // --- DIFERENCIA ANGULAR NORMALIZADA ---
+      function angleDiff(a, b) {
+        let diff = (a - b) % (Math.PI * 2);
+        if (diff < -Math.PI) diff += Math.PI * 2;
+        if (diff > Math.PI) diff -= Math.PI * 2;
+        return diff;
+      }
+
+      // --- GAME OVER Y ANUNCIOS ---
+      function checkAndTriggerInterstitial(onComplete) {
+        const now = Date.now();
+        if (now - lastInterstitialTime >= INTERSTITIAL_INTERVAL_MS) {
+          if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+            window.GamerVerse.showInterstitialAd(() => {
+              lastInterstitialTime = Date.now();
+              if (onComplete) onComplete();
+            });
+            return;
+          }
+        }
+        if (onComplete) onComplete();
+      }
+
+      function triggerGameOver() {
+        if (isGameOver) return;
+        isGameOver = true;
+        sfxGameOver();
+
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem('gv_orbit_pong_best', bestScore);
+        }
+
+        goScore.innerText = score;
+        goBest.innerText = bestScore;
+        goRally.innerText = maxRally;
+        goCoins.innerText = `+${coinsSession}`;
+
+        if (hasRevived) {
+          btnRevive.style.display = 'none';
+        } else {
+          btnRevive.style.display = 'flex';
+        }
+
+        if (window.GamerVerse && typeof window.GamerVerse.submitScore === 'function') {
+          window.GamerVerse.submitScore('orbit_pong', score, coinsSession);
+        }
+
+        modalGameOver.classList.add('active');
+      }
+
+      // --- REVIVIR CON REWARDED AD ---
+      btnRevive.addEventListener('click', () => {
+        if (hasRevived) return;
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd({
+            onSuccess: () => {
+              hasRevived = true;
+              isGameOver = false;
+              modalGameOver.classList.remove('active');
+              emergencyShieldTime = 10000; // 10 segundos de escudo 360° total
+              resetBall();
+              addShockwave(centerX, centerY, '#10b981', arenaRadius);
+            },
+            onFailure: () => {
+              alert('No se pudo cargar el anuncio. Intenta de nuevo.');
+            }
+          });
+        } else {
+          // Fallback offline / dev
+          hasRevived = true;
+          isGameOver = false;
+          modalGameOver.classList.remove('active');
+          emergencyShieldTime = 10000;
+          resetBall();
+        }
+      });
+
+      btnRestart.addEventListener('click', () => {
+        checkAndTriggerInterstitial(() => {
+          if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+            window.GamerVerse.showNoTicketsModal(() => startNewGame());
+            return;
+          }
+          if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+            window.GamerVerse.consumeTicket();
+          }
+          startNewGame();
+        });
+      });
+
+      btnExitHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // Pausa
+      btnPause.addEventListener('click', () => {
+        if (isGameOver) return;
+        isPaused = true;
+        modalPause.classList.add('active');
+      });
+      btnResume.addEventListener('click', () => {
+        isPaused = false;
+        modalPause.classList.remove('active');
+      });
+      btnPauseHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // --- BUCLE PRINCIPAL (PHYSICS & RENDERING) ---
+      let lastTime = performance.now();
+
+      function update(dt) {
+        if (isPaused || isGameOver) return;
+
+        if (emergencyShieldTime > 0) {
+          emergencyShieldTime -= dt * 1000;
+        }
+
+        // Actualizar rastro de la pelota
+        ball.trail.push({ x: ball.x, y: ball.y });
+        if (ball.trail.length > 8) ball.trail.shift();
+
+        // Mover pelota
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // Distancia del centro a la pelota
+        const dx = ball.x - centerX;
+        const dy = ball.y - centerY;
+        const distCenter = Math.sqrt(dx * dx + dy * dy);
+
+        // Comprobar colisión con la circunferencia exterior
+        if (distCenter + ball.radius >= arenaRadius) {
+          const ballAngle = Math.atan2(dy, dx);
+          const diff = Math.abs(angleDiff(ballAngle, paddle.angle));
+
+          // Si el escudo de revivir está activo O la pelota golpea la paleta
+          if (emergencyShieldTime > 0 || diff <= paddle.widthAngle / 2) {
+            // Rebote exitoso!
+            rally++;
+            if (rally > maxRally) maxRally = rally;
+            score += 10 + (rally * 2);
+            updateHUD();
+            sfxBounce(rally);
+
+            // Reflejar velocidad radialmente invertida hacia el centro
+            const normalX = dx / distCenter;
+            const normalY = dy / distCenter;
+
+            // Variación angular según qué parte de la paleta tocó
+            const hitOffset = angleDiff(ballAngle, paddle.angle) / (paddle.widthAngle / 2); // -1 a +1
+            const bounceSpeed = Math.min(ball.baseSpeed + (rally * 0.12), 12);
+
+            // Vector de rebote hacia el interior con ángulo
+            const inwardAngle = ballAngle + Math.PI + (hitOffset * 0.4);
+            ball.vx = Math.cos(inwardAngle) * bounceSpeed;
+            ball.vy = Math.sin(inwardAngle) * bounceSpeed;
+
+            // Reposicionar justo dentro del perímetro
+            ball.x = centerX + Math.cos(ballAngle) * (arenaRadius - ball.radius - 2);
+            ball.y = centerY + Math.sin(ballAngle) * (arenaRadius - ball.radius - 2);
+
+            addShockwave(ball.x, ball.y, paddle.color, 45);
+            addParticles(ball.x, ball.y, paddle.color, 14);
+
+            // Generar nuevo núcleo si hay pocos
+            if (cores.length < 5) spawnCore();
+
+          } else {
+            // Fuera de órbita -> GAME OVER
+            addParticles(ball.x, ball.y, '#ef4444', 25);
+            triggerGameOver();
+            return;
+          }
+        }
+
+        // Colisión con núcleos y monedas
+        for (let i = cores.length - 1; i >= 0; i--) {
+          const c = cores[i];
+          c.pulse += dt * 3;
+          const cdx = ball.x - c.x;
+          const cdy = ball.y - c.y;
+          const cdist = Math.sqrt(cdx * cdx + cdy * cdy);
+
+          if (cdist <= ball.radius + c.radius) {
+            c.health--;
+            if (c.isCoin) {
+              coinsSession++;
+              score += 25;
+              sfxCoin();
+              addParticles(c.x, c.y, '#facc15', 16);
+            } else {
+              score += 50 * rally;
+              sfxCoreHit();
+              addShockwave(c.x, c.y, c.color, 70);
+              addParticles(c.x, c.y, c.color, 20);
+            }
+            updateHUD();
+
+            // Desvío suave de la pelota al impactar el núcleo
+            const normX = cdx / (cdist || 1);
+            const normY = cdy / (cdist || 1);
+            ball.vx = normX * ball.speed;
+            ball.vy = normY * ball.speed;
+
+            if (c.health <= 0) {
+              cores.splice(i, 1);
+              if (cores.length < 3) spawnCore();
+            }
+          }
+        }
+
+        // Actualizar partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= p.decay;
+          if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        // Actualizar ondas de choque
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const sw = shockwaves[i];
+          sw.r += dt * 180;
+          sw.alpha = 1 - (sw.r / sw.maxR);
+          if (sw.alpha <= 0) shockwaves.splice(i, 1);
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Estrellas de fondo
+        for (let s of stars) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 2. Anillo de la arena
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, arenaRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.2)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 8]);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Escudo de revivir 360° si está activo
+        if (emergencyShieldTime > 0) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, arenaRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(16, 185, 129, ${0.4 + Math.sin(Date.now() * 0.01) * 0.3})`;
+          ctx.lineWidth = 8;
+          ctx.shadowColor = '#10b981';
+          ctx.shadowBlur = 18;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 4. Núcleos y Gemas
+        for (let c of cores) {
+          ctx.save();
+          ctx.beginPath();
+          const pScale = 1 + Math.sin(c.pulse) * 0.08;
+          ctx.arc(c.x, c.y, c.radius * pScale, 0, Math.PI * 2);
+          ctx.fillStyle = c.color;
+          ctx.shadowColor = c.color;
+          ctx.shadowBlur = 15;
+          ctx.fill();
+
+          // Centro brillante
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, c.radius * 0.45 * pScale, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 5. Ondas de choque
+        for (let sw of shockwaves) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+          ctx.strokeStyle = sw.color;
+          ctx.lineWidth = 2.5;
+          ctx.globalAlpha = Math.max(0, sw.alpha);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // 6. Partículas
+        for (let p of particles) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 7. Rastro de la pelota
+        for (let i = 0; i < ball.trail.length; i++) {
+          const t = ball.trail[i];
+          const trAlpha = (i + 1) / ball.trail.length * 0.4;
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, ball.radius * (0.4 + (i / ball.trail.length) * 0.6), 0, Math.PI * 2);
+          ctx.fillStyle = '#38bdf8';
+          ctx.globalAlpha = trAlpha;
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 8. Pelota de energía
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.restore();
+
+        // 9. Paleta del jugador (Arco curvo)
+        ctx.save();
+        ctx.beginPath();
+        const startAng = paddle.angle - paddle.widthAngle / 2;
+        const endAng = paddle.angle + paddle.widthAngle / 2;
+        ctx.arc(centerX, centerY, arenaRadius, startAng, endAng);
+        ctx.strokeStyle = paddle.color;
+        ctx.lineWidth = paddle.thickness;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = paddle.color;
+        ctx.shadowBlur = 25;
+        ctx.stroke();
+
+        // Núcleo brillante de la paleta
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, arenaRadius, startAng + 0.05, endAng - 0.05);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = paddle.thickness * 0.35;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function loop(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      function init() {
+        resize();
+        if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => startNewGame());
+          return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+          window.GamerVerse.consumeTicket();
+        }
+        startNewGame();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

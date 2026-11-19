@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Crossy Comet - GamerVerse</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #030712;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #fff;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10;
+      pointer-events: none;
+      padding: max(12px, env(safe-area-inset-top)) 16px 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hud-left, .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .hud-pill {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .hud-score {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.4);
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    }
+    .hud-coins {
+      color: #facc15;
+      border-color: rgba(250, 204, 21, 0.4);
+    }
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      font-size: 16px;
+      transition: transform 0.1s, background 0.2s;
+    }
+    .hud-btn:active {
+      transform: scale(0.92);
+      background: rgba(56, 189, 248, 0.3);
+    }
+
+    /* Controles en pantalla D-Pad compactos */
+    .dpad-container {
+      position: absolute;
+      bottom: max(20px, env(safe-area-inset-bottom));
+      right: 20px;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(2, 44px);
+      gap: 6px;
+      pointer-events: auto;
+    }
+    .dpad-btn {
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: #e2e8f0;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    }
+    .dpad-btn:active {
+      transform: scale(0.9);
+      background: rgba(56, 189, 248, 0.4);
+    }
+
+    /* Guía de toque */
+    .touch-hint {
+      position: absolute;
+      bottom: 25px;
+      left: 20px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #38bdf8;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Modales */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 24px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(56, 189, 248, 0.2);
+      transform: translateY(20px) scale(0.95);
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .modal-overlay.active .modal-card {
+      transform: translateY(0) scale(1);
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #38bdf8 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .modal-score {
+      font-size: 48px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
+      margin: 12px 0;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(2, 6, 23, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 16px 0 20px 0;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      margin-bottom: 10px;
+      transition: transform 0.1s, filter 0.15s;
+    }
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+    .btn-revive {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+    .btn-restart {
+      background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.4);
+    }
+    .btn-hub {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-pill hud-score">🚀 <span id="hud-score">0</span></div>
+      <div class="hud-pill hud-coins">🪙 <span id="hud-coins">0</span></div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-pill" style="color: #cbd5e1;">🏆 <span id="hud-best">0</span></div>
+      <button class="hud-btn" id="btn-pause" title="Pausar">⏸️</button>
+      <button class="hud-btn" id="btn-hub" title="Salir al Hub">🏠</button>
+    </div>
+  </div>
+
+  <div class="touch-hint" id="touch-hint">Toca o desliza para saltar</div>
+
+  <!-- D-Pad compacto opcional -->
+  <div class="dpad-container">
+    <div></div>
+    <button class="dpad-btn" id="dpad-up">▲</button>
+    <div></div>
+    <button class="dpad-btn" id="dpad-left">◀</button>
+    <button class="dpad-btn" id="dpad-down">▼</button>
+    <button class="dpad-btn" id="dpad-right">▶</button>
+  </div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Modal Game Over -->
+  <div class="modal-overlay" id="modal-gameover">
+    <div class="modal-card">
+      <div class="modal-title">COSMIC COLLISION</div>
+      <div class="modal-score" id="go-score">0</div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-label">Récord</span>
+          <span class="stat-value" id="go-best">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Monedas</span>
+          <span class="stat-value" id="go-coins">+0</span>
+        </div>
+      </div>
+      <button class="btn-action btn-revive" id="btn-revive">
+        🛡️ Revivir Fantasma Cuántico (Anuncio)
+      </button>
+      <button class="btn-action btn-restart" id="btn-restart">
+        🔄 Reintentar Misión
+      </button>
+      <button class="btn-action btn-hub" id="btn-exit-hub">
+        🏠 Menú Principal
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Pausa -->
+  <div class="modal-overlay" id="modal-pause">
+    <div class="modal-card">
+      <div class="modal-title">PAUSA</div>
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Salto interestelar pausado</p>
+      <button class="btn-action btn-restart" id="btn-resume">▶️ Continuar</button>
+      <button class="btn-action btn-hub" id="btn-pause-hub">🏠 Salir al Menú</button>
+    </div>
+  </div>
+
+  <script src="./gamerverse-bridge.js?v=20261112"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const hudScore = document.getElementById('hud-score');
+      const hudCoins = document.getElementById('hud-coins');
+      const hudBest = document.getElementById('hud-best');
+      const touchHint = document.getElementById('touch-hint');
+
+      const modalGameOver = document.getElementById('modal-gameover');
+      const goScore = document.getElementById('go-score');
+      const goBest = document.getElementById('go-best');
+      const goCoins = document.getElementById('go-coins');
+      const btnRevive = document.getElementById('btn-revive');
+      const btnRestart = document.getElementById('btn-restart');
+      const btnExitHub = document.getElementById('btn-exit-hub');
+
+      const modalPause = document.getElementById('modal-pause');
+      const btnPause = document.getElementById('btn-pause');
+      const btnResume = document.getElementById('btn-resume');
+      const btnPauseHub = document.getElementById('btn-pause-hub');
+
+      const dpadUp = document.getElementById('dpad-up');
+      const dpadDown = document.getElementById('dpad-down');
+      const dpadLeft = document.getElementById('dpad-left');
+      const dpadRight = document.getElementById('dpad-right');
+
+      // --- AUDIO PROCEDURAL SINTETIZADO ---
+      let audioCtx = null;
+      function getAudioCtx() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+      }
+
+      function sfxHop() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(320, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(640, actx.currentTime + 0.08);
+          gain.gain.setValueAtTime(0.2, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.1);
+        } catch (_) {}
+      }
+
+      function sfxCoin() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(987, actx.currentTime);
+          osc.frequency.setValueAtTime(1318, actx.currentTime + 0.06);
+          gain.gain.setValueAtTime(0.25, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.18);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.18);
+        } catch (_) {}
+      }
+
+      function sfxCrash() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(180, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, actx.currentTime + 0.35);
+          gain.gain.setValueAtTime(0.4, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.4);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.4);
+        } catch (_) {}
+      }
+
+      // --- CONFIGURACIÓN DE REJILLA ---
+      const COLS = 9;
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      let dpr = window.devicePixelRatio || 1;
+      let tileSize = Math.floor(width / COLS);
+      let cameraY = 0; // Se centra en el jugador verticalmente
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+        tileSize = Math.floor(width / COLS);
+      }
+      window.addEventListener('resize', resize);
+
+      // --- ESTADO DEL JUEGO ---
+      let score = 0;
+      let bestScore = parseInt(localStorage.getItem('gv_crossy_comet_best') || '0', 10);
+      let coinsSession = 0;
+      let isPaused = false;
+      let isGameOver = false;
+      let hasRevived = false;
+
+      // Anuncios cada 2 minutos
+      let lastInterstitialTime = Date.now();
+      const INTERSTITIAL_INTERVAL_MS = 120000;
+
+      // Jugador (Astro Hopper)
+      const player = {
+        col: Math.floor(COLS / 2),
+        row: 0,
+        targetX: 0,
+        targetY: 0,
+        currentX: 0,
+        currentY: 0,
+        jumpProgress: 1, // 0 a 1 animación de salto
+        invulnerableTime: 0 // ms de escudo cuántico
+      };
+
+      // Vórtice inferior que persigue al jugador
+      let stormRow = -5;
+      let stormSpeed = 0.4; // filas por segundo
+
+      // Filas generadas del mundo
+      let lanes = [];
+      let particles = [];
+
+      // Tipos de carril:
+      // 'PLATFORM' (seguro, asteroides estables)
+      // 'ASTEROID_RIVER' (rocas lentas flotando)
+      // 'FREIGHTER_HIGHWAY' (naves de carga rápidas con luces de neón)
+      // 'LASER_GRID' (rayos láser que parpadean)
+
+      function createLane(rowIndex) {
+        if (rowIndex <= 2) {
+          // Filas iniciales siempre seguras
+          return {
+            row: rowIndex,
+            type: 'PLATFORM',
+            color: '#0f172a',
+            items: [],
+            coins: []
+          };
+        }
+
+        const rand = Math.random();
+        let type = 'PLATFORM';
+        if (rand < 0.25) type = 'PLATFORM';
+        else if (rand < 0.6) type = 'FREIGHTER_HIGHWAY';
+        else if (rand < 0.85) type = 'ASTEROID_RIVER';
+        else type = 'LASER_GRID';
+
+        const speed = (Math.random() * 1.5 + 1.2) * (Math.random() < 0.5 ? 1 : -1);
+        const lane = {
+          row: rowIndex,
+          type: type,
+          speed: speed,
+          color: type === 'PLATFORM' ? '#0f172a' : (type === 'FREIGHTER_HIGHWAY' ? '#111827' : '#030712'),
+          items: [],
+          coins: [],
+          laserTimer: Math.random() * 2, // ciclo de láser
+          laserActive: false
+        };
+
+        // Generar monedas aleatorias (15% de probabilidad)
+        if (Math.random() < 0.25) {
+          lane.coins.push({
+            col: Math.floor(Math.random() * COLS),
+            collected: false
+          });
+        }
+
+        // Generar obstáculos según tipo
+        if (type === 'FREIGHTER_HIGHWAY') {
+          const numShips = Math.floor(Math.random() * 2) + 2;
+          for (let i = 0; i < numShips; i++) {
+            lane.items.push({
+              x: (i * (COLS * tileSize / numShips)) + Math.random() * 40,
+              width: tileSize * (Math.random() * 0.8 + 1.2),
+              color: '#ef4444'
+            });
+          }
+        } else if (type === 'ASTEROID_RIVER') {
+          const numRocks = Math.floor(Math.random() * 3) + 2;
+          for (let i = 0; i < numRocks; i++) {
+            lane.items.push({
+              x: (i * (COLS * tileSize / numRocks)),
+              width: tileSize * 0.9,
+              color: '#38bdf8'
+            });
+          }
+        }
+
+        return lane;
+      }
+
+      function ensureLanes() {
+        const topRowNeeded = player.row + 16;
+        let highestRow = lanes.length > 0 ? lanes[lanes.length - 1].row : -1;
+
+        while (highestRow < topRowNeeded) {
+          highestRow++;
+          lanes.push(createLane(highestRow));
+        }
+
+        // Limpiar carriles muy viejos que quedaron abajo
+        while (lanes.length > 0 && lanes[0].row < player.row - 10) {
+          lanes.shift();
+        }
+      }
+
+      function startNewGame() {
+        score = 0;
+        coinsSession = 0;
+        isGameOver = false;
+        hasRevived = false;
+        particles = [];
+        lanes = [];
+
+        player.col = Math.floor(COLS / 2);
+        player.row = 0;
+        player.currentX = player.col * tileSize + tileSize / 2;
+        player.currentY = -player.row * tileSize;
+        player.targetX = player.currentX;
+        player.targetY = player.currentY;
+        player.jumpProgress = 1;
+        player.invulnerableTime = 0;
+
+        stormRow = -5;
+        stormSpeed = 0.45;
+
+        ensureLanes();
+        updateHUD();
+
+        modalGameOver.classList.remove('active');
+        modalPause.classList.remove('active');
+        isPaused = false;
+      }
+
+      function updateHUD() {
+        hudScore.innerText = score;
+        hudCoins.innerText = coinsSession;
+        hudBest.innerText = bestScore;
+      }
+
+      // --- MOVIMIENTO DEL JUGADOR ---
+      function movePlayer(dCol, dRow) {
+        if (isGameOver || isPaused) return;
+        getAudioCtx();
+
+        const newCol = player.col + dCol;
+        const newRow = player.row + dRow;
+
+        if (newCol < 0 || newCol >= COLS) return; // Limite lateral
+        if (newRow < stormRow) return; // No saltar dentro del vórtice
+
+        player.col = newCol;
+        player.row = newRow;
+        player.targetX = player.col * tileSize + tileSize / 2;
+        player.targetY = -player.row * tileSize;
+        player.jumpProgress = 0;
+        sfxHop();
+
+        if (player.row > score) {
+          score = player.row;
+          stormSpeed = 0.45 + Math.min(score * 0.02, 1.2);
+          updateHUD();
+        }
+
+        ensureLanes();
+
+        if (touchHint && touchHint.style.display !== 'none') {
+          touchHint.style.display = 'none';
+        }
+      }
+
+      // Controles D-Pad
+      dpadUp.addEventListener('click', () => movePlayer(0, 1));
+      dpadDown.addEventListener('click', () => movePlayer(0, -1));
+      dpadLeft.addEventListener('click', () => movePlayer(-1, 0));
+      dpadRight.addEventListener('click', () => movePlayer(1, 0));
+
+      // Controles de Teclado
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' || e.key === 'w') movePlayer(0, 1);
+        else if (e.key === 'ArrowDown' || e.key === 's') movePlayer(0, -1);
+        else if (e.key === 'ArrowLeft' || e.key === 'a') movePlayer(-1, 0);
+        else if (e.key === 'ArrowRight' || e.key === 'd') movePlayer(1, 0);
+      });
+
+      // Gestos Táctiles y Toque directo en Canvas
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+
+      canvas.addEventListener('touchstart', (e) => {
+        if (isGameOver || isPaused) return;
+        const t = e.changedTouches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchStartTime = Date.now();
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', (e) => {
+        if (isGameOver || isPaused) return;
+        const t = e.changedTouches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+        const dt = Date.now() - touchStartTime;
+
+        // Si fue un tap rápido sin mucho deslizamiento -> Salto hacia adelante
+        if (Math.abs(dx) < 20 && Math.abs(dy) < 20 && dt < 280) {
+          movePlayer(0, 1);
+          return;
+        }
+
+        // Si fue un swipe claro
+        if (Math.abs(dx) > Math.abs(dy)) {
+          if (dx > 30) movePlayer(1, 0);
+          else if (dx < -30) movePlayer(-1, 0);
+        } else {
+          if (dy < -30) movePlayer(0, 1);
+          else if (dy > 30) movePlayer(0, -1);
+        }
+      }, { passive: false });
+
+      // Clic de ratón en PC
+      canvas.addEventListener('click', (e) => {
+        if (isGameOver || isPaused) return;
+        movePlayer(0, 1);
+      });
+
+      // --- GAME OVER & ANUNCIOS ---
+      function checkAndTriggerInterstitial(onComplete) {
+        const now = Date.now();
+        if (now - lastInterstitialTime >= INTERSTITIAL_INTERVAL_MS) {
+          if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+            window.GamerVerse.showInterstitialAd(() => {
+              lastInterstitialTime = Date.now();
+              if (onComplete) onComplete();
+            });
+            return;
+          }
+        }
+        if (onComplete) onComplete();
+      }
+
+      function triggerGameOver() {
+        if (isGameOver) return;
+        isGameOver = true;
+        sfxCrash();
+
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem('gv_crossy_comet_best', bestScore);
+        }
+
+        goScore.innerText = score;
+        goBest.innerText = bestScore;
+        goCoins.innerText = `+${coinsSession}`;
+
+        if (hasRevived) {
+          btnRevive.style.display = 'none';
+        } else {
+          btnRevive.style.display = 'flex';
+        }
+
+        if (window.GamerVerse && typeof window.GamerVerse.submitScore === 'function') {
+          window.GamerVerse.submitScore('crossy_comet', score, coinsSession);
+        }
+
+        modalGameOver.classList.add('active');
+      }
+
+      // Revivir con Rewarded Ad
+      btnRevive.addEventListener('click', () => {
+        if (hasRevived) return;
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd({
+            onSuccess: () => {
+              hasRevived = true;
+              isGameOver = false;
+              modalGameOver.classList.remove('active');
+              player.invulnerableTime = 6000; // 6 segundos de fantasma cuántico
+              stormRow = player.row - 4; // Empujar la tormenta atrás
+            },
+            onFailure: () => {
+              alert('No se pudo cargar el anuncio. Intenta de nuevo.');
+            }
+          });
+        } else {
+          hasRevived = true;
+          isGameOver = false;
+          modalGameOver.classList.remove('active');
+          player.invulnerableTime = 6000;
+          stormRow = player.row - 4;
+        }
+      });
+
+      btnRestart.addEventListener('click', () => {
+        checkAndTriggerInterstitial(() => {
+          if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+            window.GamerVerse.showNoTicketsModal(() => startNewGame());
+            return;
+          }
+          if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+            window.GamerVerse.consumeTicket();
+          }
+          startNewGame();
+        });
+      });
+
+      btnExitHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // Pausa
+      btnPause.addEventListener('click', () => {
+        if (isGameOver) return;
+        isPaused = true;
+        modalPause.classList.add('active');
+      });
+      btnResume.addEventListener('click', () => {
+        isPaused = false;
+        modalPause.classList.remove('active');
+      });
+      btnPauseHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // --- BUCLE PRINCIPAL (PHYSICS & RENDER) ---
+      let lastTime = performance.now();
+
+      function update(dt) {
+        if (isPaused || isGameOver) return;
+
+        // Animar salto del jugador
+        if (player.jumpProgress < 1) {
+          player.jumpProgress = Math.min(1, player.jumpProgress + dt * 7);
+          player.currentX += (player.targetX - player.currentX) * 0.35;
+          player.currentY += (player.targetY - player.currentY) * 0.35;
+        } else {
+          player.currentX = player.targetX;
+          player.currentY = player.targetY;
+        }
+
+        if (player.invulnerableTime > 0) {
+          player.invulnerableTime -= dt * 1000;
+        }
+
+        // Avanzar el vórtice cósmico
+        stormRow += stormSpeed * dt;
+        if (player.row <= stormRow && player.invulnerableTime <= 0) {
+          triggerGameOver();
+          return;
+        }
+
+        // Cámara sigue suavemente al jugador
+        const targetCamY = player.currentY - height * 0.65;
+        cameraY += (targetCamY - cameraY) * 0.12;
+
+        // Actualizar obstáculos en cada carril
+        for (let lane of lanes) {
+          // Monedas
+          for (let c of lane.coins) {
+            if (!c.collected && lane.row === player.row && c.col === player.col) {
+              c.collected = true;
+              coinsSession++;
+              score += 5;
+              sfxCoin();
+              updateHUD();
+            }
+          }
+
+          if (lane.type === 'FREIGHTER_HIGHWAY' || lane.type === 'ASTEROID_RIVER') {
+            for (let item of lane.items) {
+              item.x += lane.speed * (lane.type === 'FREIGHTER_HIGHWAY' ? 140 : 80) * dt;
+
+              // Envolver alrededor de la pantalla
+              const totalW = COLS * tileSize;
+              if (lane.speed > 0 && item.x > totalW + 40) item.x = -item.width - 20;
+              else if (lane.speed < 0 && item.x < -item.width - 40) item.x = totalW + 20;
+
+              // Comprobar colisión si el jugador está en esta fila
+              if (lane.row === player.row && player.invulnerableTime <= 0) {
+                const pBoxLeft = player.currentX - tileSize * 0.3;
+                const pBoxRight = player.currentX + tileSize * 0.3;
+                if (item.x < pBoxRight && item.x + item.width > pBoxLeft) {
+                  triggerGameOver();
+                  return;
+                }
+              }
+            }
+          } else if (lane.type === 'LASER_GRID') {
+            lane.laserTimer += dt;
+            if (lane.laserTimer >= 2.4) lane.laserTimer = 0;
+            lane.laserActive = lane.laserTimer > 1.4; // 1.0s de aviso, 1.0s de disparo activo
+
+            if (lane.laserActive && lane.row === player.row && player.invulnerableTime <= 0) {
+              triggerGameOver();
+              return;
+            }
+          }
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.save();
+        ctx.translate(0, -cameraY);
+
+        // 1. Dibujar carriles
+        for (let lane of lanes) {
+          const y = -lane.row * tileSize;
+
+          ctx.fillStyle = lane.color;
+          ctx.fillRect(0, y, width, tileSize);
+
+          // Línea divisoria sutil
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(0, y, width, tileSize);
+
+          // Monedas
+          for (let c of lane.coins) {
+            if (!c.collected) {
+              const cx = c.col * tileSize + tileSize / 2;
+              const cy = y + tileSize / 2;
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+              ctx.fillStyle = '#facc15';
+              ctx.shadowColor = '#facc15';
+              ctx.shadowBlur = 10;
+              ctx.fill();
+              ctx.restore();
+            }
+          }
+
+          // Obstáculos
+          if (lane.type === 'FREIGHTER_HIGHWAY') {
+            for (let item of lane.items) {
+              ctx.save();
+              // Nave espacial de carga
+              ctx.fillStyle = item.color;
+              ctx.shadowColor = item.color;
+              ctx.shadowBlur = 12;
+              ctx.fillRect(item.x, y + 6, item.width, tileSize - 12);
+
+              // Cabina con faros
+              ctx.fillStyle = '#ffffff';
+              const headX = lane.speed > 0 ? item.x + item.width - 8 : item.x;
+              ctx.fillRect(headX, y + 10, 8, tileSize - 20);
+              ctx.restore();
+            }
+          } else if (lane.type === 'ASTEROID_RIVER') {
+            for (let item of lane.items) {
+              ctx.save();
+              ctx.fillStyle = item.color;
+              ctx.shadowColor = item.color;
+              ctx.shadowBlur = 8;
+              ctx.beginPath();
+              ctx.arc(item.x + item.width / 2, y + tileSize / 2, item.width / 2.3, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          } else if (lane.type === 'LASER_GRID') {
+            if (lane.laserActive) {
+              // Láser disparando
+              ctx.save();
+              ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+              ctx.shadowColor = '#ef4444';
+              ctx.shadowBlur = 20;
+              ctx.fillRect(0, y + tileSize * 0.35, width, tileSize * 0.3);
+              ctx.restore();
+            } else if (lane.laserTimer > 0.8) {
+              // Advertencia de carga
+              ctx.save();
+              ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 + Math.sin(Date.now() * 0.02) * 0.4})`;
+              ctx.lineWidth = 2;
+              ctx.setLineDash([6, 6]);
+              ctx.beginPath();
+              ctx.moveTo(0, y + tileSize / 2);
+              ctx.lineTo(width, y + tileSize / 2);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        }
+
+        // 2. Vórtice de Tormenta cósmica
+        const stormScreenY = -stormRow * tileSize;
+        ctx.save();
+        const grad = ctx.createLinearGradient(0, stormScreenY, 0, stormScreenY + 250);
+        grad.addColorStop(0, 'rgba(168, 85, 247, 0.85)');
+        grad.addColorStop(0.3, 'rgba(147, 51, 234, 0.5)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, stormScreenY, width, 400);
+        ctx.restore();
+
+        // 3. Jugador (Astro Hopper)
+        ctx.save();
+        const jumpArc = Math.sin(player.jumpProgress * Math.PI) * 16;
+        const drawPx = player.currentX;
+        const drawPy = player.currentY + tileSize / 2 - jumpArc;
+
+        // Escudo de invulnerabilidad
+        if (player.invulnerableTime > 0) {
+          ctx.beginPath();
+          ctx.arc(drawPx, drawPy, tileSize * 0.45, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(16, 185, 129, ${0.6 + Math.sin(Date.now() * 0.02) * 0.3})`;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#10b981';
+          ctx.shadowBlur = 15;
+          ctx.stroke();
+        }
+
+        // Cuerpo astronauta
+        ctx.beginPath();
+        ctx.arc(drawPx, drawPy, tileSize * 0.32, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+
+        // Visor azul cian
+        ctx.beginPath();
+        ctx.arc(drawPx, drawPy - 2, tileSize * 0.16, 0, Math.PI * 2);
+        ctx.fillStyle = '#0284c7';
+        ctx.fill();
+
+        ctx.restore();
+        ctx.restore(); // restaurar cámara
+      }
+
+      function loop(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      function init() {
+        resize();
+        if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => startNewGame());
+          return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+          window.GamerVerse.consumeTicket();
+        }
+        startNewGame();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

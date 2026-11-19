@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Jetpack Astro · GameVerse 307</title>
+  <meta name="monetag-zone" content="12242572" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="./gamerverse-bridge.js?v=20261112"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #040614;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      background: radial-gradient(circle at 50% 30%, #0d1334 0%, #040614 100%);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    header {
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 6px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(6, 10, 28, 0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.2);
+      z-index: 20;
+    }
+    .hud-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hud-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #7b8dbb;
+      text-transform: uppercase;
+    }
+    .hud-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 24px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+      line-height: 1.1;
+    }
+    .btn-ctrl {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-ctrl:active {
+      transform: scale(0.95);
+    }
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    /* Modales */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 5, 18, 0.88);
+      backdrop-filter: blur(10px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 100;
+      text-align: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 330px;
+      background: rgba(14, 20, 50, 0.95);
+      border: 1px solid rgba(255, 71, 87, 0.4);
+      border-radius: 18px;
+      padding: 24px 20px;
+      box-shadow: 0 0 35px rgba(255, 71, 87, 0.25);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .modal-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 24px;
+      font-weight: 900;
+      color: #ff4757;
+      text-shadow: 0 0 14px rgba(255, 71, 87, 0.6);
+    }
+    .modal-score {
+      font-family: 'Orbitron', monospace;
+      font-size: 40px;
+      font-weight: 900;
+      color: #00f0ff;
+      text-shadow: 0 0 20px rgba(0, 240, 255, 0.6);
+    }
+    .btn-action {
+      width: 100%;
+      padding: 13px 18px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-revive {
+      background: linear-gradient(135deg, #ffd32a 0%, #ff9f43 100%);
+      color: #050713;
+      box-shadow: 0 0 20px rgba(255, 211, 42, 0.4);
+    }
+    .btn-retry {
+      background: linear-gradient(135deg, #00f0ff 0%, #0072ff 100%);
+      color: #fff;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.35);
+    }
+    .btn-hub {
+      background: transparent;
+      color: #7b8dbb;
+      border: 1px solid rgba(123, 141, 187, 0.25);
+      font-size: 11px;
+    }
+    .toast {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(0, 240, 255, 0.95);
+      color: #050713;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 16px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 80;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <header>
+      <button class="btn-ctrl" id="btn-back">🏠 Hub</button>
+      <div class="hud-stat">
+        <span class="hud-label">Distancia</span>
+        <span class="hud-val" id="hud-score">0m</span>
+      </div>
+      <div style="font-family: 'Orbitron', monospace; font-size: 12px; color: #ffd32a;">
+        Récord: <span id="hud-best">0m</span>
+      </div>
+      <button class="btn-ctrl" id="btn-sound">🔊</button>
+    </header>
+
+    <div id="canvas-wrap">
+      <canvas id="game-canvas"></canvas>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- Modal Game Over -->
+    <div class="modal-overlay" id="modal-gameover">
+      <div class="modal-card">
+        <div style="font-size: 40px;">💥</div>
+        <h2 class="modal-title">¡IMPACTO CRÍTICO!</h2>
+        <p style="font-size: 13px; color: #a4b0be;">Chocaste contra un rayo de plasma o misil.</p>
+        <div>
+          <div style="font-size: 11px; text-transform: uppercase; color: #7b8dbb; letter-spacing: 1px;">Distancia Recorrida</div>
+          <div class="modal-score" id="final-score">0m</div>
+        </div>
+
+        <button class="btn-action btn-revive" id="btn-revive">
+          <span>📺</span> ESCUDO DE PLASMA (1 AD)
+        </button>
+
+        <button class="btn-action btn-retry" id="btn-retry">
+          <span>🔄</span> VOLAR OTRA VEZ (1 🎟️)
+        </button>
+
+        <button class="btn-action btn-hub" id="btn-exit-hub">
+          VOLVER AL HUB ARCADE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // --- AUDIO PROCEDURAL SINTETIZADO ---
+      let audioCtx = null;
+      let soundEnabled = true;
+
+      function initAudio() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      }
+
+      function playTone(freq, dur, type = 'sine', gainVal = 0.08) {
+        if (!soundEnabled || !audioCtx) return;
+        try {
+          const now = audioCtx.currentTime;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(gainVal, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(now);
+          osc.stop(now + dur);
+        } catch (_) {}
+      }
+
+      function playCoinSound() {
+        playTone(660, 0.08, 'sine', 0.08);
+        setTimeout(() => playTone(880, 0.12, 'sine', 0.08), 40);
+      }
+
+      function playWarningBeep() {
+        playTone(700, 0.1, 'square', 0.1);
+      }
+
+      function playExplosionSound() {
+        playTone(130, 0.35, 'sawtooth', 0.15);
+      }
+
+      // --- ELEMENTOS DOM ---
+      const canvasWrap = document.getElementById('canvas-wrap');
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+      const hudScore = document.getElementById('hud-score');
+      const hudBest = document.getElementById('hud-best');
+      const modalGameOver = document.getElementById('modal-gameover');
+      const finalScoreEl = document.getElementById('final-score');
+      const btnRevive = document.getElementById('btn-revive');
+      const btnRetry = document.getElementById('btn-retry');
+      const btnBack = document.getElementById('btn-back');
+      const btnExitHub = document.getElementById('btn-exit-hub');
+      const btnSound = document.getElementById('btn-sound');
+      const toastEl = document.getElementById('toast');
+
+      function showToast(text) {
+        toastEl.innerText = text;
+        toastEl.classList.add('show');
+        setTimeout(() => toastEl.classList.remove('show'), 2200);
+      }
+
+      // --- PARÁMETROS DEL JUEGO ---
+      let width = 0;
+      let height = 0;
+      let dpr = 1;
+      let distance = 0;
+      let coins = 0;
+      let bestDistance = parseInt(localStorage.getItem('gv_jetpack_best') || '0', 10);
+      let gameState = 'START'; // 'START', 'PLAYING', 'GAMEOVER'
+      let screenShake = 0;
+
+      // Publicidad: cada 2 minutos
+      const INTERSTITIAL_INTERVAL_MS = 120000;
+      let lastInterstitialAdTime = Date.now();
+      let hasRevivedThisRun = false;
+
+      // Jugador Astronauta
+      let player = {
+        x: 65,
+        y: 200,
+        vy: 0,
+        radius: 16,
+        isThrusting: false,
+        invulnerableTime: 0
+      };
+
+      // Entidades del mundo
+      let zappers = []; // Rayos láser eléctricos
+      let missiles = []; // Misiles teledirigidos
+      let coinsList = []; // Monedas flotantes
+      let particles = [];
+
+      let spawnDistanceTimer = 0;
+      let speed = 4.8;
+
+      // --- AJUSTE RESPONSIVE CANVAS ---
+      function resize() {
+        const rect = canvasWrap.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+
+        if (gameState === 'START') {
+          player.y = height * 0.5;
+        }
+      }
+      window.addEventListener('resize', resize);
+      window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+      // --- CONTROLES: MANTENER PULSADO PARA PROPULSARSE ---
+      function startThrust() {
+        initAudio();
+        if (gameState === 'GAMEOVER') return;
+        if (gameState === 'START') gameState = 'PLAYING';
+        player.isThrusting = true;
+      }
+
+      function stopThrust() {
+        player.isThrusting = false;
+      }
+
+      canvasWrap.addEventListener('mousedown', startThrust);
+      window.addEventListener('mouseup', stopThrust);
+
+      canvasWrap.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        startThrust();
+      }, { passive: false });
+
+      window.addEventListener('touchend', stopThrust);
+
+      // --- GENERACIÓN DE ELEMENTOS ---
+      function spawnEntities() {
+        // Barrera láser eléctrica (Zapper)
+        const zapperType = Math.random() < 0.5 ? 'VERTICAL' : 'DIAGONAL';
+        const zY = 50 + Math.random() * (height - 180);
+        const zLen = 80 + Math.random() * 50;
+
+        zappers.push({
+          x: width + 40,
+          y: zY,
+          length: zLen,
+          type: zapperType,
+          angle: zapperType === 'DIAGONAL' ? 0.45 : 0
+        });
+
+        // Grupo de 3 a 5 monedas en arco
+        const coinCount = Math.floor(3 + Math.random() * 3);
+        const startCoinY = 60 + Math.random() * (height - 140);
+        for (let i = 0; i < coinCount; i++) {
+          coinsList.push({
+            x: width + 120 + i * 28,
+            y: startCoinY + Math.sin(i * 0.5) * 20,
+            collected: false
+          });
+        }
+
+        // Misil con alerta si el jugador ya avanzó suficiente
+        if (distance > 120 && Math.random() < 0.45) {
+          playWarningBeep();
+          showToast('⚠️ ¡MISIL DETECTADO!');
+          setTimeout(() => {
+            if (gameState === 'PLAYING') {
+              missiles.push({
+                x: width + 60,
+                y: player.y,
+                vx: -9.5,
+                warning: false
+              });
+            }
+          }, 900);
+        }
+      }
+
+      // --- FÍSICA Y COLISIONES (60 FPS) ---
+      function updatePhysics() {
+        if (gameState !== 'PLAYING') return;
+
+        // Físicas del Jetpack: empuje hacia arriba o caída por gravedad
+        if (player.isThrusting) {
+          player.vy -= 0.65;
+          // Partículas de plasma del cohete
+          for (let i = 0; i < 2; i++) {
+            particles.push({
+              x: player.x - 12,
+              y: player.y + 12,
+              vx: -3 - Math.random() * 4,
+              vy: 2 + (Math.random() - 0.5) * 3,
+              color: Math.random() < 0.5 ? '#00f0ff' : '#ff9f43',
+              size: 3 + Math.random() * 3,
+              alpha: 1
+            });
+          }
+        } else {
+          player.vy += 0.48; // Gravedad
+        }
+
+        player.vy = Math.max(-8, Math.min(8.5, player.vy));
+        player.y += player.vy;
+
+        // Límites de techo y suelo
+        if (player.y - player.radius < 10) {
+          player.y = 10 + player.radius;
+          player.vy = 0;
+        } else if (player.y + player.radius > height - 12) {
+          player.y = height - 12 - player.radius;
+          player.vy = 0;
+        }
+
+        // Avance de distancia y velocidad
+        distance += Math.floor(speed * 0.1);
+        speed = Math.min(9.5, 4.8 + distance * 0.003);
+        hudScore.innerText = `${distance}m`;
+
+        if (distance > bestDistance) {
+          bestDistance = distance;
+          localStorage.setItem('gv_jetpack_best', bestDistance);
+          hudBest.innerText = `${bestDistance}m`;
+        }
+
+        // Generar obstáculos periódicamente
+        spawnDistanceTimer += speed;
+        if (spawnDistanceTimer > 240) {
+          spawnDistanceTimer = 0;
+          spawnEntities();
+        }
+
+        const isInvuln = Date.now() < player.invulnerableTime;
+
+        // 1. Zappers (Rayos láser)
+        for (let i = zappers.length - 1; i >= 0; i--) {
+          const z = zappers[i];
+          z.x -= speed;
+
+          // Colisión con el zapper
+          if (!isInvuln && Math.abs(player.x - z.x) < player.radius + 10) {
+            if (player.y >= z.y && player.y <= z.y + z.length) {
+              triggerGameOver();
+              return;
+            }
+          }
+
+          if (z.x < -100) zappers.splice(i, 1);
+        }
+
+        // 2. Misiles teledirigidos
+        for (let i = missiles.length - 1; i >= 0; i--) {
+          const m = missiles[i];
+          m.x += m.vx;
+          // Seguir ligeramente la altura del jugador
+          m.y += (player.y - m.y) * 0.025;
+
+          // Partícula de humo del misil
+          particles.push({
+            x: m.x + 20,
+            y: m.y,
+            vx: 3,
+            vy: (Math.random() - 0.5) * 2,
+            color: '#7b8dbb',
+            size: 3,
+            alpha: 0.8
+          });
+
+          // Colisión con el misil
+          if (!isInvuln && Math.hypot(player.x - m.x, player.y - m.y) < player.radius + 14) {
+            triggerGameOver();
+            return;
+          }
+
+          if (m.x < -80) missiles.splice(i, 1);
+        }
+
+        // 3. Monedas
+        for (let i = coinsList.length - 1; i >= 0; i--) {
+          const c = coinsList[i];
+          c.x -= speed;
+
+          if (!c.collected && Math.hypot(player.x - c.x, player.y - c.y) < player.radius + 15) {
+            c.collected = true;
+            coins++;
+            playCoinSound();
+          }
+
+          if (c.x < -40) coinsList.splice(i, 1);
+        }
+
+        // 4. Partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          p.alpha -= 0.04;
+          if (p.alpha <= 0) particles.splice(i, 1);
+        }
+
+        if (screenShake > 0) screenShake *= 0.85;
+      }
+
+      // --- DIBUJADO EN CANVAS (60 FPS) ---
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        ctx.save();
+        if (screenShake > 0.5) {
+          ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        }
+
+        // 1. Techo y suelo metálico
+        ctx.fillStyle = '#0a1030';
+        ctx.fillRect(0, 0, width, 10);
+        ctx.fillRect(0, height - 12, width, 12);
+
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, 10);
+        ctx.lineTo(width, 10);
+        ctx.moveTo(0, height - 12);
+        ctx.lineTo(width, height - 12);
+        ctx.stroke();
+
+        // 2. Dibujar Zappers (Rayos eléctricos)
+        for (let i = 0; i < zappers.length; i++) {
+          const z = zappers[i];
+          ctx.save();
+          ctx.strokeStyle = '#ffd32a';
+          ctx.shadowColor = '#ffd32a';
+          ctx.shadowBlur = 14;
+          ctx.lineWidth = 8;
+          ctx.lineCap = 'round';
+
+          ctx.beginPath();
+          ctx.moveTo(z.x, z.y);
+          ctx.lineTo(z.x + (z.angle ? 25 : 0), z.y + z.length);
+          ctx.stroke();
+
+          // Rayo brillante central blanco
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+
+          // Nodos eléctricos en los extremos
+          ctx.fillStyle = '#ff4757';
+          ctx.beginPath();
+          ctx.arc(z.x, z.y, 6, 0, Math.PI * 2);
+          ctx.arc(z.x + (z.angle ? 25 : 0), z.y + z.length, 6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 3. Dibujar Misiles
+        for (let i = 0; i < missiles.length; i++) {
+          const m = missiles[i];
+          ctx.save();
+          ctx.fillStyle = '#ff4757';
+          ctx.shadowColor = '#ff4757';
+          ctx.shadowBlur = 12;
+
+          ctx.beginPath();
+          ctx.ellipse(m.x, m.y, 16, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffd32a';
+          ctx.beginPath();
+          ctx.arc(m.x - 12, m.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 4. Dibujar Monedas
+        for (let i = 0; i < coinsList.length; i++) {
+          const c = coinsList[i];
+          if (c.collected) continue;
+          ctx.save();
+          ctx.fillStyle = '#ffd32a';
+          ctx.shadowColor = '#ffd32a';
+          ctx.shadowBlur = 10;
+          ctx.beginPath();
+          ctx.arc(c.x, c.y, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 8px Orbitron';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('$', c.x, c.y);
+          ctx.restore();
+        }
+
+        // 5. Dibujar Astronauta con Jetpack
+        ctx.save();
+        // Aura si tiene escudo de invulnerabilidad
+        if (Date.now() < player.invulnerableTime) {
+          ctx.strokeStyle = '#00f0ff';
+          ctx.shadowColor = '#00f0ff';
+          ctx.shadowBlur = 16;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(player.x, player.y, player.radius + 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Mochila Jetpack metálica
+        ctx.fillStyle = '#7b8dbb';
+        ctx.fillRect(player.x - 15, player.y - 8, 8, 16);
+
+        // Traje espacial
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Visor azul eléctrico
+        ctx.fillStyle = '#00f0ff';
+        ctx.beginPath();
+        ctx.arc(player.x + 6, player.y - 2, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 6. Partículas
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          ctx.save();
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // Mensaje inicial
+        if (gameState === 'START') {
+          ctx.save();
+          ctx.fillStyle = '#00f0ff';
+          ctx.shadowColor = '#00f0ff';
+          ctx.shadowBlur = 12;
+          ctx.font = '800 16px Orbitron';
+          ctx.textAlign = 'center';
+          ctx.fillText('MANTÉN PULSADO PARA VOLAR', width / 2, height * 0.4);
+          ctx.restore();
+        }
+
+        ctx.restore();
+      }
+
+      // --- BUCLE PRINCIPAL (60 FPS) ---
+      function loop() {
+        updatePhysics();
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      // --- GAME OVER & REVIVIR ---
+      function triggerGameOver() {
+        gameState = 'GAMEOVER';
+        screenShake = 16;
+        playExplosionSound();
+        finalScoreEl.innerText = `${distance}m`;
+        modalGameOver.classList.add('active');
+
+        // Partículas de explosión
+        for (let i = 0; i < 20; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 2 + Math.random() * 7;
+          particles.push({
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            color: Math.random() < 0.5 ? '#ff4757' : '#ffd32a',
+            size: 3 + Math.random() * 4,
+            alpha: 1
+          });
+        }
+
+        if (window.GamerVerse) {
+          window.GamerVerse.submitScore('jetpack_astro', distance, coins);
+        }
+
+        if (hasRevivedThisRun) {
+          btnRevive.style.display = 'none';
+        } else {
+          btnRevive.style.display = 'flex';
+          btnRevive.disabled = false;
+        }
+      }
+
+      function reviveGame() {
+        btnRevive.disabled = true;
+        btnRevive.innerText = 'Cargando...';
+
+        const onReward = () => {
+          hasRevivedThisRun = true;
+          modalGameOver.classList.remove('active');
+          gameState = 'PLAYING';
+          lastInterstitialAdTime = Date.now();
+
+          // Limpiar zappers y misiles cercanos y dar 5s de escudo
+          zappers = [];
+          missiles = [];
+          player.y = height * 0.5;
+          player.vy = -3;
+          player.invulnerableTime = Date.now() + 5000;
+          showToast('🛡️ ¡ESCUDO DE PLASMA ACTIVO!');
+        };
+
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd(onReward, (err) => {
+            btnRevive.disabled = false;
+            btnRevive.innerText = '📺 ESCUDO DE PLASMA (1 AD)';
+          });
+        } else {
+          onReward();
+        }
+      }
+
+      function resetNewGame() {
+        modalGameOver.classList.remove('active');
+
+        if (window.GamerVerse && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => resetNewGame());
+          return;
+        }
+        if (window.GamerVerse) {
+          window.GamerVerse.consumeTicket();
+        }
+
+        const startFresh = () => {
+          distance = 0;
+          coins = 0;
+          speed = 4.8;
+          hudScore.innerText = `${distance}m`;
+          hasRevivedThisRun = false;
+          player.y = height * 0.5;
+          player.vy = 0;
+          player.isThrusting = false;
+          player.invulnerableTime = 0;
+          zappers = [];
+          missiles = [];
+          coinsList = [];
+          particles = [];
+          gameState = 'START';
+        };
+
+        const now = Date.now();
+        if (now - lastInterstitialAdTime >= INTERSTITIAL_INTERVAL_MS && window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+          lastInterstitialAdTime = now;
+          window.GamerVerse.showInterstitialAd(startFresh);
+        } else {
+          startFresh();
+        }
+      }
+
+      // --- BOTONES ---
+      btnRevive.addEventListener('click', reviveGame);
+      btnRetry.addEventListener('click', resetNewGame);
+      btnSound.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        btnSound.innerText = soundEnabled ? '🔊' : '🔇';
+      });
+      btnBack.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+      btnExitHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // --- INICIALIZACIÓN ---
+      function init() {
+        resize();
+        hudBest.innerText = `${bestDistance}m`;
+
+        if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => init());
+          return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+          window.GamerVerse.consumeTicket();
+        }
+
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Plasma Snake - GamerVerse</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, #061e1b 0%, #030d0b 70%, #010504 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #fff;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 10;
+      pointer-events: none;
+      padding: max(12px, env(safe-area-inset-top)) 16px 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hud-left, .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    .hud-pill {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .hud-score {
+      color: #10b981;
+      border-color: rgba(16, 185, 129, 0.4);
+      text-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+    }
+    .hud-coins {
+      color: #facc15;
+      border-color: rgba(250, 204, 21, 0.4);
+    }
+    .hud-length {
+      color: #34d399;
+    }
+    .hud-btn {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      font-size: 16px;
+      transition: transform 0.1s, background 0.2s;
+    }
+    .hud-btn:active {
+      transform: scale(0.92);
+      background: rgba(16, 185, 129, 0.3);
+    }
+
+    /* Modales */
+    .modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.88);
+      backdrop-filter: blur(12px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 24px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 340px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(16, 185, 129, 0.2);
+      transform: translateY(20px) scale(0.95);
+      transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .modal-overlay.active .modal-card {
+      transform: translateY(0) scale(1);
+    }
+    .modal-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .modal-score {
+      font-size: 48px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+      margin: 12px 0;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(2, 6, 23, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 16px 0 20px 0;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+    .btn-action {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      margin-bottom: 10px;
+      transition: transform 0.1s, filter 0.15s;
+    }
+    .btn-action:active {
+      transform: scale(0.97);
+    }
+    .btn-revive {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+    .btn-restart {
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+    .btn-hub {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .touch-hint {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #34d399;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-pill hud-score">🐍 <span id="hud-score">0</span></div>
+      <div class="hud-pill hud-coins">🪙 <span id="hud-coins">0</span></div>
+    </div>
+    <div class="hud-right">
+      <div class="hud-pill hud-length">📏 <span id="hud-length">10</span></div>
+      <button class="hud-btn" id="btn-pause" title="Pausar">⏸️</button>
+      <button class="hud-btn" id="btn-hub" title="Salir al Hub">🏠</button>
+    </div>
+  </div>
+
+  <div class="touch-hint" id="touch-hint">Toca o arrastra para guiar la serpiente de plasma</div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Modal Game Over -->
+  <div class="modal-overlay" id="modal-gameover">
+    <div class="modal-card">
+      <div class="modal-title">PLASMA COLLAPSE</div>
+      <div class="modal-score" id="go-score">0</div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-label">Récord</span>
+          <span class="stat-value" id="go-best">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Longitud</span>
+          <span class="stat-value" id="go-length">0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Monedas</span>
+          <span class="stat-value" id="go-coins">+0</span>
+        </div>
+      </div>
+      <button class="btn-action btn-revive" id="btn-revive">
+        👻 Revivir con Serpiente Fantasma (Anuncio)
+      </button>
+      <button class="btn-action btn-restart" id="btn-restart">
+        🔄 Nueva Serpiente
+      </button>
+      <button class="btn-action btn-hub" id="btn-exit-hub">
+        🏠 Menú Principal
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Pausa -->
+  <div class="modal-overlay" id="modal-pause">
+    <div class="modal-card">
+      <div class="modal-title">PAUSA</div>
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Flujo de plasma en reposo</p>
+      <button class="btn-action btn-restart" id="btn-resume">▶️ Continuar</button>
+      <button class="btn-action btn-hub" id="btn-pause-hub">🏠 Salir al Menú</button>
+    </div>
+  </div>
+
+  <script src="./gamerverse-bridge.js?v=20261112"></script>
+  <script>
+    (function () {
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const hudScore = document.getElementById('hud-score');
+      const hudCoins = document.getElementById('hud-coins');
+      const hudLength = document.getElementById('hud-length');
+      const touchHint = document.getElementById('touch-hint');
+
+      const modalGameOver = document.getElementById('modal-gameover');
+      const goScore = document.getElementById('go-score');
+      const goBest = document.getElementById('go-best');
+      const goLength = document.getElementById('go-length');
+      const goCoins = document.getElementById('go-coins');
+      const btnRevive = document.getElementById('btn-revive');
+      const btnRestart = document.getElementById('btn-restart');
+      const btnExitHub = document.getElementById('btn-exit-hub');
+
+      const modalPause = document.getElementById('modal-pause');
+      const btnPause = document.getElementById('btn-pause');
+      const btnResume = document.getElementById('btn-resume');
+      const btnPauseHub = document.getElementById('btn-pause-hub');
+
+      // --- AUDIO PROCEDURAL SINTETIZADO ---
+      let audioCtx = null;
+      function getAudioCtx() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+      }
+
+      function sfxEat() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(520, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(880, actx.currentTime + 0.1);
+          gain.gain.setValueAtTime(0.2, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.1);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.1);
+        } catch (_) {}
+      }
+
+      function sfxCoin() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(987, actx.currentTime);
+          osc.frequency.setValueAtTime(1318, actx.currentTime + 0.05);
+          gain.gain.setValueAtTime(0.25, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.16);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.16);
+        } catch (_) {}
+      }
+
+      function sfxCrash() {
+        try {
+          const actx = getAudioCtx();
+          if (!actx) return;
+          const osc = actx.createOscillator();
+          const gain = actx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, actx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, actx.currentTime + 0.4);
+          gain.gain.setValueAtTime(0.4, actx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.4);
+          osc.connect(gain);
+          gain.connect(actx.destination);
+          osc.start();
+          osc.stop(actx.currentTime + 0.4);
+        } catch (_) {}
+      }
+
+      // --- DIMENSIONES Y DPR ---
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+      let dpr = window.devicePixelRatio || 1;
+
+      function resize() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        dpr = window.devicePixelRatio || 1;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+      }
+      window.addEventListener('resize', resize);
+
+      // --- ESTADO DEL JUEGO ---
+      let score = 0;
+      let bestScore = parseInt(localStorage.getItem('gv_plasma_snake_best') || '0', 10);
+      let coinsSession = 0;
+      let isPaused = false;
+      let isGameOver = false;
+      let hasRevived = false;
+
+      // Escudo fantasma de revivir
+      let ghostTimer = 0; // ms restantes
+
+      // Anuncios cada 2 minutos
+      let lastInterstitialTime = Date.now();
+      const INTERSTITIAL_INTERVAL_MS = 120000;
+
+      // Serpiente
+      const snake = {
+        x: 0,
+        y: 0,
+        angle: 0,
+        speed: 3.5,
+        turnSpeed: 0.1,
+        radius: 10,
+        body: [], // [{x, y}]
+        targetLength: 15,
+        jointSpacing: 6
+      };
+
+      // Orbes de comida y monedas
+      let orbs = [];
+      let particles = [];
+      let stars = [];
+
+      for (let i = 0; i < 60; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.7 + 0.3
+        });
+      }
+
+      function spawnOrb(isCoin = false) {
+        orbs.push({
+          x: Math.random() * (width - 60) + 30,
+          y: Math.random() * (height - 120) + 60,
+          radius: isCoin ? 8 : 6,
+          isCoin: isCoin,
+          pulse: 0,
+          color: isCoin ? '#facc15' : ['#34d399', '#38bdf8', '#ec4899', '#a855f7'][Math.floor(Math.random() * 4)]
+        });
+      }
+
+      function startNewGame() {
+        score = 0;
+        coinsSession = 0;
+        isGameOver = false;
+        hasRevived = false;
+        ghostTimer = 0;
+        particles = [];
+        orbs = [];
+
+        snake.x = width / 2;
+        snake.y = height / 2;
+        snake.angle = -Math.PI / 2;
+        snake.speed = 3.5;
+        snake.targetLength = 15;
+        snake.body = [];
+
+        for (let i = 0; i < snake.targetLength; i++) {
+          snake.body.push({ x: snake.x, y: snake.y + i * snake.jointSpacing });
+        }
+
+        // Generar 12 orbes de plasma y 2 monedas iniciales
+        for (let i = 0; i < 12; i++) spawnOrb(false);
+        spawnOrb(true);
+        spawnOrb(true);
+
+        updateHUD();
+        modalGameOver.classList.remove('active');
+        modalPause.classList.remove('active');
+        isPaused = false;
+      }
+
+      function updateHUD() {
+        hudScore.innerText = score;
+        hudCoins.innerText = coinsSession;
+        hudLength.innerText = snake.body.length;
+      }
+
+      // --- CONTROLES DE DIRECCIÓN (TOUCH / MOUSE) ---
+      let touchX = width / 2;
+      let touchY = height / 2 - 100;
+      let hasTarget = false;
+
+      function setSteerTarget(clientX, clientY) {
+        touchX = clientX;
+        touchY = clientY;
+        hasTarget = true;
+        if (touchHint && touchHint.style.display !== 'none') {
+          touchHint.style.display = 'none';
+        }
+      }
+
+      window.addEventListener('pointerdown', (e) => {
+        if (isGameOver || isPaused) return;
+        getAudioCtx();
+        setSteerTarget(e.clientX, e.clientY);
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (hasTarget && !isGameOver && !isPaused) {
+          setSteerTarget(e.clientX, e.clientY);
+        }
+      });
+
+      window.addEventListener('pointerup', () => { hasTarget = false; });
+      window.addEventListener('pointercancel', () => { hasTarget = false; });
+
+      // Teclado
+      window.addEventListener('keydown', (e) => {
+        if (isGameOver || isPaused) return;
+        if (e.key === 'ArrowLeft' || e.key === 'a') snake.angle -= 0.12;
+        else if (e.key === 'ArrowRight' || e.key === 'd') snake.angle += 0.12;
+      });
+
+      // --- GAME OVER & ANUNCIOS ---
+      function checkAndTriggerInterstitial(onComplete) {
+        const now = Date.now();
+        if (now - lastInterstitialTime >= INTERSTITIAL_INTERVAL_MS) {
+          if (window.GamerVerse && typeof window.GamerVerse.showInterstitialAd === 'function') {
+            window.GamerVerse.showInterstitialAd(() => {
+              lastInterstitialTime = Date.now();
+              if (onComplete) onComplete();
+            });
+            return;
+          }
+        }
+        if (onComplete) onComplete();
+      }
+
+      function triggerGameOver() {
+        if (isGameOver) return;
+        isGameOver = true;
+        sfxCrash();
+
+        if (score > bestScore) {
+          bestScore = score;
+          localStorage.setItem('gv_plasma_snake_best', bestScore);
+        }
+
+        goScore.innerText = score;
+        goBest.innerText = bestScore;
+        goLength.innerText = snake.body.length;
+        goCoins.innerText = `+${coinsSession}`;
+
+        if (hasRevived) {
+          btnRevive.style.display = 'none';
+        } else {
+          btnRevive.style.display = 'flex';
+        }
+
+        if (window.GamerVerse && typeof window.GamerVerse.submitScore === 'function') {
+          window.GamerVerse.submitScore('plasma_snake', score, coinsSession);
+        }
+
+        modalGameOver.classList.add('active');
+      }
+
+      // Revivir con Serpiente Fantasma
+      btnRevive.addEventListener('click', () => {
+        if (hasRevived) return;
+        if (window.GamerVerse && typeof window.GamerVerse.showRewardedAd === 'function') {
+          window.GamerVerse.showRewardedAd({
+            onSuccess: () => {
+              hasRevived = true;
+              isGameOver = false;
+              modalGameOver.classList.remove('active');
+              ghostTimer = 6000; // 6 segundos de fantasma inmune
+              snake.x = width / 2;
+              snake.y = height / 2;
+            },
+            onFailure: () => {
+              alert('No se pudo cargar el anuncio. Intenta de nuevo.');
+            }
+          });
+        } else {
+          hasRevived = true;
+          isGameOver = false;
+          modalGameOver.classList.remove('active');
+          ghostTimer = 6000;
+          snake.x = width / 2;
+          snake.y = height / 2;
+        }
+      });
+
+      btnRestart.addEventListener('click', () => {
+        checkAndTriggerInterstitial(() => {
+          if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+            window.GamerVerse.showNoTicketsModal(() => startNewGame());
+            return;
+          }
+          if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+            window.GamerVerse.consumeTicket();
+          }
+          startNewGame();
+        });
+      });
+
+      btnExitHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // Pausa
+      btnPause.addEventListener('click', () => {
+        if (isGameOver) return;
+        isPaused = true;
+        modalPause.classList.add('active');
+      });
+      btnResume.addEventListener('click', () => {
+        isPaused = false;
+        modalPause.classList.remove('active');
+      });
+      btnPauseHub.addEventListener('click', () => {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'GV_CLOSE_GAME' }, '*');
+        } else {
+          window.location.href = '../index.html';
+        }
+      });
+
+      // --- BUCLE PRINCIPAL (PHYSICS & RENDERING) ---
+      let lastTime = performance.now();
+
+      function update(dt) {
+        if (isPaused || isGameOver) return;
+
+        if (ghostTimer > 0) {
+          ghostTimer -= dt * 1000;
+        }
+
+        // Girar suavemente hacia el objetivo
+        if (hasTarget) {
+          const dx = touchX - snake.x;
+          const dy = touchY - snake.y;
+          const targetAng = Math.atan2(dy, dx);
+          let diff = (targetAng - snake.angle) % (Math.PI * 2);
+          if (diff < -Math.PI) diff += Math.PI * 2;
+          if (diff > Math.PI) diff -= Math.PI * 2;
+          snake.angle += diff * 0.12;
+        }
+
+        // Mover cabeza
+        snake.x += Math.cos(snake.angle) * snake.speed;
+        snake.y += Math.sin(snake.angle) * snake.speed;
+
+        // Comprobar colisión con límites de la pantalla
+        if (snake.x < snake.radius || snake.x > width - snake.radius ||
+            snake.y < snake.radius || snake.y > height - snake.radius) {
+          if (ghostTimer <= 0) {
+            triggerGameOver();
+            return;
+          } else {
+            // Rebotar o envolver en modo fantasma
+            if (snake.x < 0) snake.x = width;
+            if (snake.x > width) snake.x = 0;
+            if (snake.y < 0) snake.y = height;
+            if (snake.y > height) snake.y = 0;
+          }
+        }
+
+        // Actualizar cuerpo con encadenamiento inverso
+        snake.body.unshift({ x: snake.x, y: snake.y });
+        while (snake.body.length > snake.targetLength) {
+          snake.body.pop();
+        }
+
+        // Comprobar colisión con el propio cuerpo (a partir del segmento 12)
+        if (ghostTimer <= 0 && snake.body.length > 14) {
+          for (let i = 12; i < snake.body.length; i++) {
+            const seg = snake.body[i];
+            const dx = snake.x - seg.x;
+            const dy = snake.y - seg.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < snake.radius * 1.2) {
+              triggerGameOver();
+              return;
+            }
+          }
+        }
+
+        // Comer orbes
+        for (let i = orbs.length - 1; i >= 0; i--) {
+          const o = orbs[i];
+          o.pulse += dt * 4;
+          const dx = snake.x - o.x;
+          const dy = snake.y - o.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < snake.radius + o.radius) {
+            if (o.isCoin) {
+              coinsSession++;
+              score += 25;
+              sfxCoin();
+              addParticles(o.x, o.y, '#facc15', 16);
+            } else {
+              score += 10;
+              snake.targetLength += 2;
+              sfxEat();
+              addParticles(o.x, o.y, o.color, 12);
+            }
+            updateHUD();
+            orbs.splice(i, 1);
+            spawnOrb(Math.random() < 0.2);
+          }
+        }
+
+        // Partículas
+        for (let i = particles.length - 1; i >= 0; i--) {
+          const pt = particles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.alpha -= pt.decay;
+          if (pt.alpha <= 0) particles.splice(i, 1);
+        }
+      }
+
+      function addParticles(x, y, color, count = 10) {
+        for (let i = 0; i < count; i++) {
+          const ang = Math.random() * Math.PI * 2;
+          const spd = Math.random() * 3 + 1;
+          particles.push({
+            x, y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            color,
+            alpha: 1,
+            decay: Math.random() * 0.04 + 0.02
+          });
+        }
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Estrellas de fondo
+        for (let s of stars) {
+          ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 2. Límites electrificados de la arena
+        ctx.save();
+        ctx.strokeStyle = ghostTimer > 0 ? 'rgba(52, 211, 153, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(1, 1, width - 2, height - 2);
+        ctx.restore();
+
+        // 3. Orbes de plasma
+        for (let o of orbs) {
+          ctx.save();
+          const pR = o.radius * (1 + Math.sin(o.pulse) * 0.12);
+          ctx.beginPath();
+          ctx.arc(o.x, o.y, pR, 0, Math.PI * 2);
+          ctx.fillStyle = o.color;
+          ctx.shadowColor = o.color;
+          ctx.shadowBlur = 12;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(o.x, o.y, pR * 0.4, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 4. Partículas
+        for (let pt of particles) {
+          ctx.save();
+          ctx.fillStyle = pt.color;
+          ctx.globalAlpha = Math.max(0, pt.alpha);
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 5. Cuerpo de la serpiente de plasma
+        ctx.save();
+        const isGhost = ghostTimer > 0;
+        const baseColor = isGhost ? '#38bdf8' : '#10b981';
+
+        for (let i = snake.body.length - 1; i >= 0; i--) {
+          const seg = snake.body[i];
+          const segAlpha = (1 - (i / snake.body.length) * 0.6) * (isGhost ? 0.5 : 1);
+          const segR = snake.radius * (1 - (i / snake.body.length) * 0.4);
+
+          ctx.beginPath();
+          ctx.arc(seg.x, seg.y, segR, 0, Math.PI * 2);
+          ctx.fillStyle = baseColor;
+          ctx.globalAlpha = segAlpha;
+          ctx.shadowColor = baseColor;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+        }
+
+        // Cabeza brillante
+        ctx.beginPath();
+        ctx.arc(snake.x, snake.y, snake.radius * 1.15, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.globalAlpha = 1;
+        ctx.shadowColor = baseColor;
+        ctx.shadowBlur = 18;
+        ctx.fill();
+
+        // Ojos
+        const eyeOffsetAng = 0.55;
+        const eyeDist = snake.radius * 0.8;
+        for (let sign of [-1, 1]) {
+          const ex = snake.x + Math.cos(snake.angle + sign * eyeOffsetAng) * eyeDist;
+          const ey = snake.y + Math.sin(snake.angle + sign * eyeOffsetAng) * eyeDist;
+          ctx.beginPath();
+          ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#0f172a';
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      function loop(now) {
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
+        update(dt);
+        draw();
+        requestAnimationFrame(loop);
+      }
+
+      function init() {
+        resize();
+        if (window.GamerVerse && typeof window.GamerVerse.canPlay === 'function' && !window.GamerVerse.canPlay()) {
+          window.GamerVerse.showNoTicketsModal(() => startNewGame());
+          return;
+        }
+        if (window.GamerVerse && typeof window.GamerVerse.consumeTicket === 'function') {
+          window.GamerVerse.consumeTicket();
+        }
+        startNewGame();
+        requestAnimationFrame(loop);
+      }
+
+      window.addEventListener('DOMContentLoaded', init);
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>

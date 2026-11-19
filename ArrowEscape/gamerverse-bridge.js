@@ -87,6 +87,17 @@
             if (p.includes('cosmicblocks')) return 'cosmic_blocks';
             if (p.includes('cosmichexagon')) return 'cosmic_hexagon';
             if (p.includes('planethit')) return 'planet_hit';
+            if (p.includes('neonbreaker')) return 'neon_breaker';
+            if (p.includes('cosmichelix')) return 'cosmic_helix';
+            if (p.includes('cosmicmerge')) return 'cosmic_merge';
+            if (p.includes('colorswitch')) return 'color_switch';
+            if (p.includes('stacktower')) return 'stack_tower';
+            if (p.includes('jetpackastro')) return 'jetpack_astro';
+            if (p.includes('orbitpong')) return 'orbit_pong';
+            if (p.includes('crossycomet')) return 'crossy_comet';
+            if (p.includes('orbitleap')) return 'orbit_leap';
+            if (p.includes('spaceblade')) return 'space_blade';
+            if (p.includes('plasmasnake')) return 'plasma_snake';
             return 'hub';
         },
 
